@@ -1,0 +1,25 @@
+{
+    "core": null,
+    "phpVersion": "8.2",
+    "plugins": [
+        "https://downloads.wordpress.org/plugin/woocommerce.zip"
+    ],
+    "themes": [
+        "https://downloads.wordpress.org/theme/storefront.zip"
+    ],
+    "mappings": {
+        "wp-content/plugins/wc-ship-today-notice": "."
+    },
+    "port": 8894,
+    "testsPort": 8895,
+    "config": {
+        "WP_DEBUG": true,
+        "WP_DEBUG_LOG": true,
+        "WP_DEBUG_DISPLAY": false,
+        "SCRIPT_DEBUG": true,
+        "WP_ENVIRONMENT_TYPE": "local"
+    },
+    "lifecycleScripts": {
+        "afterStart": "wp-env run cli bash wp-content/plugins/wc-ship-today-notice/scripts/env/after-start.sh"
+    }
+}

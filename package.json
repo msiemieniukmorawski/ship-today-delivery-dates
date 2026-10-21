@@ -1,0 +1,16 @@
+{
+    "name": "wc-ship-today-notice-env",
+    "private": true,
+    "description": "Lokalne srodowisko wp-env dla wc-ship-today-notice (http://localhost:8894)",
+    "scripts": {
+        "env:start": "flock /tmp/roomly-docker.lock wp-env start",
+        "env:stop": "wp-env stop",
+        "env:destroy": "wp-env destroy",
+        "env:cli": "wp-env run cli wp",
+        "env:seed": "wp-env run cli bash wp-content/plugins/wc-ship-today-notice/scripts/env/seed.sh",
+        "test:schedule": "wp-env run cli wp eval-file wp-content/plugins/wc-ship-today-notice/tests/cli-schedule-test.php"
+    },
+    "devDependencies": {
+        "@wordpress/env": "10.39.0"
+    }
+}
