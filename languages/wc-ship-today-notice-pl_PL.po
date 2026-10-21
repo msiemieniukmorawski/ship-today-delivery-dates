@@ -346,3 +346,107 @@ msgstr ""
 #: wc-ship-today-notice.php:955
 msgid "Loading..."
 msgstr "Ładowanie..."
+
+#: wc-ship-today-notice.php
+msgid "Settings"
+msgstr "Ustawienia"
+
+#: wc-ship-today-notice.php
+msgid "Style"
+msgstr "Styl"
+
+#: wc-ship-today-notice.php
+msgid "Empty field = default look. Changes are shown in the preview right away; click \"Save Changes\" to apply them on the site."
+msgstr "Puste pole = domyślny wygląd. Zmiany widać od razu w podglądzie; kliknij „Zapisz zmiany”, aby zastosować je na stronie."
+
+#: wc-ship-today-notice.php
+msgid "Colors"
+msgstr "Kolory"
+
+#: wc-ship-today-notice.php
+msgid "Before cutoff"
+msgstr "Przed godziną graniczną"
+
+#: wc-ship-today-notice.php
+msgid "After cutoff"
+msgstr "Po godzinie granicznej"
+
+#: wc-ship-today-notice.php
+msgid "Background"
+msgstr "Tło"
+
+#: wc-ship-today-notice.php
+msgid "Border color"
+msgstr "Kolor ramki"
+
+#: wc-ship-today-notice.php
+msgid "Text color"
+msgstr "Kolor tekstu"
+
+#: wc-ship-today-notice.php
+msgid "Also used on non-shipping days."
+msgstr "Używane też w dni bez wysyłki."
+
+#: wc-ship-today-notice.php
+msgid "Countdown color"
+msgstr "Kolor odliczania"
+
+#: wc-ship-today-notice.php
+msgid "Layout and text"
+msgstr "Układ i tekst"
+
+#: wc-ship-today-notice.php
+msgid "Border width"
+msgstr "Grubość ramki"
+
+#: wc-ship-today-notice.php
+msgid "Border radius"
+msgstr "Zaokrąglenie"
+
+#: wc-ship-today-notice.php
+msgid "Padding"
+msgstr "Odstęp wewnętrzny"
+
+#: wc-ship-today-notice.php
+msgid "Same on all sides. Default: 10px top and bottom, 14px left and right."
+msgstr "Taki sam ze wszystkich stron. Domyślnie: 10px góra i dół, 14px lewo i prawo."
+
+#: wc-ship-today-notice.php
+msgid "Font size"
+msgstr "Rozmiar czcionki"
+
+#: wc-ship-today-notice.php
+msgid "Font weight"
+msgstr "Grubość czcionki"
+
+#: wc-ship-today-notice.php
+msgid "Default (600)"
+msgstr "Domyślna (600)"
+
+#: wc-ship-today-notice.php
+msgid "Alignment"
+msgstr "Wyrównanie"
+
+#: wc-ship-today-notice.php
+msgid "Default"
+msgstr "Domyślne"
+
+#: wc-ship-today-notice.php
+msgid "Left"
+msgstr "Do lewej"
+
+#: wc-ship-today-notice.php
+msgid "Center"
+msgstr "Do środka"
+
+#: wc-ship-today-notice.php
+msgid "Right"
+msgstr "Do prawej"
+
+#: wc-ship-today-notice.php
+msgid "Restore defaults"
+msgstr "Przywróć domyślne"
+
+#: wc-ship-today-notice.php
+msgid "Preview"
+msgstr "Podgląd"

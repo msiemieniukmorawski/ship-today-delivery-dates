@@ -299,3 +299,107 @@ msgstr ""
 #: wc-ship-today-notice.php:955
 msgid "Loading..."
 msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Settings"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Style"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Empty field = default look. Changes are shown in the preview right away; click \"Save Changes\" to apply them on the site."
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Colors"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Before cutoff"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "After cutoff"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Background"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Border color"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Text color"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Also used on non-shipping days."
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Countdown color"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Layout and text"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Border width"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Border radius"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Padding"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Same on all sides. Default: 10px top and bottom, 14px left and right."
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Font size"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Font weight"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Default (600)"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Alignment"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Default"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Left"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Center"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Right"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Restore defaults"
+msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "Preview"
+msgstr ""

@@ -301,3 +301,107 @@ msgstr "Wenn deaktiviert, wird das Widget an Wochenenden, Feiertagen und ausgesc
 #: wc-ship-today-notice.php:955
 msgid "Loading..."
 msgstr "Wird geladen..."
+
+#: wc-ship-today-notice.php
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: wc-ship-today-notice.php
+msgid "Style"
+msgstr "Stil"
+
+#: wc-ship-today-notice.php
+msgid "Empty field = default look. Changes are shown in the preview right away; click \"Save Changes\" to apply them on the site."
+msgstr "Leeres Feld = Standardaussehen. Änderungen erscheinen sofort in der Vorschau; klicke auf „Änderungen speichern“, um sie auf der Website zu übernehmen."
+
+#: wc-ship-today-notice.php
+msgid "Colors"
+msgstr "Farben"
+
+#: wc-ship-today-notice.php
+msgid "Before cutoff"
+msgstr "Vor Annahmeschluss"
+
+#: wc-ship-today-notice.php
+msgid "After cutoff"
+msgstr "Nach Annahmeschluss"
+
+#: wc-ship-today-notice.php
+msgid "Background"
+msgstr "Hintergrund"
+
+#: wc-ship-today-notice.php
+msgid "Border color"
+msgstr "Rahmenfarbe"
+
+#: wc-ship-today-notice.php
+msgid "Text color"
+msgstr "Textfarbe"
+
+#: wc-ship-today-notice.php
+msgid "Also used on non-shipping days."
+msgstr "Wird auch an Tagen ohne Versand verwendet."
+
+#: wc-ship-today-notice.php
+msgid "Countdown color"
+msgstr "Farbe des Countdowns"
+
+#: wc-ship-today-notice.php
+msgid "Layout and text"
+msgstr "Layout und Text"
+
+#: wc-ship-today-notice.php
+msgid "Border width"
+msgstr "Rahmenbreite"
+
+#: wc-ship-today-notice.php
+msgid "Border radius"
+msgstr "Eckenradius"
+
+#: wc-ship-today-notice.php
+msgid "Padding"
+msgstr "Innenabstand"
+
+#: wc-ship-today-notice.php
+msgid "Same on all sides. Default: 10px top and bottom, 14px left and right."
+msgstr "Auf allen Seiten gleich. Standard: 10px oben und unten, 14px links und rechts."
+
+#: wc-ship-today-notice.php
+msgid "Font size"
+msgstr "Schriftgröße"
+
+#: wc-ship-today-notice.php
+msgid "Font weight"
+msgstr "Schriftstärke"
+
+#: wc-ship-today-notice.php
+msgid "Default (600)"
+msgstr "Standard (600)"
+
+#: wc-ship-today-notice.php
+msgid "Alignment"
+msgstr "Ausrichtung"
+
+#: wc-ship-today-notice.php
+msgid "Default"
+msgstr "Standard"
+
+#: wc-ship-today-notice.php
+msgid "Left"
+msgstr "Links"
+
+#: wc-ship-today-notice.php
+msgid "Center"
+msgstr "Zentriert"
+
+#: wc-ship-today-notice.php
+msgid "Right"
+msgstr "Rechts"
+
+#: wc-ship-today-notice.php
+msgid "Restore defaults"
+msgstr "Standard wiederherstellen"
+
+#: wc-ship-today-notice.php
+msgid "Preview"
+msgstr "Vorschau"

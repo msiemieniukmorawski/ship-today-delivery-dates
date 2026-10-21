@@ -23,6 +23,7 @@ require_once __DIR__ . '/includes/functions.php';
 final class WC_Ship_Today_Notice
 {
     const OPTION_KEY       = 'wc_ship_today_notice_options';
+    const STYLE_KEY        = 'wc_ship_today_notice_style';
     const VERSION_KEY      = 'wc_ship_today_notice_version';
     const CRON_HOOK        = 'wc_ship_today_notice_cron_sync_holidays';
     const CRON_PURGE_HOOK  = 'wc_ship_today_notice_cron_purge_cache';
@@ -40,6 +41,9 @@ final class WC_Ship_Today_Notice
 
     /** @var int Przesunięcie "teraz" w sekundach w trybie testowym (?stn_now=). */
     private $now_offset = 0;
+
+    /** @var string|false Hook strony ustawień (do ładowania skryptów zakładki "Styl"). */
+    private $page_hook = false;
 
     public static function instance()
     {
@@ -60,6 +64,7 @@ final class WC_Ship_Today_Notice
         add_action('admin_menu', [$this, 'register_admin_menu']);
         add_action('admin_init', [$this, 'maybe_upgrade'], 5);
         add_action('admin_init', [$this, 'register_settings']);
+        add_action('admin_enqueue_scripts', [$this, 'admin_assets']);
 
         add_action('init', [$this, 'register_shortcode']);
         add_action('init', [$this, 'maybe_enable_test_mode'], 1);
@@ -71,6 +76,9 @@ final class WC_Ship_Today_Notice
         add_filter('cron_schedules', [$this, 'add_cron_schedules']);
 
         add_action('update_option_' . self::OPTION_KEY, [$this, 'on_options_updated'], 10, 2);
+        // Pierwszy zapis stylu to add_option, kolejne to update_option
+        add_action('add_option_' . self::STYLE_KEY, [$this, 'on_style_updated']);
+        add_action('update_option_' . self::STYLE_KEY, [$this, 'on_style_updated']);
 
         new WC_STN_Checkout($this);
     }
@@ -237,6 +245,11 @@ final class WC_Ship_Today_Notice
         $this->reschedule_cache_purge();
     }
 
+    public function on_style_updated()
+    {
+        $this->purge_cache();
+    }
+
     /**
      * Strony z cache mają tekst startowy policzony przy renderze. JS i tak przelicza termin,
      * ale czyścimy cache o godzinie granicznej, żeby tekst startowy też był aktualny.
@@ -278,7 +291,7 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
     public function register_admin_menu()
     {
-        add_submenu_page(
+        $this->page_hook = add_submenu_page(
             'woocommerce',
             __('Ship Today Notice', 'wc-ship-today-notice'),
             __('Ship Today Notice', 'wc-ship-today-notice'),
@@ -291,6 +304,7 @@ final class WC_Ship_Today_Notice
     public function register_settings()
     {
         register_setting(self::OPTION_KEY, self::OPTION_KEY, [$this, 'sanitize_options']);
+        register_setting(self::STYLE_KEY, self::STYLE_KEY, [$this, 'sanitize_style']);
 
         // --- Sekcja: Shortcode Info ---
         add_settings_section(
@@ -473,9 +487,21 @@ final class WC_Ship_Today_Notice
         }
 
         settings_errors(self::OPTION_KEY);
+
+        $tab      = $this->current_tab();
+        $page_url = admin_url('admin.php?page=wc-ship-today-notice');
 ?>
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+
+            <nav class="nav-tab-wrapper" style="margin-bottom:16px;">
+                <a href="<?php echo esc_url($page_url); ?>" class="nav-tab<?php echo 'settings' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e('Settings', 'wc-ship-today-notice'); ?></a>
+                <a href="<?php echo esc_url(add_query_arg('tab', 'style', $page_url)); ?>" class="nav-tab<?php echo 'style' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e('Style', 'wc-ship-today-notice'); ?></a>
+            </nav>
+
+            <?php if ('style' === $tab) : ?>
+                <?php $this->render_style_tab(); ?>
+            <?php else : ?>
 
             <form method="post" action="options.php">
                 <?php
@@ -494,6 +520,8 @@ final class WC_Ship_Today_Notice
                 <input type="hidden" name="wc_ship_today_manual_sync" value="1" />
                 <?php submit_button(__('Fetch holidays now', 'wc-ship-today-notice'), 'secondary', 'submit', false); ?>
             </form>
+
+            <?php endif; ?>
         </div>
     <?php
     }
@@ -553,6 +581,257 @@ final class WC_Ship_Today_Notice
 
         $saved = get_option(self::OPTION_KEY, []);
         return wp_parse_args($saved, $defaults);
+    }
+
+    /* ---------------------------------------------------------
+     * Style tab
+     * --------------------------------------------------------- */
+
+    /**
+     * Pola zakładki "Styl": klucz => [typ, zmienna CSS bez prefiksu, min, max].
+     * Stan "nie dzień wysyłki" ma na froncie klasę --after, więc dziedziczy kolory "po".
+     */
+    private function style_fields()
+    {
+        return [
+            'before_bg'       => ['color', 'before-bg'],
+            'before_border'   => ['color', 'before-border'],
+            'before_color'    => ['color', 'before-color'],
+            'after_bg'        => ['color', 'after-bg'],
+            'after_border'    => ['color', 'after-border'],
+            'after_color'     => ['color', 'after-color'],
+            'countdown_color' => ['color', 'countdown-color'],
+            'border_width'    => ['px', 'border-width', 0, 20],
+            'radius'          => ['px', 'radius', 0, 100],
+            'padding'         => ['px', 'padding', 0, 80],
+            'font_size'       => ['px', 'font-size', 8, 72],
+            'font_weight'     => ['weight', 'font-weight'],
+            'align'           => ['align', 'align'],
+        ];
+    }
+
+    /** Pusta wartość = domyślny wygląd z notice.css. */
+    public function get_style()
+    {
+        $saved = get_option(self::STYLE_KEY, []);
+        return wp_parse_args(is_array($saved) ? $saved : [], array_fill_keys(array_keys($this->style_fields()), ''));
+    }
+
+    public function sanitize_style($input)
+    {
+        $input = is_array($input) ? $input : [];
+        $style = [];
+
+        foreach ($this->style_fields() as $key => $field) {
+            $value = trim((string) ($input[$key] ?? ''));
+
+            if ('' === $value) {
+                $style[$key] = '';
+            } elseif ('color' === $field[0]) {
+                $style[$key] = (string) sanitize_hex_color($value);
+            } elseif ('px' === $field[0]) {
+                $style[$key] = max($field[2], min($field[3], absint($value)));
+            } elseif ('weight' === $field[0]) {
+                $style[$key] = in_array($value, ['400', '500', '600', '700', '800'], true) ? $value : '';
+            } else {
+                $style[$key] = in_array($value, ['left', 'center', 'right'], true) ? $value : '';
+            }
+        }
+
+        return $style;
+    }
+
+    /**
+     * Zmienne CSS dla notice.css (na :root, więc własny CSS na elemencie dalej je nadpisuje).
+     * Czysty CSS w HTML strony, działa też ze stron w cache (cache czyszczony po zapisie).
+     */
+    private function style_css()
+    {
+        $fields  = $this->style_fields();
+        $justify = ['left' => 'flex-start', 'center' => 'center', 'right' => 'flex-end'];
+        $css     = '';
+
+        foreach ($this->sanitize_style($this->get_style()) as $key => $value) {
+            if ('' === $value) {
+                continue;
+            }
+            $css .= '--wc-ship-today-notice-' . $fields[$key][1] . ':' . $value . ('px' === $fields[$key][0] ? 'px' : '') . ';';
+            if ('align' === $fields[$key][0]) {
+                $css .= '--wc-ship-today-notice-justify:' . $justify[$value] . ';';
+            }
+        }
+
+        return '' === $css ? '' : ':root{' . $css . '}';
+    }
+
+    private function current_tab()
+    {
+        return (isset($_GET['tab']) && 'style' === $_GET['tab']) ? 'style' : 'settings'; // phpcs:ignore WordPress.Security.NonceVerification
+    }
+
+    public function admin_assets($hook)
+    {
+        if (!$this->page_hook || $hook !== $this->page_hook || 'style' !== $this->current_tab()) {
+            return;
+        }
+
+        wp_enqueue_style('wp-color-picker');
+        wp_enqueue_style(
+            'wc-ship-today-notice',
+            plugins_url('assets/css/notice.css', __FILE__),
+            [],
+            WC_STN_VERSION
+        );
+        wp_enqueue_script(
+            'wc-ship-today-notice-style',
+            plugins_url('assets/js/style-preview.js', __FILE__),
+            ['jquery', 'wp-color-picker'],
+            WC_STN_VERSION,
+            true
+        );
+    }
+
+    private function style_color_input($key, array $s)
+    {
+        printf(
+            '<input type="text" class="wc-stn-color" name="%1$s[%2$s]" value="%3$s" data-stn-var="--wc-ship-today-notice-%4$s" />',
+            esc_attr(self::STYLE_KEY),
+            esc_attr($key),
+            esc_attr($s[$key]),
+            esc_attr($this->style_fields()[$key][1])
+        );
+    }
+
+    private function style_px_input($key, array $s, $placeholder)
+    {
+        $field = $this->style_fields()[$key];
+        printf(
+            '<input type="number" min="%1$d" max="%2$d" step="1" name="%3$s[%4$s]" value="%5$s" placeholder="%6$s" data-stn-var="--wc-ship-today-notice-%7$s" data-stn-unit="px" style="width:80px" /> px',
+            (int) $field[2],
+            (int) $field[3],
+            esc_attr(self::STYLE_KEY),
+            esc_attr($key),
+            esc_attr($s[$key]),
+            esc_attr($placeholder),
+            esc_attr($field[1])
+        );
+    }
+
+    private function render_style_tab()
+    {
+        $s    = $this->get_style();
+        $o    = $this->get_options();
+        $name = self::STYLE_KEY;
+
+        // Przykładowe odliczanie w formacie z ustawień (jak formatCountdown w notice.js)
+        $countdown = '01' . $o['countdown_label_h'] . ' 25' . $o['countdown_label_m'];
+        if (!empty($o['countdown_show_seconds'])) {
+            $countdown .= ' 08' . $o['countdown_label_s'];
+        }
+        $before_html = str_replace(
+            '{countdown}',
+            '<span class="wc-ship-today-countdown">' . esc_html($countdown) . '</span>',
+            esc_html__('Order within: {countdown} — we will ship today!', 'wc-ship-today-notice')
+        );
+
+        $colors = [
+            'bg'     => __('Background', 'wc-ship-today-notice'),
+            'border' => __('Border color', 'wc-ship-today-notice'),
+            'color'  => __('Text color', 'wc-ship-today-notice'),
+        ];
+        $col = 'display:inline-block;vertical-align:top;margin:0 16px 8px 0;';
+        ?>
+        <div style="display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start;">
+            <form method="post" action="options.php" id="wc-stn-style-form" style="flex:1 1 520px;min-width:0;">
+                <?php settings_fields($name); ?>
+                <p class="description"><?php esc_html_e('Empty field = default look. Changes are shown in the preview right away; click "Save Changes" to apply them on the site.', 'wc-ship-today-notice'); ?></p>
+
+                <h2><?php esc_html_e('Colors', 'wc-ship-today-notice'); ?></h2>
+                <table class="form-table" role="presentation">
+                    <?php foreach (['before' => __('Before cutoff', 'wc-ship-today-notice'), 'after' => __('After cutoff', 'wc-ship-today-notice')] as $state => $label) : ?>
+                        <tr>
+                            <th scope="row"><?php echo esc_html($label); ?></th>
+                            <td>
+                                <?php foreach ($colors as $suffix => $color_label) : ?>
+                                    <div style="<?php echo esc_attr($col); ?>">
+                                        <span style="display:block;margin-bottom:4px;"><?php echo esc_html($color_label); ?></span>
+                                        <?php $this->style_color_input($state . '_' . $suffix, $s); ?>
+                                    </div>
+                                <?php endforeach; ?>
+                                <?php if ('after' === $state) : ?>
+                                    <p class="description"><?php esc_html_e('Also used on non-shipping days.', 'wc-ship-today-notice'); ?></p>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Countdown color', 'wc-ship-today-notice'); ?></th>
+                        <td><?php $this->style_color_input('countdown_color', $s); ?></td>
+                    </tr>
+                </table>
+
+                <h2><?php esc_html_e('Layout and text', 'wc-ship-today-notice'); ?></h2>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Border width', 'wc-ship-today-notice'); ?></th>
+                        <td><?php $this->style_px_input('border_width', $s, '2'); ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Border radius', 'wc-ship-today-notice'); ?></th>
+                        <td><?php $this->style_px_input('radius', $s, '8'); ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Padding', 'wc-ship-today-notice'); ?></th>
+                        <td>
+                            <?php $this->style_px_input('padding', $s, '10 / 14'); ?>
+                            <p class="description"><?php esc_html_e('Same on all sides. Default: 10px top and bottom, 14px left and right.', 'wc-ship-today-notice'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Font size', 'wc-ship-today-notice'); ?></th>
+                        <td><?php $this->style_px_input('font_size', $s, '13'); ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Font weight', 'wc-ship-today-notice'); ?></th>
+                        <td>
+                            <select name="<?php echo esc_attr($name); ?>[font_weight]" data-stn-var="--wc-ship-today-notice-font-weight">
+                                <option value=""><?php esc_html_e('Default (600)', 'wc-ship-today-notice'); ?></option>
+                                <?php foreach (['400', '500', '600', '700', '800'] as $weight) : ?>
+                                    <option value="<?php echo esc_attr($weight); ?>" <?php selected($s['font_weight'], $weight); ?>><?php echo esc_html($weight); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Alignment', 'wc-ship-today-notice'); ?></th>
+                        <td>
+                            <select name="<?php echo esc_attr($name); ?>[align]" data-stn-align="1">
+                                <option value=""><?php esc_html_e('Default', 'wc-ship-today-notice'); ?></option>
+                                <option value="left" <?php selected($s['align'], 'left'); ?>><?php esc_html_e('Left', 'wc-ship-today-notice'); ?></option>
+                                <option value="center" <?php selected($s['align'], 'center'); ?>><?php esc_html_e('Center', 'wc-ship-today-notice'); ?></option>
+                                <option value="right" <?php selected($s['align'], 'right'); ?>><?php esc_html_e('Right', 'wc-ship-today-notice'); ?></option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+
+                <p class="submit">
+                    <?php submit_button(null, 'primary', 'submit', false); ?>
+                    <button type="button" class="button" id="wc-stn-style-reset" style="margin-left:8px;"><?php esc_html_e('Restore defaults', 'wc-ship-today-notice'); ?></button>
+                </p>
+            </form>
+
+            <div style="flex:0 1 380px;min-width:260px;position:sticky;top:46px;">
+                <h2><?php esc_html_e('Preview', 'wc-ship-today-notice'); ?></h2>
+                <div id="wc-stn-style-preview" style="background:#fff;border:1px solid #c3c4c7;padding:16px;">
+                    <p style="margin:0 0 6px;"><?php esc_html_e('Before cutoff', 'wc-ship-today-notice'); ?></p>
+                    <div class="wc-ship-today-notice wc-ship-today-notice--before"><?php echo $before_html; // phpcs:ignore WordPress.Security.EscapeOutput -- esc_html__ + esc_html wyżej. ?></div>
+                    <p style="margin:16px 0 6px;"><?php esc_html_e('After cutoff', 'wc-ship-today-notice'); ?></p>
+                    <div class="wc-ship-today-notice wc-ship-today-notice--after"><?php esc_html_e('We will ship tomorrow.', 'wc-ship-today-notice'); ?></div>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 
     /* ---------------------------------------------------------
@@ -1188,6 +1467,10 @@ final class WC_Ship_Today_Notice
             [],
             WC_STN_VERSION
         );
+        $style_css = $this->style_css();
+        if ('' !== $style_css) {
+            wp_add_inline_style('wc-ship-today-notice', $style_css);
+        }
         wp_enqueue_script(
             'wc-ship-today-notice',
             plugins_url('assets/js/notice.js', __FILE__),
