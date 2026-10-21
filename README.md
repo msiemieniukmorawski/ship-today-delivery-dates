@@ -1,6 +1,6 @@
 # WooCommerce Ship Today Notice
 
-![WordPress](https://img.shields.io/badge/WordPress-5.3%2B-blue)
+![WordPress](https://img.shields.io/badge/WordPress-6.8%2B-blue)
 ![WooCommerce](https://img.shields.io/badge/WooCommerce-wymagany-purple)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4)
 ![License](https://img.shields.io/badge/license-GPL--2.0%2B-green)
@@ -17,7 +17,7 @@ Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po
 - **Harmonogram wysyłek** - dni wysyłki, godzina graniczna dla każdego dnia, godzina graniczna wypadająca 0-6 dni przed dniem wysyłki
   (np. wysyłka w poniedziałek, zamówienia do niedzieli 20:00).
 - **Data dostawy** - N dni doręczeń po wysyłce, z pominięciem dni bez doręczeń i świąt.
-- **Święta** z [OpenHolidays API](https://openholidaysapi.org/) na bieżący i następny rok, z możliwością ignorowania wybranych.
+- **Święta** z [OpenHolidays API](https://www.openholidaysapi.org/) na bieżący i następny rok, z możliwością ignorowania wybranych.
   Do tego ręczna lista dat wykluczonych.
 - **Tokeny z polską odmianą dni**: "dziś do 20:00", "do niedzieli 20:00", "we wtorek".
 - **Działa ze stron w cache** - harmonogram na 42 dni jest w HTML, przeglądarka sama przełącza terminy. Czyszczenie cache LiteSpeed
@@ -30,7 +30,7 @@ Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po
 
 ## Wymagania
 
-- WordPress 5.3+ (`wp_timezone()`, `wp_date()`)
+- WordPress 6.8+ (od 6.8 WordPress sam ładuje tłumaczenia z `languages/` wtyczki; sprawdzone na 6.8 z WooCommerce 9.4.3)
 - PHP 7.4+
 - WooCommerce - wymagany: strona ustawień jest w menu WooCommerce, a dostęp sprawdza uprawnienie `manage_woocommerce`.
 - Checkout blokowy (WooCommerce Blocks): wybór terminu przez Additional Checkout Fields API z regułami warunkowymi,
@@ -335,13 +335,16 @@ Wymaga WordPressa i pobranych świąt PL na lata 2026-2027. Nie zmienia zapisany
 - Opcja `wc_ship_today_notice_version` - wersja do migracji (1.x → 2.0: ignorowane święta z ID na daty).
 - Tabela `{prefix}wc_ship_today_notice_holidays` - pobrane święta.
 
-Dezaktywacja usuwa wszystkie zdarzenia cron wtyczki (`wp_clear_scheduled_hook`). Wtyczka nie ma `uninstall.php`, więc opcje i tabela zostają po usunięciu.
+Dezaktywacja usuwa wszystkie zdarzenia cron wtyczki (`wp_clear_scheduled_hook`). Usunięcie wtyczki (`uninstall.php`) kasuje trzy opcje,
+tabelę świąt i zdarzenia cron (także na każdej stronie multisite). Meta zamówień (`_wc_stn_*`) zostają w zamówieniach.
 
 ## Struktura plików
 
 ```
 wc-ship-today-notice/
 ├── wc-ship-today-notice.php        # Główny plik: panel, shortcode widgetu, święta, cron, cache, tryb testowy, WPML
+├── uninstall.php                   # Usuwanie: opcje, tabela świąt, cron (meta zamówień zostają)
+├── readme.txt                      # Readme w formacie WordPress.org (po angielsku)
 ├── index.php
 ├── includes/
 │   ├── class-wc-stn-schedule.php   # Silnik terminów (dni wysyłki, godzina graniczna, dostawa, tokeny)
@@ -359,6 +362,8 @@ wc-ship-today-notice/
 │   └── wc-ship-today-notice-de_DE.po / .mo
 ├── tests/cli-schedule-test.php     # Tabela przypadków silnika (wp eval-file)
 ├── scripts/lint.sh                 # Lint PHP i JS
+├── scripts/build-zip.sh            # Paczka build/wc-ship-today-notice.zip (bez plików z .distignore)
+├── .distignore                     # Co nie trafia do paczki (testy, skrypty, README.md, wp-env)
 └── README.md
 ```
 
@@ -368,6 +373,10 @@ wc-ship-today-notice/
 ### Niewydane
 - Wybór terminu w checkoucie blokowym, WooCommerce 10.1+ (pole Additional Checkout Fields, walidacja w Store API, te same meta zamówienia);
   deklaracja zgodności z checkoutem blokowym.
+- Przygotowanie do WordPress.org: `readme.txt`, nagłówek wtyczki (licencja, wymagania WP/PHP/WooCommerce,
+  `Requires Plugins`), `uninstall.php`, `.distignore` i `scripts/build-zip.sh`.
+- Minimalna wersja WordPressa: 6.8 (tłumaczenia ładuje WordPress, bez `load_plugin_textdomain`).
+- Zapytania do tabeli świąt przez `$wpdb->prepare()` z `%i`, poprawki escapingu w panelu.
 - Zakładka "Styl": kolory przed/po godzinie granicznej, kolor odliczania, ramka, zaokrąglenie, odstęp, czcionka
   i wyrównanie, z podglądem na żywo i "Przywróć domyślne".
 - Nowe zmienne CSS w `notice.css` (domyślny wygląd bez zmian).

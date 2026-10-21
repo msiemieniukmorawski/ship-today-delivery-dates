@@ -2,11 +2,19 @@
 
 /**
  * Plugin Name: Powiadomienie o wysyłce dziś
- * Description: Odliczanie do godziny granicznej i informacja o najbliższej wysyłce i dostawie. Użycie przez shortcode [ship_today_notice].
+ * Description: Countdown to the order cutoff time with the next ship and delivery dates (shortcode [ship_today_notice]), plus an optional ship date choice at checkout.
  * Version: 2.1.0
+ * Requires at least: 6.8
+ * Requires PHP: 7.4
+ * Requires Plugins: woocommerce
  * Author: MS-M.pl
+ * Author URI: https://ms-m.pl
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wc-ship-today-notice
  * Domain Path: /languages
+ * WC requires at least: 9.4
+ * WC tested up to: 11.2
  */
 
 if (!defined('ABSPATH')) {
@@ -59,8 +67,7 @@ final class WC_Ship_Today_Notice
         register_activation_hook(__FILE__, [$this, 'on_activate']);
         register_deactivation_hook(__FILE__, [$this, 'on_deactivate']);
 
-        // Load translations early (before admin_menu and admin_init)
-        add_action('plugins_loaded', [$this, 'load_textdomain']);
+        // Tłumaczenia ładuje WordPress (WP 6.8+: Domain Path z nagłówka, pierwszeństwo ma wp-content/languages/plugins/)
 
         add_action('admin_menu', [$this, 'register_admin_menu']);
         add_action('admin_init', [$this, 'maybe_upgrade'], 5);
@@ -121,29 +128,6 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Load plugin text domain for translations
-     */
-    public function load_textdomain()
-    {
-        $domain = 'wc-ship-today-notice';
-        $locale = determine_locale();
-
-        // Try to load from WP languages directory first (wp-content/languages/plugins/)
-        $mofile = WP_LANG_DIR . '/plugins/' . $domain . '-' . $locale . '.mo';
-
-        if (file_exists($mofile)) {
-            load_textdomain($domain, $mofile);
-        } else {
-            // Fallback to plugin's languages directory
-            load_plugin_textdomain(
-                $domain,
-                false,
-                dirname(plugin_basename(__FILE__)) . '/languages/'
-            );
-        }
-    }
-
-    /**
      * Silnik terminów na aktualnych ustawieniach.
      */
     public function schedule()
@@ -193,8 +177,8 @@ final class WC_Ship_Today_Notice
             global $wpdb;
             $table = $wpdb->prefix . self::TABLE_NAME;
             $ids   = array_map('intval', (array) $saved['excluded_holidays']);
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $dates = $wpdb->get_col("SELECT holiday_date FROM {$table} WHERE id IN (" . implode(',', $ids) . ')');
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- jednorazowa migracja 1.x, własna tabela.
+            $dates = $wpdb->get_col($wpdb->prepare('SELECT holiday_date FROM %i WHERE id IN (' . implode(',', array_fill(0, count($ids), '%d')) . ')', array_merge([$table], $ids)));
             $saved['excluded_holiday_dates'] = array_values(array_unique((array) $dates));
             unset($saved['excluded_holidays']);
             update_option(self::OPTION_KEY, $saved);
@@ -900,7 +884,7 @@ final class WC_Ship_Today_Notice
             printf(
                 /* translators: %s: link to OpenHolidays API */
                 esc_html__('Public holidays are fetched from %s. Configure your country and language below.', 'wc-ship-today-notice'),
-                '<a href="https://openholidaysapi.org/" target="_blank">OpenHolidays API</a>'
+                '<a href="https://www.openholidaysapi.org/" target="_blank" rel="noopener noreferrer">OpenHolidays API</a>'
             );
             ?>
         </p>
@@ -1053,7 +1037,6 @@ final class WC_Ship_Today_Notice
         echo '</tr></thead><tbody>';
 
         foreach ($days as $num => $label) {
-            $checked = in_array($num, (array)$o['delivery_days'], true) ? 'checked' : '';
             $cutoff = $cutoff_times[$num] ?? '14:00';
             $offset = (int) ($cutoff_offsets[$num] ?? 0);
 
@@ -1072,13 +1055,13 @@ final class WC_Ship_Today_Notice
                 esc_html($label),
                 esc_attr(self::OPTION_KEY),
                 (int)$num,
-                $checked,
+                checked(in_array($num, (array)$o['delivery_days'], true), true, false),
                 esc_attr(self::OPTION_KEY),
                 (int)$num,
                 esc_attr($cutoff),
                 esc_attr(self::OPTION_KEY),
                 (int)$num,
-                $options_html // phpcs:ignore WordPress.Security.EscapeOutput
+                wp_kses($options_html, ['option' => ['value' => true, 'selected' => true]])
             );
         }
 
@@ -1161,7 +1144,7 @@ final class WC_Ship_Today_Notice
         );
         echo '<p class="description">';
         esc_html_e('Two-letter ISO 3166-1 country code. Examples: PL (Poland), DE (Germany), CZ (Czech Republic), FR (France), GB (United Kingdom).', 'wc-ship-today-notice');
-        echo ' <a href="https://openholidaysapi.org/Countries" target="_blank">' . esc_html__('See supported countries', 'wc-ship-today-notice') . '</a></p>';
+        echo ' <a href="https://openholidaysapi.org/Countries" target="_blank" rel="noopener noreferrer">' . esc_html__('See supported countries', 'wc-ship-today-notice') . '</a></p>';
     }
 
     public function field_language_code()
@@ -1187,9 +1170,11 @@ final class WC_Ship_Today_Notice
         $table = $wpdb->prefix . self::TABLE_NAME;
 
         $year = (int) wp_date('Y');
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- własna tabela świąt, brak API WP; tylko panel.
         $holidays = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT DISTINCT holiday_date, holiday_name FROM {$table} WHERE country_code = %s AND YEAR(holiday_date) IN (%d, %d) ORDER BY holiday_date ASC",
+                'SELECT DISTINCT holiday_date, holiday_name FROM %i WHERE country_code = %s AND YEAR(holiday_date) IN (%d, %d) ORDER BY holiday_date ASC',
+                $table,
                 $o['country_code'],
                 $year,
                 $year + 1
@@ -1443,9 +1428,11 @@ final class WC_Ship_Today_Notice
         $table = $wpdb->prefix . self::TABLE_NAME;
 
         // Remove this year for this country before insert (exclusions are stored by date, so they survive)
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- własna tabela świąt, brak API WP; po zapisie cache nie ma czego unieważniać.
         $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$table} WHERE country_code = %s AND holiday_date BETWEEN %s AND %s",
+                'DELETE FROM %i WHERE country_code = %s AND holiday_date BETWEEN %s AND %s',
+                $table,
                 $country,
                 $validFrom,
                 $validTo
@@ -1470,6 +1457,7 @@ final class WC_Ship_Today_Notice
                 }
             }
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- własna tabela świąt.
             $wpdb->insert($table, [
                 'country_code' => $country,
                 'holiday_date' => $date,

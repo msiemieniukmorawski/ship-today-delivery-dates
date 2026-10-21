@@ -325,8 +325,8 @@ final class WC_STN_Schedule
         $this->holidays = [];
         $table          = $wpdb->prefix . WC_Ship_Today_Notice::TABLE_NAME;
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT holiday_date, holiday_name FROM {$table} WHERE country_code = %s", $this->options['country_code'] ?? 'PL'));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- własna tabela świąt, brak API WP; wynik trzymany w $this->holidays na czas żądania.
+        $rows = $wpdb->get_results($wpdb->prepare('SELECT holiday_date, holiday_name FROM %i WHERE country_code = %s', $table, $this->options['country_code'] ?? 'PL'));
 
         foreach ((array) $rows as $row) {
             $this->holidays[$row->holiday_date] = (string) $row->holiday_name;

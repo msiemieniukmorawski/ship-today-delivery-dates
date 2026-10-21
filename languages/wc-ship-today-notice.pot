@@ -21,7 +21,7 @@ msgstr ""
 
 #. Description of the plugin
 #: wc-ship-today-notice.php
-msgid "Wyświetla powiadomienie \"wyślij dziś, jeśli zamówienie zostanie złożone przed upływem terminu\". Użycie przez shortcode [ship_today_notice]."
+msgid "Countdown to the order cutoff time with the next ship and delivery dates (shortcode [ship_today_notice]), plus an optional ship date choice at checkout."
 msgstr ""
 
 #. Author of the plugin

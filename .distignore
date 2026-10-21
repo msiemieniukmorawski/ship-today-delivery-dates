@@ -1,0 +1,14 @@
+# Pliki pomijane w paczce wtyczki (scripts/build-zip.sh, wp dist-archive)
+/.git
+/.gitignore
+/.gitattributes
+/.distignore
+/.wp-env.json
+/build
+/node_modules
+/scripts
+/tests
+/README.md
+/package.json
+/package-lock.json
+.DS_Store

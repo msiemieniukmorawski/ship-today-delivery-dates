@@ -23,8 +23,8 @@ msgstr "Benachrichtigung über heutigen Versand"
 
 #. Description of the plugin
 #: wc-ship-today-notice.php
-msgid "Wyświetla powiadomienie \"wyślij dziś, jeśli zamówienie zostanie złożone przed upływem terminu\". Użycie przez shortcode [ship_today_notice]."
-msgstr "Zeigt den Hinweis \"Versand heute, wenn die Bestellung vor Ablauf der Frist aufgegeben wird\" an. Verwendung über den Shortcode [ship_today_notice]."
+msgid "Countdown to the order cutoff time with the next ship and delivery dates (shortcode [ship_today_notice]), plus an optional ship date choice at checkout."
+msgstr "Countdown bis zum Bestellschluss mit dem nächsten Versand- und Liefertermin (Shortcode [ship_today_notice]) sowie optionale Auswahl des Versandtermins im Checkout."
 
 #. Author of the plugin
 #: wc-ship-today-notice.php
