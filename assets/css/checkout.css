@@ -1,0 +1,96 @@
+/**
+ * WooCommerce Ship Today Notice: wybór terminu w checkoucie.
+ * Kolor: ustawienie "Kolor zaznaczenia" albo zmienna --wc-stn-accent w motywie.
+ */
+
+.wc-stn-checkout {
+  min-width: 0;
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+}
+
+.wc-stn-checkout__legend {
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.wc-stn-checkout__tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .wc-stn-checkout__tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.wc-stn-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  margin: 0;
+  padding: 12px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  background: #fff;
+  text-align: center;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wc-stn-tile:hover {
+  border-color: var(--wc-stn-accent, #333);
+}
+
+.wc-stn-tile:focus-within {
+  outline: 2px solid var(--wc-stn-accent, #333);
+  outline-offset: 2px;
+}
+
+.wc-stn-tile.is-checked {
+  border-color: var(--wc-stn-accent, #333);
+  box-shadow: inset 0 0 0 1px var(--wc-stn-accent, #333);
+}
+
+/* Radio ukryte wizualnie, ale dostępne z klawiatury i dla czytników ekranu. */
+.wc-stn-tile__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.wc-stn-tile__main {
+  font-size: 1.05em;
+  font-weight: 700;
+}
+
+.wc-stn-tile.is-checked .wc-stn-tile__main {
+  color: var(--wc-stn-accent, #333);
+}
+
+.wc-stn-tile__sub {
+  font-size: 0.8em;
+  opacity: 0.75;
+}
+
+.wc-stn-checkout__notice {
+  margin: 10px 0 0;
+  font-size: 0.9em;
+  color: var(--wc-stn-accent, #333);
+}
+
+.wc-stn-checkout__notice[hidden] {
+  display: none;
+}

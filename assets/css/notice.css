@@ -1,0 +1,56 @@
+/**
+ * WooCommerce Ship Today Notice
+ * Version: 2.0.0
+ */
+
+.wc-ship-today-notice {
+  background: var(--wc-ship-today-notice-bg, #fff3b0);
+  border: 2px solid var(--wc-ship-today-notice-border, #f2c94c);
+  color: var(--wc-ship-today-notice-color, #111);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wc-ship-today-notice-font-size, 13px);
+  line-height: 1.2;
+}
+
+.wc-ship-today-notice--loading {
+  opacity: 0.6;
+}
+
+.wc-ship-today-notice--hidden {
+  display: none !important;
+}
+
+.wc-ship-today-notice--before {
+  display: flex !important;
+  background: var(--wc-ship-today-notice-before-bg, #fff3b0);
+  border-color: var(--wc-ship-today-notice-before-border, #f2c94c);
+}
+
+.wc-ship-today-notice--after {
+  display: flex !important;
+  background: var(--wc-ship-today-notice-after-bg, #fff3b0);
+  border-color: var(--wc-ship-today-notice-after-border, #f2c94c);
+  color: var(--wc-ship-today-notice-after-color, #111);
+}
+
+.wc-ship-today-notice .wc-ship-today-countdown {
+  display: inline-flex;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lista terminów: [ship_today_notice count="2"] */
+.wc-ship-today-notice--list {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.wc-ship-today-notice__item {
+  display: block;
+}
