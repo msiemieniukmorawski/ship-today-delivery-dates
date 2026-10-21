@@ -22,7 +22,7 @@ Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po
 - **Tokeny z polską odmianą dni**: "dziś do 20:00", "do niedzieli 20:00", "we wtorek".
 - **Działa ze stron w cache** - harmonogram na 42 dni jest w HTML, przeglądarka sama przełącza terminy. Czyszczenie cache LiteSpeed
   o godzinie granicznej.
-- **Wybór terminu w checkoucie** (klasyczny checkout) - kafelki, walidacja, zapis w zamówieniu, maile, panel zamówienia,
+- **Wybór terminu w checkoucie** (klasyczny i blokowy checkout) - kafelki, walidacja, zapis w zamówieniu, maile, panel zamówienia,
   kolumna z sortowaniem i filtrem na liście zamówień, przełącznik wyłączający Iconic Delivery Slots.
 - **Zakładka „Styl”** - kolory, ramka, czcionka i wyrównanie widgetu wyklikane w panelu, z podglądem na żywo.
 - **Podgląd 5 najbliższych terminów** w panelu i **tryb testowy** `?stn_now=`.
@@ -33,11 +33,11 @@ Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po
 - WordPress 5.3+ (`wp_timezone()`, `wp_date()`)
 - PHP 7.4+
 - WooCommerce - wymagany: strona ustawień jest w menu WooCommerce, a dostęp sprawdza uprawnienie `manage_woocommerce`.
-- **Checkout blokowy (WooCommerce Blocks) nie jest obsługiwany.** Moduł wyboru terminu działa tylko w klasycznym checkoucie
-  (shortcode `[woocommerce_checkout]` albo szablon klasyczny). W checkoucie blokowym pole się nie pojawi, nie ma walidacji
-  i data nie zapisze się w zamówieniu. Sam widget `[ship_today_notice]` działa niezależnie od checkoutu.
-- Zgodność z HPOS jest zadeklarowana (`FeaturesUtil::declare_compatibility('custom_order_tables')`): kod zamówień używa
-  CRUD WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów. Zgodności z checkoutem blokowym wtyczka nie deklaruje.
+- Checkout blokowy (WooCommerce Blocks): wybór terminu przez Additional Checkout Fields API z regułami warunkowymi,
+  od **WooCommerce 10.1** (sprawdzone na 11.2.1, patrz „Checkout blokowy”). Na starszym WooCommerce pole w checkoucie
+  blokowym się nie pojawia, a zamówienia przechodzą bez daty jak wcześniej. Sam widget `[ship_today_notice]` działa niezależnie od checkoutu.
+- Zgodność z HPOS i z checkoutem blokowym jest zadeklarowana (`FeaturesUtil::declare_compatibility('custom_order_tables')`,
+  `'cart_checkout_blocks'`): kod zamówień używa CRUD WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 
 ## Instalacja
 
@@ -182,7 +182,8 @@ więc działa też ze stron w cache. Po zapisie cache jest czyszczony jak po zap
 
 ## Wybór terminu w checkoucie
 
-Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie → Moduł**. Działa tylko w klasycznym checkoucie.
+Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie → Moduł**. Działa w klasycznym i blokowym checkoucie
+(różnice w „Checkout blokowy”).
 
 | Ustawienie | Domyślnie | Opis |
 |---|---|---|
@@ -219,6 +220,26 @@ Działanie:
 - Lista zamówień (HPOS i stara): kolumna "Wysyłka" za datą zamówienia, sortowanie i filtr "Wysyłka: dd.mm.rrrr"
   (dni wysyłki od 14 dni wstecz do 31 dni w przód). Sortowanie pokazuje tylko zamówienia z datą z tego modułu.
   Zamówienia z Iconic mają datę z dopiskiem "Iconic" (tylko odczyt, bez migracji).
+
+### Checkout blokowy
+
+Wymaga WooCommerce 10.1+: reguły warunkowe pól są od 9.9, ukrywanie pola w potwierdzeniu i mailach od 10.1.
+Na starszej wersji pole się nie rejestruje.
+
+W checkoucie blokowym nie ma kafelków. Wtyczka rejestruje pole `wc-stn/ship-date` (Additional Checkout Fields API,
+`select` w sekcji dodatkowych informacji o zamówieniu), bez własnego JS:
+
+- Opcje to najbliższe terminy (ustawienie „Liczba terminów”), etykieta jak na kafelku, np. `pt 23.10, wysyłka czw 22.10`.
+  „Zaznacz najbliższy termin” ustawia pierwszą opcję. Ustawienia „Miejsce”, „Duży napis” i „Kolor zaznaczenia” nie mają tu znaczenia.
+- Pole jest wymagane i widoczne tylko, gdy koszyk wymaga wysyłki.
+- Serwer (Store API) przyjmuje tylko termin z aktualnej listy. Termin, którego godzina graniczna minęła na otwartej stronie,
+  jest odrzucany komunikatem „Przyjmowanie zamówień na wysyłkę … już się zakończyło. Wybierz inny termin.”.
+  Lista w polu odświeża się dopiero po przeładowaniu strony.
+- Zapis tych samych meta co w klasycznym checkoucie (`woocommerce_store_api_checkout_update_order_from_request`), więc maile,
+  strona podziękowania, panel i lista zamówień działają tak samo. WooCommerce zapisuje też własną kopię
+  `_wc_other/wc-stn/ship-date`. Nie pokazuje jej w potwierdzeniu ani w mailach, a w panelu zamówienia jest ukryta.
+- Przełącznik Iconic działa tylko w klasycznym checkoucie.
+- Na stronie z blokiem checkoutu nie są ładowane `checkout.css` i `checkout.js` (kafelki klasycznego checkoutu).
 
 ### Okres przejściowy z Iconic Delivery Slots
 
@@ -345,6 +366,8 @@ wc-ship-today-notice/
 ## Changelog
 
 ### Niewydane
+- Wybór terminu w checkoucie blokowym, WooCommerce 10.1+ (pole Additional Checkout Fields, walidacja w Store API, te same meta zamówienia);
+  deklaracja zgodności z checkoutem blokowym.
 - Zakładka "Styl": kolory przed/po godzinie granicznej, kolor odliczania, ramka, zaokrąglenie, odstęp, czcionka
   i wyrównanie, z podglądem na żywo i "Przywróć domyślne".
 - Nowe zmienne CSS w `notice.css` (domyślny wygląd bez zmian).
@@ -388,8 +411,7 @@ wc-ship-today-notice/
 
 ## TODO
 
-- [ ] Obsługa checkoutu blokowego (WooCommerce Blocks).
-- [ ] Deklaracja zgodności z checkoutem blokowym (HPOS zadeklarowane).
+- [ ] Kafelki zamiast selecta w checkoucie blokowym (wymaga własnego bloku JS).
 - [ ] Tłumaczenie tekstów frontu i reszty panelu.
 - [ ] Różne godziny graniczne dla stref wysyłki WooCommerce.
 

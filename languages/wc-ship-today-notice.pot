@@ -412,3 +412,15 @@ msgstr ""
 #, php-format
 msgid "Invalid ship date \"%s\". The ship date was not changed."
 msgstr ""
+
+#. translators: %s: shipping date, e.g. "pn 26.10"
+#: includes/class-wc-stn-checkout-blocks.php
+#, php-format
+msgid "Orders for shipping on %s are no longer accepted. Please choose another date."
+msgstr ""
+
+#. translators: %s: shipping date, e.g. "pn 26.10"
+#: includes/class-wc-stn-checkout-blocks.php
+#, php-format
+msgid "Shipping on %s is not available. Please choose another date."
+msgstr ""

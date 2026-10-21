@@ -151,7 +151,7 @@ final class WC_STN_Checkout
         return $html;
     }
 
-    private function tile_data(array $slot)
+    public function tile_data(array $slot)
     {
         $o        = $this->plugin->get_options();
         $ship     = $slot['ship'];
@@ -199,7 +199,8 @@ final class WC_STN_Checkout
 
     public function enqueue_assets()
     {
-        if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page()) {
+        // Checkout blokowy ma własne pole (WC_STN_Checkout_Blocks), kafelki nie są tam potrzebne.
+        if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || has_block('woocommerce/checkout')) {
             return;
         }
 

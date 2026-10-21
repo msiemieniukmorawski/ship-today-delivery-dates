@@ -18,6 +18,7 @@ define('WC_STN_FILE', __FILE__);
 
 require_once __DIR__ . '/includes/class-wc-stn-schedule.php';
 require_once __DIR__ . '/includes/class-wc-stn-checkout.php';
+require_once __DIR__ . '/includes/class-wc-stn-checkout-blocks.php';
 require_once __DIR__ . '/includes/functions.php';
 
 final class WC_Ship_Today_Notice
@@ -91,16 +92,18 @@ final class WC_Ship_Today_Notice
 
     public function init_checkout()
     {
-        new WC_STN_Checkout($this);
+        new WC_STN_Checkout_Blocks($this, new WC_STN_Checkout($this));
     }
 
     /**
      * Moduł zamówień używa tylko CRUD (get_meta / update_meta_data), więc działa z HPOS.
+     * Checkout blokowy obsługuje WC_STN_Checkout_Blocks.
      */
     public function declare_wc_compatibility()
     {
         if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
             \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', WC_STN_FILE, true);
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', WC_STN_FILE, true);
         }
     }
 

@@ -414,3 +414,15 @@ msgstr "Der Shortcode [ship_today_checkout] muss innerhalb des Checkout-Formular
 #, php-format
 msgid "Invalid ship date \"%s\". The ship date was not changed."
 msgstr "Ungültiges Versanddatum „%s“. Das Versanddatum wurde nicht geändert."
+
+#. translators: %s: shipping date, e.g. "pn 26.10"
+#: includes/class-wc-stn-checkout-blocks.php
+#, php-format
+msgid "Orders for shipping on %s are no longer accepted. Please choose another date."
+msgstr "Bestellungen für den Versand am %s werden nicht mehr angenommen. Bitte wählen Sie einen anderen Termin."
+
+#. translators: %s: shipping date, e.g. "pn 26.10"
+#: includes/class-wc-stn-checkout-blocks.php
+#, php-format
+msgid "Shipping on %s is not available. Please choose another date."
+msgstr "Der Versand am %s ist nicht verfügbar. Bitte wählen Sie einen anderen Termin."
