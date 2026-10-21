@@ -8,7 +8,7 @@ fail=0
 
 while IFS= read -r -d '' f; do
   out="$(php -l "$f" 2>&1)" || { echo "$out"; fail=1; }
-done < <(find "$ROOT" -name '*.php' -not -path '*/.git/*' -print0)
+done < <(find "$ROOT" -name '*.php' -not -path '*/.git/*' -not -path '*/node_modules/*' -print0)
 
 if command -v node >/dev/null 2>&1; then
   while IFS= read -r -d '' f; do
