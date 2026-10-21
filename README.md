@@ -24,6 +24,7 @@ Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po
   o godzinie granicznej.
 - **Wybór terminu w checkoucie** (klasyczny checkout) - kafelki, walidacja, zapis w zamówieniu, maile, panel zamówienia,
   kolumna z sortowaniem i filtrem na liście zamówień, przełącznik wyłączający Iconic Delivery Slots.
+- **Zakładka „Styl”** - kolory, ramka, czcionka i wyrównanie widgetu wyklikane w panelu, z podglądem na żywo.
 - **Podgląd 5 najbliższych terminów** w panelu i **tryb testowy** `?stn_now=`.
 - **API dla motywu i innych wtyczek** - funkcje `wc_stn_*`, filtry, akcja, JS.
 
@@ -70,6 +71,7 @@ Ustawienia zapisuje się przez `options.php`, więc wymagają uprawnienia `manag
 | Daty wykluczone | brak | Excluded dates | |
 | Tekst po godzinie granicznej / w dzień bez wysyłki | tak | checkboxy przy tekstach | Dotyczy trybu "wysyłka dziś". |
 | Sekundy w odliczaniu | tak | Countdown format | |
+| Własny wygląd widgetu | nie (domyślne style z `notice.css`) | zakładka **Styl** | Puste pole = domyślny wygląd. |
 | Wybór terminu w checkoucie | **nie** | Wybór terminu w checkoucie → Moduł | Domyślne miejsce: tylko shortcode `[ship_today_checkout]`. |
 | Wiersz w podsumowaniu, maile, strona podziękowania, Moje konto | z modułem | j.w. | |
 | Panel zamówienia (daty + zmiana daty wysyłki) | z modułem | j.w. | |
@@ -159,8 +161,25 @@ Etykiety godzin, minut i sekund (domyślnie `h`, `min`, `s`), przełącznik seku
 Klasy stanu kontenera: `wc-ship-today-notice--before` (przed godziną graniczną i tryb "najbliższy termin"),
 `--after` (po godzinie granicznej, dzień bez wysyłki), `--hidden`. Odliczanie: `.wc-ship-today-countdown`.
 
-Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-before-bg`, `-before-border`,
-`-after-bg`, `-after-border`, `-after-color`.
+Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-before-bg`, `-before-border`, `-before-color`,
+`-after-bg`, `-after-border`, `-after-color`, `-countdown-color`, `-border-width`, `-radius`, `-padding`, `-font-weight`,
+`-align`, `-justify`. Można je nadpisać własnym CSS, np. na klasie z atrybutu `class`.
+
+### Zakładka „Styl”
+
+WooCommerce → Ship Today Notice → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
+"przed" i "po" godzinie granicznej.
+
+| Opcja | Opis |
+|-------|------|
+| **Przed / po godzinie granicznej** | Tło, kolor ramki i kolor tekstu dla każdego stanu. Dzień bez wysyłki używa kolorów "po". |
+| **Kolor odliczania** | Kolor `{countdown}`. |
+| **Grubość ramki, zaokrąglenie, odstęp wewnętrzny, rozmiar czcionki** | W px. Odstęp jest jeden na wszystkie boki. |
+| **Grubość czcionki, wyrównanie** | 400-800; do lewej / do środka / do prawej. |
+
+Puste pole = domyślny wygląd. "Przywróć domyślne" czyści formularz, a zapis następuje dopiero po kliknięciu "Zapisz zmiany". Styl jest
+zapisany w opcji `wc_ship_today_notice_style` i trafia na stronę jako zmienne CSS na `:root` (inline przy `notice.css`),
+więc działa też ze stron w cache. Po zapisie cache jest czyszczony jak po zapisie ustawień.
 
 ## Wybór terminu w checkoucie
 
@@ -286,6 +305,7 @@ Wymaga WordPressa i pobranych świąt PL na lata 2026-2027. Nie zmienia zapisany
 ## Dane w bazie
 
 - Opcja `wc_ship_today_notice_options` - wszystkie ustawienia (tablica).
+- Opcja `wc_ship_today_notice_style` - ustawienia zakładki „Styl” (tablica, puste wartości = domyślne).
 - Opcja `wc_ship_today_notice_version` - wersja do migracji (1.x → 2.0: ignorowane święta z ID na daty).
 - Tabela `{prefix}wc_ship_today_notice_holidays` - pobrane święta.
 
@@ -305,7 +325,8 @@ wc-ship-today-notice/
 │   ├── css/notice.css              # Widget
 │   ├── css/checkout.css            # Kafelki w checkoucie
 │   ├── js/notice.js                # Widget: stany, odliczanie, przełączanie terminów
-│   └── js/checkout.js              # Kafelki: wybór, upływ godziny granicznej
+│   ├── js/checkout.js              # Kafelki: wybór, upływ godziny granicznej
+│   └── js/style-preview.js         # Podgląd na żywo w zakładce "Styl"
 ├── languages/
 │   ├── wc-ship-today-notice.pot
 │   ├── wc-ship-today-notice-pl_PL.po / .mo
@@ -317,6 +338,11 @@ wc-ship-today-notice/
 
 
 ## Changelog
+
+### Niewydane
+- Zakładka "Styl": kolory przed/po godzinie granicznej, kolor odliczania, ramka, zaokrąglenie, odstęp, czcionka
+  i wyrównanie, z podglądem na żywo i "Przywróć domyślne".
+- Nowe zmienne CSS w `notice.css` (domyślny wygląd bez zmian).
 
 ### 2.1.0
 - Moduł "Wybór terminu w checkoucie": kafelki, walidacja przy składaniu zamówienia, zapis w zamówieniu, maile, panel
