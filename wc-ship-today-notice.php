@@ -65,6 +65,10 @@ final class WC_Ship_Today_Notice
         add_action('admin_init', [$this, 'maybe_upgrade'], 5);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'admin_assets']);
+        // Panel jest dla manage_woocommerce, a options.php domyślnie wymaga manage_options
+        add_filter('option_page_capability_' . self::OPTION_KEY, [$this, 'settings_capability']);
+        add_filter('option_page_capability_' . self::STYLE_KEY, [$this, 'settings_capability']);
+        add_action('before_woocommerce_init', [$this, 'declare_wc_compatibility']);
 
         add_action('init', [$this, 'register_shortcode']);
         add_action('init', [$this, 'maybe_enable_test_mode'], 1);
@@ -76,11 +80,33 @@ final class WC_Ship_Today_Notice
         add_filter('cron_schedules', [$this, 'add_cron_schedules']);
 
         add_action('update_option_' . self::OPTION_KEY, [$this, 'on_options_updated'], 10, 2);
+        add_action('add_option_' . self::OPTION_KEY, [$this, 'on_options_added'], 10, 2);
         // Pierwszy zapis stylu to add_option, kolejne to update_option
         add_action('add_option_' . self::STYLE_KEY, [$this, 'on_style_updated']);
         add_action('update_option_' . self::STYLE_KEY, [$this, 'on_style_updated']);
 
+        // Na init, a nie przy wczytaniu pliku: get_options() woła __(), a tłumaczenia nie mogą się ładować przed init
+        add_action('init', [$this, 'init_checkout'], 0);
+    }
+
+    public function init_checkout()
+    {
         new WC_STN_Checkout($this);
+    }
+
+    /**
+     * Moduł zamówień używa tylko CRUD (get_meta / update_meta_data), więc działa z HPOS.
+     */
+    public function declare_wc_compatibility()
+    {
+        if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', WC_STN_FILE, true);
+        }
+    }
+
+    public function settings_capability()
+    {
+        return 'manage_woocommerce';
     }
 
     /**
@@ -140,10 +166,7 @@ final class WC_Ship_Today_Notice
     public function on_deactivate()
     {
         foreach ([self::CRON_HOOK, self::CRON_PURGE_HOOK] as $hook) {
-            $timestamp = wp_next_scheduled($hook);
-            if ($timestamp) {
-                wp_unschedule_event($timestamp, $hook);
-            }
+            wp_clear_scheduled_hook($hook);
         }
     }
 
@@ -243,6 +266,12 @@ final class WC_Ship_Today_Notice
         $this->wpml_register_strings($old, $new);
         $this->purge_cache();
         $this->reschedule_cache_purge();
+    }
+
+    /** Pierwszy zapis ustawień to add_option, a nie update_option. */
+    public function on_options_added($option, $value)
+    {
+        $this->on_options_updated([], $value);
     }
 
     public function on_style_updated()
@@ -919,6 +948,11 @@ final class WC_Ship_Today_Notice
                 </select>
             </label>
         </p>
+        <?php if ('shortcode' === $o['checkout_position']) : ?>
+            <p class="description" style="color:#b32d2e;">
+                <?php esc_html_e('The [ship_today_checkout] shortcode must be placed inside the checkout form. If it is missing or outside the form, the date field is not shown and orders are placed without a ship date.', 'wc-ship-today-notice'); ?>
+            </p>
+        <?php endif; ?>
         <p>
             <label>
                 Nazwa pola:

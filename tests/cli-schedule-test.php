@@ -80,4 +80,28 @@ foreach ($texts as [$label, $now, $text, $expected]) {
     printf("%s  tekst: %-14s %s%s\n", $ok ? 'OK  ' : 'FAIL', $label, $got, $ok ? '' : "  (oczekiwano: {$expected})");
 }
 
+// API z błędną datą: false/null zamiast wyjątku. [opis, wywołanie, oczekiwany wynik]
+$api = [
+    ['is_shipping_day("bzdura")', function () { return wc_stn_is_shipping_day('bzdura'); }, false],
+    ['is_shipping_day("2026-02-31")', function () { return wc_stn_is_shipping_day('2026-02-31'); }, false],
+    ['is_blocked_date("bzdura")', function () { return wc_stn_is_blocked_date('bzdura'); }, false],
+    ['is_blocked_date(null)', function () { return wc_stn_is_blocked_date(null); }, false],
+    ['delivery_for_ship_date("2026-1015")', function () { return wc_stn_delivery_for_ship_date('2026-1015'); }, null],
+    ['normalize_ymd("20261015")', function () { return wc_stn_normalize_ymd('20261015'); }, '2026-10-15'],
+    ['normalize_ymd("2026-10-15")', function () { return wc_stn_normalize_ymd('2026-10-15'); }, '2026-10-15'],
+];
+
+foreach ($api as [$label, $call, $expected]) {
+    try {
+        $got = $call();
+        $ok  = $got === $expected;
+    } catch (Throwable $e) {
+        $got = get_class($e) . ': ' . $e->getMessage();
+        $ok  = false;
+    }
+    $fail += $ok ? 0 : 1;
+
+    printf("%s  api: %-36s %s\n", $ok ? 'OK  ' : 'FAIL', $label, var_export($got, true));
+}
+
 echo $fail ? "\n{$fail} błędów\n" : "\nWszystkie przypadki OK\n";

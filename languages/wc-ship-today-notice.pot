@@ -403,3 +403,12 @@ msgstr ""
 #: wc-ship-today-notice.php
 msgid "Preview"
 msgstr ""
+
+#: wc-ship-today-notice.php
+msgid "The [ship_today_checkout] shortcode must be placed inside the checkout form. If it is missing or outside the form, the date field is not shown and orders are placed without a ship date."
+msgstr ""
+
+#: includes/class-wc-stn-checkout.php
+#, php-format
+msgid "Invalid ship date \"%s\". The ship date was not changed."
+msgstr ""

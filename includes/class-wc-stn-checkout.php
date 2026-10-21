@@ -16,6 +16,7 @@ if (!defined('ABSPATH')) {
 final class WC_STN_Checkout
 {
     const FIELD        = 'wc_stn_ship_date';
+    const RENDERED     = 'wc_stn_rendered';
     const META_SHIP    = '_wc_stn_ship_date';
     const META_DELIVERY = '_wc_stn_delivery_date';
     const META_CUTOFF  = '_wc_stn_cutoff';
@@ -107,8 +108,11 @@ final class WC_STN_Checkout
         $all      = $schedule->slots(40, $now, WC_Ship_Today_Notice::FRONTEND_DAYS);
         $count    = max(1, (int) $o['checkout_count']);
 
+        // Znacznik: walidacja wymaga daty tylko, gdy pole było w formularzu (shortcode bywa niewstawiony albo poza formularzem)
+        $marker = '<input type="hidden" name="' . esc_attr(self::RENDERED) . '" value="1" />';
+
         if (!$all) {
-            return '<p class="wc-stn-checkout__empty">Brak dostępnych terminów dostawy. Skontaktuj się z nami.</p>';
+            return '<p class="wc-stn-checkout__empty">Brak dostępnych terminów dostawy. Skontaktuj się z nami.</p>' . $marker;
         }
 
         $selected = $this->posted_ship_date();
@@ -141,6 +145,7 @@ final class WC_STN_Checkout
         }
         $html .= '</div>';
         $html .= '<p class="wc-stn-checkout__notice" role="status" aria-live="polite" hidden></p>';
+        $html .= $marker;
         $html .= '</fieldset>';
 
         return $html;
@@ -268,9 +273,25 @@ final class WC_STN_Checkout
         );
     }
 
+    /**
+     * Czy wszystkie wybrane metody wysyłki to odbiór osobisty (wtedy data nie jest wymagana).
+     */
+    private function only_local_pickup()
+    {
+        $ids = function_exists('wc_get_chosen_shipping_method_ids') ? wc_get_chosen_shipping_method_ids() : [];
+        if (!$ids) {
+            return false;
+        }
+
+        $pickup = (array) apply_filters('woocommerce_local_pickup_methods', ['legacy_local_pickup', 'local_pickup', 'pickup_location']);
+
+        return !array_diff($ids, $pickup);
+    }
+
     public function validate($data, $errors)
     {
-        if (!WC()->cart || !WC()->cart->needs_shipping()) {
+        // phpcs:ignore WordPress.Security.NonceVerification -- WooCommerce weryfikuje nonce checkoutu.
+        if (empty($_POST[self::RENDERED]) || !WC()->cart || !WC()->cart->needs_shipping() || $this->only_local_pickup()) {
             return;
         }
 
@@ -403,7 +424,15 @@ final class WC_STN_Checkout
         $new = sanitize_text_field(wp_unslash($_POST['wc_stn_admin_ship_date']));
         $old = (string) $order->get_meta(self::META_SHIP);
 
-        if ($new === $old || ('' !== $new && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $new))) {
+        if ($new === $old) {
+            return;
+        }
+
+        if ('' !== $new && (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $new, $m) || !checkdate((int) $m[2], (int) $m[3], (int) $m[1]))) {
+            if (class_exists('WC_Admin_Meta_Boxes')) {
+                /* translators: %s: date entered in the order edit screen */
+                WC_Admin_Meta_Boxes::add_error(sprintf(__('Invalid ship date "%s". The ship date was not changed.', 'wc-ship-today-notice'), $new));
+            }
             return;
         }
 

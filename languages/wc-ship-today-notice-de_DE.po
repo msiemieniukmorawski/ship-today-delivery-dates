@@ -405,3 +405,12 @@ msgstr "Standard wiederherstellen"
 #: wc-ship-today-notice.php
 msgid "Preview"
 msgstr "Vorschau"
+
+#: wc-ship-today-notice.php
+msgid "The [ship_today_checkout] shortcode must be placed inside the checkout form. If it is missing or outside the form, the date field is not shown and orders are placed without a ship date."
+msgstr "Der Shortcode [ship_today_checkout] muss innerhalb des Checkout-Formulars stehen. Fehlt er oder steht er außerhalb des Formulars, wird das Datumsfeld nicht angezeigt und Bestellungen werden ohne Versanddatum aufgegeben."
+
+#: includes/class-wc-stn-checkout.php
+#, php-format
+msgid "Invalid ship date \"%s\". The ship date was not changed."
+msgstr "Ungültiges Versanddatum „%s“. Das Versanddatum wurde nicht geändert."

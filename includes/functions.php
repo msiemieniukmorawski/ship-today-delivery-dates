@@ -33,13 +33,9 @@ function wc_stn_get_slots($count = 1, $now = null)
  */
 function wc_stn_delivery_for_ship_date($ship_ymd)
 {
-    $ship_ymd = (string) $ship_ymd;
+    $ship_ymd = wc_stn_normalize_ymd($ship_ymd);
 
-    if (preg_match('/^(\d{4})(\d{2})(\d{2})$/', $ship_ymd, $m)) {
-        $ship_ymd = $m[1] . '-' . $m[2] . '-' . $m[3];
-    }
-
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ship_ymd)) {
+    if (null === $ship_ymd) {
         return null;
     }
 
@@ -54,7 +50,9 @@ function wc_stn_delivery_for_ship_date($ship_ymd)
  */
 function wc_stn_is_blocked_date($ymd)
 {
-    return WC_Ship_Today_Notice::instance()->schedule()->is_blocked((string) $ymd);
+    $ymd = wc_stn_normalize_ymd($ymd);
+
+    return null !== $ymd && WC_Ship_Today_Notice::instance()->schedule()->is_blocked($ymd);
 }
 
 /**
@@ -62,7 +60,26 @@ function wc_stn_is_blocked_date($ymd)
  */
 function wc_stn_is_shipping_day($ymd)
 {
+    $ymd = wc_stn_normalize_ymd($ymd);
+    if (null === $ymd) {
+        return false;
+    }
+
     $schedule = WC_Ship_Today_Notice::instance()->schedule();
 
-    return $schedule->is_shipping_day($schedule->date((string) $ymd));
+    return $schedule->is_shipping_day($schedule->date($ymd));
+}
+
+/**
+ * Y-m-d (przyjmuje też Ymd) albo null, gdy to nie jest poprawna data.
+ *
+ * @internal
+ */
+function wc_stn_normalize_ymd($ymd)
+{
+    if (!is_scalar($ymd) || !preg_match('/^(\d{4})(-?)(\d{2})\2(\d{2})$/', (string) $ymd, $m) || !checkdate((int) $m[3], (int) $m[4], (int) $m[1])) {
+        return null;
+    }
+
+    return $m[1] . '-' . $m[3] . '-' . $m[4];
 }

@@ -36,9 +36,8 @@ Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po
 - **Checkout blokowy (WooCommerce Blocks) nie jest obsługiwany.** Moduł wyboru terminu działa tylko w klasycznym checkoucie
   (shortcode `[woocommerce_checkout]` albo szablon klasyczny). W checkoucie blokowym pole się nie pojawi, nie ma walidacji
   i data nie zapisze się w zamówieniu. Sam widget `[ship_today_notice]` działa niezależnie od checkoutu.
-- Wtyczka nie deklaruje zgodności z HPOS ani z checkoutem blokowym (`FeaturesUtil::declare_compatibility`). Kod zamówień używa
-  CRUD WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów, ale WooCommerce może oznaczać wtyczkę jako
-  niezadeklarowaną.
+- Zgodność z HPOS jest zadeklarowana (`FeaturesUtil::declare_compatibility('custom_order_tables')`): kod zamówień używa
+  CRUD WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów. Zgodności z checkoutem blokowym wtyczka nie deklaruje.
 
 ## Instalacja
 
@@ -47,8 +46,8 @@ Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po
    (pierwsze po ok. godzinie, potem co 4 miesiące).
 3. Wejdź w **WooCommerce → Ship Today Notice**.
 
-Ustawienia zapisuje się przez `options.php`, więc wymagają uprawnienia `manage_options` (administrator). Kierownik sklepu
-(`manage_woocommerce`) widzi stronę, ale zapisu WordPress mu nie pozwoli.
+Strona ustawień i zapis obu zakładek wymagają uprawnienia `manage_woocommerce`, więc kierownik sklepu może je zmieniać
+(filtr `option_page_capability_*` dla grup `wc_ship_today_notice_options` i `wc_ship_today_notice_style`).
 
 ## Szybki start
 
@@ -187,7 +186,7 @@ Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie
 
 | Ustawienie | Domyślnie | Opis |
 |---|---|---|
-| Moduł | wyłączony | Pole jest wymagane, gdy koszyk wymaga wysyłki. |
+| Moduł | wyłączony | Pole jest wymagane, gdy koszyk wymaga wysyłki, pole było w formularzu i wybrana metoda to nie odbiór osobisty. |
 | Miejsce | tylko shortcode | `[ship_today_checkout]` (musi być wewnątrz formularza checkoutu), pod uwagami do zamówienia (`woocommerce_after_order_notes`) albo nad podsumowaniem (`woocommerce_checkout_before_order_review`). |
 | Nazwa pola | `Termin dostawy` | Legenda pola, wiersz w podsumowaniu, komunikat walidacji. |
 | Liczba terminów | 6 | 1-12 kafelków. |
@@ -197,7 +196,8 @@ Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie
 | Iconic Delivery Slots | - | Patrz niżej. |
 
 > **Uwaga:** przy miejscu "tylko shortcode" trzeba wstawić `[ship_today_checkout]` do formularza checkoutu. Bez tego
-> pole się nie pokaże, a walidacja i tak go wymaga, więc zamówień z wysyłką nie da się złożyć.
+> (albo z shortcode poza formularzem) pole się nie pokaże, a zamówienia będą składane bez daty wysyłki. Panel pokazuje
+> przy tym ustawieniu ostrzeżenie.
 
 Działanie:
 
@@ -206,11 +206,16 @@ Działanie:
 - Wiersz z terminem w tabeli podsumowania zamówienia.
 - Przy składaniu zamówienia serwer sprawdza termin jeszcze raz (`woocommerce_after_checkout_validation`). Termin, którego
   godzina graniczna minęła, jest odrzucany z komunikatem.
+- Data jest wymagana tylko wtedy, gdy pole było w wysłanym formularzu (ukryte pole `wc_stn_rendered`). Brak shortcode
+  albo shortcode poza formularzem nie blokuje zamówień.
+- Odbiór osobisty: gdy wszystkie wybrane metody wysyłki to odbiór (`local_pickup`, `pickup_location`, filtr
+  `woocommerce_local_pickup_methods`), data nie jest wymagana. Kafelki zostają: wybrany termin zapisze się w zamówieniu,
+  brak wyboru też przejdzie.
 - Zapis w zamówieniu przez CRUD (`woocommerce_checkout_create_order`) - działa z HPOS i starą tabelą postów.
 - Wiersze "Data wysyłki" i "Planowana dostawa" na stronie podziękowania, w mailach (klient i admin) i w Moje konto
   (`woocommerce_get_order_item_totals`).
 - Panel zamówienia: daty i pole "Zmień datę wysyłki" (dostawa przeliczana automatycznie, notatka w zamówieniu z nazwą użytkownika).
-  Puste pole usuwa daty. Klient nie dostaje powiadomienia o zmianie.
+  Puste pole usuwa daty. Błędna data (np. 31.02) nie jest zapisywana, panel pokazuje komunikat. Klient nie dostaje powiadomienia o zmianie.
 - Lista zamówień (HPOS i stara): kolumna "Wysyłka" za datą zamówienia, sortowanie i filtr "Wysyłka: dd.mm.rrrr"
   (dni wysyłki od 14 dni wstecz do 31 dni w przód). Sortowanie pokazuje tylko zamówienia z datą z tego modułu.
   Zamówienia z Iconic mają datę z dopiskiem "Iconic" (tylko odczyt, bez migracji).
@@ -248,8 +253,8 @@ Daty jako `Y-m-d` w strefie czasowej sklepu.
 |---|---|
 | `wc_stn_get_slots( $count = 1, $now = null )` | najbliższe terminy, których godzina graniczna jeszcze nie minęła: tablica `['cutoff' => DateTimeImmutable, 'ship' => DateTimeImmutable, 'delivery' => ?DateTimeImmutable]`. `$now` przyjmuje `DateTime` lub `DateTimeImmutable`. |
 | `wc_stn_delivery_for_ship_date( $ship_ymd )` | data dostawy dla daty wysyłki (`Y-m-d` lub `Ymd`) albo `null`, gdy dostawa = 0 lub data jest błędna |
-| `wc_stn_is_blocked_date( $ymd )` | czy data to nieignorowane święto albo data wykluczona (bez względu na dzień tygodnia) |
-| `wc_stn_is_shipping_day( $ymd )` | czy to dzień wysyłki (dzień tygodnia z ustawień, nie święto, nie data wykluczona) |
+| `wc_stn_is_blocked_date( $ymd )` | czy data to nieignorowane święto albo data wykluczona (bez względu na dzień tygodnia); `false` dla błędnej daty |
+| `wc_stn_is_shipping_day( $ymd )` | czy to dzień wysyłki (dzień tygodnia z ustawień, nie święto, nie data wykluczona); `false` dla błędnej daty |
 
 ### Filtry
 
@@ -309,7 +314,7 @@ Wymaga WordPressa i pobranych świąt PL na lata 2026-2027. Nie zmienia zapisany
 - Opcja `wc_ship_today_notice_version` - wersja do migracji (1.x → 2.0: ignorowane święta z ID na daty).
 - Tabela `{prefix}wc_ship_today_notice_holidays` - pobrane święta.
 
-Dezaktywacja usuwa zdarzenia cron. Wtyczka nie ma `uninstall.php`, więc opcje i tabela zostają po usunięciu.
+Dezaktywacja usuwa wszystkie zdarzenia cron wtyczki (`wp_clear_scheduled_hook`). Wtyczka nie ma `uninstall.php`, więc opcje i tabela zostają po usunięciu.
 
 ## Struktura plików
 
@@ -343,6 +348,17 @@ wc-ship-today-notice/
 - Zakładka "Styl": kolory przed/po godzinie granicznej, kolor odliczania, ramka, zaokrąglenie, odstęp, czcionka
   i wyrównanie, z podglądem na żywo i "Przywróć domyślne".
 - Nowe zmienne CSS w `notice.css` (domyślny wygląd bez zmian).
+- Poprawka: włączony moduł checkoutu bez wyrenderowanego pola (brak shortcode albo shortcode poza formularzem) blokował
+  wszystkie zamówienia z wysyłką. Teraz data jest wymagana tylko, gdy pole było w formularzu. W panelu jest ostrzeżenie
+  przy miejscu "tylko shortcode".
+- Odbiór osobisty (`local_pickup`, `pickup_location`) nie wymaga daty.
+- Kierownik sklepu (`manage_woocommerce`) może zapisywać ustawienia i styl (wcześniej `options.php` wymagał `manage_options`).
+- Deklaracja zgodności z HPOS.
+- Tłumaczenia nie ładują się przed `init` (notice `_load_textdomain_just_in_time` w WP 6.7+): moduł checkoutu startuje na `init`.
+- Pierwszy zapis ustawień (`add_option`) rejestruje stringi WPML i czyści cache, tak jak kolejne zapisy.
+- Dezaktywacja usuwa wszystkie zaplanowane zdarzenia cron wtyczki, a nie tylko najbliższe.
+- Edycja daty wysyłki w zamówieniu odrzuca nieistniejące daty (np. 2026-02-31) z komunikatem.
+- `wc_stn_is_shipping_day()` i `wc_stn_is_blocked_date()` zwracają `false` dla błędnej daty zamiast rzucać wyjątek.
 
 ### 2.1.0
 - Moduł "Wybór terminu w checkoucie": kafelki, walidacja przy składaniu zamówienia, zapis w zamówieniu, maile, panel
@@ -373,7 +389,7 @@ wc-ship-today-notice/
 ## TODO
 
 - [ ] Obsługa checkoutu blokowego (WooCommerce Blocks).
-- [ ] Deklaracja zgodności z HPOS i checkoutem blokowym.
+- [ ] Deklaracja zgodności z checkoutem blokowym (HPOS zadeklarowane).
 - [ ] Tłumaczenie tekstów frontu i reszty panelu.
 - [ ] Różne godziny graniczne dla stref wysyłki WooCommerce.
 
