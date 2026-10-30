@@ -4,7 +4,7 @@ Tags: woocommerce, shipping, countdown, delivery date, cutoff time
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -116,6 +116,13 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 
 == Changelog ==
 
+= 2.4.0 =
+* New: cutoff times per shipping method. In the "Shipping methods" settings each method of every shipping zone can have its own shipping weekdays, cutoff times and delivery days, with a preview of the next slots. Without them the general schedule applies.
+* New: both checkouts show tiles, validate and save the date for the selected shipping method; changing the method recalculates the tiles.
+* New: widget attribute method="flat_rate:3" for the schedule of one shipping method.
+* New: ship date row in the order summary of the block-based checkout, updated live, movable in the editor. Works with older checkout page layouts too.
+* New: optional $method argument in wc_stn_get_slots(), wc_stn_delivery_for_ship_date() and wc_stn_is_shipping_day(); the schedule and text filters get the method ID as the last argument.
+
 = 2.3.0 =
 * New: in the block-based checkout the date is picked from tiles, like in the classic checkout, in a "Ship date" block that can be moved, removed and added again in the checkout page editor. It replaces the 2.2.0 select field.
 * New: tile texts in the settings (Ship date at checkout → Texts): the big text and the second line with tokens, including {ship_short} and {delivery_short}; an empty second line hides it.
@@ -162,11 +169,14 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 
 == Upgrade Notice ==
 
+= 2.4.0 =
+Cutoff times per shipping method and a ship date row in the block checkout order summary. Nothing changes until you set a schedule for a shipping method.
+
 = 2.3.0 =
-Block checkout: the date select is replaced by a movable "Ship date" block with tiles, added automatically on the first admin visit after the update. If your checkout is in a theme template (Site Editor), add the block there yourself. New settings for tile texts, order row labels and checkout messages.
+Block checkout: the date select becomes a movable "Ship date" block with tiles, added on the first admin visit. In a theme template (Site Editor) add the block yourself. New settings for tile texts, order row labels and checkout messages.
 
 = 2.2.0 =
-Requires WordPress 6.8. Adds block checkout support, a Style tab and German translation. Old default "tomorrow" texts are updated automatically. If the widget is loaded via AJAX (e.g. in a popup), add the wc_ship_today_notice_load_assets filter.
+Requires WordPress 6.8. Block checkout support, Style tab, German translation. Old "tomorrow" texts are updated. Widget loaded via AJAX (e.g. popup): add the wc_ship_today_notice_load_assets filter.
 
 = 2.1.0 =
 Adds an optional ship date choice at checkout. It is off by default; when you enable it with the "shortcode only" position, place [ship_today_checkout] inside the checkout form.
