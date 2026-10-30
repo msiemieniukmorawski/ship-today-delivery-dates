@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/wersja-2.2.0-orange" alt="Wersja 2.2.0">
   <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
   <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
@@ -497,7 +498,11 @@ wc-ship-today-notice/
 
 ## Changelog
 
-### Niewydane
+### 2.2.0 (30.10.2026)
+
+> **Przy aktualizacji:** wymaga WordPressa 6.8. JS i CSS widgetu ładują się teraz tylko na stronach z widgetem - jeśli widget
+> jest w treści doładowanej AJAX-em (np. popup), dodaj `add_filter('wc_ship_today_notice_load_assets', '__return_true');`.
+> Stare domyślne teksty „Wyślemy jutro.” są poprawiane automatycznie.
 
 **Nowe**
 - **Przełączniki funkcji opcjonalnych** (domyślnie jak dotąd): wiersz w podsumowaniu checkoutu, wiersze dat w mailach / podziękowaniu /
@@ -573,8 +578,7 @@ wc-ship-today-notice/
 
 ## Plany
 
-- [ ] Przełączniki funkcji opcjonalnych (m.in. daty w zamówieniach przy wyłączonym module).
-- [ ] Kafelki zamiast selecta w checkoucie blokowym (wymaga własnego bloku JS).
+- [ ] Wybór terminu w checkoucie blokowym jako przenoszalny blok z kafelkami (w toku).
 - [ ] Różne godziny graniczne dla stref wysyłki WooCommerce.
 - [ ] Publikacja w katalogu WordPress.org.
 

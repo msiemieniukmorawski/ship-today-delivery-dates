@@ -4,7 +4,7 @@ Tags: woocommerce, shipping, countdown, delivery date, cutoff time
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -104,6 +104,19 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 
 == Changelog ==
 
+= 2.2.0 =
+* New: ship date choice in the block-based checkout (WooCommerce 10.1+), validated by the Store API and stored like in the classic checkout.
+* New: "Style" tab with a live preview: colors before and after the cutoff, countdown color, border, radius, padding, font and alignment.
+* New: all texts are translatable; complete Polish and new German translations.
+* New: optional region for regional holidays (e.g. DE-BY); regional holidays are no longer applied nationwide. Multi-day holidays are stored day by day.
+* New: switches for optional features (order date rows, order admin date editing, orders list column, showing dates when the module is off, automatic holiday download, cache purge at the cutoff, test mode, WPML).
+* Changed: the default after-cutoff and non-shipping-day texts use {ship_when} ("We will ship on Monday" on a Friday evening instead of "tomorrow"). Saved texts exactly equal to the old defaults are updated on upgrade; custom texts are kept.
+* Changed: the widget JS and CSS load only on pages with the widget. Use the wc_ship_today_notice_load_assets filter for widgets loaded via AJAX.
+* Changed: holidays are downloaded right after activation and after changing the country, language or region; an empty or failed API response no longer deletes stored holidays.
+* Changed: no ship date required for local pickup. Shop managers can save the settings. HPOS and block checkout compatibility declared. Requires WordPress 6.8.
+* Fixed: with the checkout module on and the field not rendered (shortcode missing or outside the form) all orders with shipping were blocked.
+* Fixed: invalid dates in the order admin, early translation loading notice, double space before the countdown, cutoff time field cut off in 12-hour browsers, settings validation.
+
 = 2.1.0 =
 * New: "Ship date at checkout" module: tiles, validation when the order is placed, stored in the order, emails, order admin with date editing, orders list column with sorting and a filter (HPOS and legacy storage).
 * New: switch that disables Iconic Delivery Slots in the cart and checkout (migration period).
@@ -129,6 +142,9 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 * First version: countdown, OpenHolidays API, settings in WooCommerce, WPML support.
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+Requires WordPress 6.8. Adds block checkout support, a Style tab and German translation. Old default "tomorrow" texts are updated automatically. If the widget is loaded via AJAX (e.g. in a popup), add the wc_ship_today_notice_load_assets filter.
 
 = 2.1.0 =
 Adds an optional ship date choice at checkout. It is off by default; when you enable it with the "shortcode only" position, place [ship_today_checkout] inside the checkout form.
