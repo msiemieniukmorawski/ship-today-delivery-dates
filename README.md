@@ -118,22 +118,28 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 | Dni wysyłki | pn-pt, do 14:00 tego samego dnia | Delivery weekdays & cutoff times | sob/nd mają domyślnie 12:00, ale nie są zaznaczone. |
 | Data dostawy | nie (0 dni) | Dostawa | Dni bez doręczeń domyślnie: niedziela. |
 | Święta | po pobraniu | WP-Cron zaraz po aktywacji, co ok. 4 miesiące, po zmianie kraju/języka/regionu albo „Fetch holidays now” | Kraj i język: PL, bez regionu (tylko święta ogólnokrajowe). |
+| Automatyczne pobieranie świąt (zapytania do OpenHolidays bez kliknięcia) | tak | Public holidays API → Automatyczne pobieranie | Wyłączone: zdarzenia cron zdjęte, święta tylko przyciskiem „Fetch holidays now”. |
 | Daty wykluczone | brak | Excluded dates | |
 | Tekst po godzinie granicznej / w dzień bez wysyłki | tak | checkboxy przy tekstach | Dotyczy trybu „wysyłka dziś”. |
 | Sekundy w odliczaniu | tak | Countdown format | |
 | Własny wygląd widgetu | nie (style z `notice.css`) | zakładka **Styl** | Puste pole = domyślny wygląd. |
 | Wybór terminu w checkoucie | **nie** | Wybór terminu w checkoucie → Moduł | Domyślne miejsce: tylko shortcode `[ship_today_checkout]`. |
-| Wiersz w podsumowaniu, maile, strona podziękowania, Moje konto | z modułem | j.w. | |
-| Panel zamówienia (daty + zmiana daty wysyłki) | z modułem | j.w. | |
-| Kolumna „Wysyłka”, sortowanie, filtr na liście zamówień | z modułem | j.w. | HPOS i stara tabela postów. |
+| Wiersz z terminem w podsumowaniu zamówienia (checkout) | tak, z modułem | Wybór terminu w checkoucie → Daty w zamówieniach | Klasyczny checkout. |
+| Wiersze „Data wysyłki” / „Planowana dostawa”: maile, strona podziękowania, Moje konto | tak, z modułem | j.w. | |
+| Panel zamówienia: daty | z modułem | automatycznie | Box tylko, gdy zamówienie ma daty albo można je zmienić. |
+| Panel zamówienia: zmiana daty wysyłki | tak, z modułem | Daty w zamówieniach | Wyłączone: daty tylko do odczytu. |
+| Kolumna „Wysyłka”, sortowanie, filtr na liście zamówień | tak, z modułem | Daty w zamówieniach | HPOS i stara tabela postów. |
+| Daty istniejących zamówień przy wyłączonym module | **nie** | Daty w zamówieniach | Włączone: wiersze w mailach/podziękowaniu/Moim koncie, panel (tylko odczyt) i lista działają bez modułu, wg przełączników wyżej. |
 | Wyłączenie Iconic Delivery Slots | nie | Iconic Delivery Slots | Pole widać tylko przy aktywnym Iconic, działa tylko z włączonym modułem. |
-| Czyszczenie cache o godzinie granicznej | tak, gdy aktywny LiteSpeed Cache albo podpięta akcja `wc_ship_today_notice_purge_cache` | automatycznie | Też po każdym zapisie ustawień. |
-| WPML | gdy aktywny WPML | automatycznie | Cztery teksty widgetu rejestrowane przy zapisie ustawień. |
-| Tryb testowy `?stn_now=` | tak | parametr w adresie | Tylko dla `manage_woocommerce`. |
+| Czyszczenie cache o godzinie granicznej | tak, gdy aktywny LiteSpeed Cache albo podpięta akcja `wc_ship_today_notice_purge_cache` | Zaawansowane → Funkcje opcjonalne | Po zapisie ustawień cache jest czyszczony zawsze. |
+| WPML | tak, gdy aktywny WPML | Zaawansowane → Funkcje opcjonalne | Cztery teksty widgetu rejestrowane przy zapisie ustawień i pokazywane w tłumaczeniu. |
+| Tryb testowy `?stn_now=` | tak | Zaawansowane → Funkcje opcjonalne | Tylko dla `manage_woocommerce`. |
 | Funkcje, filtry, JS API | tak | kod | |
 
-Gdy moduł checkoutu jest wyłączony, wtyczka nie rejestruje jego hooków. Daty zapisane wcześniej w zamówieniach zostają
-w meta, ale nie są wtedy pokazywane w mailach, panelu ani na liście.
+Każdy przełącznik ma domyślnie dotychczasowe zachowanie, a wyłączony nie rejestruje swoich hooków (cron: zdarzenie nie jest
+planowane albo jest zdejmowane). Gdy moduł checkoutu jest wyłączony, wtyczka nie rejestruje jego hooków. Daty zapisane wcześniej
+w zamówieniach zostają w meta i są pokazywane tylko przy włączonym przełączniku „Pokazuj daty istniejących zamówień także przy
+wyłączonym module”.
 
 ## Dokumentacja
 
@@ -478,6 +484,9 @@ wc-ship-today-notice/
 ### Niewydane
 
 **Nowe**
+- **Przełączniki funkcji opcjonalnych** (domyślnie jak dotąd): wiersz w podsumowaniu checkoutu, wiersze dat w mailach / podziękowaniu /
+  Moim koncie, zmiana daty w panelu zamówienia, kolumna na liście zamówień, daty istniejących zamówień przy wyłączonym module
+  (domyślnie wyłączone), automatyczne pobieranie świąt, czyszczenie cache o godzinie granicznej, tryb testowy, WPML.
 - Wybór terminu w **checkoucie blokowym** (WooCommerce 10.1+): pole Additional Checkout Fields, walidacja w Store API, te same meta zamówienia.
 - Zakładka **„Styl”**: kolory przed/po godzinie granicznej, kolor odliczania, ramka, zaokrąglenie, odstęp, czcionka
   i wyrównanie, z podglądem na żywo i „Przywróć domyślne”. Nowe zmienne CSS w `notice.css` (domyślny wygląd bez zmian).

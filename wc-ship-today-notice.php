@@ -39,6 +39,22 @@ final class WC_Ship_Today_Notice
     const TABLE_NAME       = 'wc_ship_today_notice_holidays';
     const WPML_DOMAIN      = 'wc-ship-today-notice';
 
+    /**
+     * Przełączniki funkcji opcjonalnych (checkboxy). Domyślne wartości w get_options() = zachowanie sprzed przełączników.
+     * Zapisywane tylko z formularza (znacznik _toggles), zapis z kodu bez nich zostawia poprzednie wartości.
+     */
+    const TOGGLES = [
+        'checkout_review_row',
+        'checkout_order_rows',
+        'checkout_admin_edit',
+        'checkout_list_column',
+        'checkout_dates_when_disabled',
+        'holidays_auto_fetch',
+        'cache_purge_at_cutoff',
+        'test_mode',
+        'wpml_strings',
+    ];
+
     /** Ile dni harmonogramu trafia do strony (musi pokryć czas trzymania strony w cache). */
     const FRONTEND_DAYS = 42;
 
@@ -79,7 +95,6 @@ final class WC_Ship_Today_Notice
         add_action('before_woocommerce_init', [$this, 'declare_wc_compatibility']);
 
         add_action('init', [$this, 'register_shortcode']);
-        add_action('init', [$this, 'maybe_enable_test_mode'], 1);
         add_action('init', [$this, 'maybe_schedule_cache_purge']);
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
 
@@ -99,6 +114,11 @@ final class WC_Ship_Today_Notice
 
     public function init_checkout()
     {
+        // Tryb testowy na init 1: przed polem checkoutu blokowego (init 2), które liczy terminy od "teraz"
+        if (!empty($this->get_options()['test_mode'])) {
+            add_action('init', [$this, 'maybe_enable_test_mode'], 1);
+        }
+
         new WC_STN_Checkout_Blocks($this, new WC_STN_Checkout($this));
     }
 
@@ -144,6 +164,19 @@ final class WC_Ship_Today_Notice
     public function on_activate()
     {
         $this->maybe_create_table();
+        $this->schedule_holidays_sync();
+    }
+
+    /**
+     * Automatyczne pobieranie świąt (zapytanie do OpenHolidays bez kliknięcia): co ok. 4 miesiące i od razu przy najbliższym
+     * WP-Cron. Przy wyłączonym przełączniku zdejmuje zaplanowane zdarzenia (zostaje przycisk "Fetch holidays now").
+     */
+    private function schedule_holidays_sync()
+    {
+        if (empty($this->get_options()['holidays_auto_fetch'])) {
+            wp_clear_scheduled_hook(self::CRON_HOOK);
+            return;
+        }
 
         if (!wp_next_scheduled(self::CRON_HOOK)) {
             wp_schedule_event(time() + HOUR_IN_SECONDS, 'every_four_months', self::CRON_HOOK);
@@ -252,11 +285,18 @@ final class WC_Ship_Today_Notice
     public function on_options_updated($old, $new)
     {
         $this->schedule = null;
-        $this->wpml_register_strings($old, $new);
+        if (!empty($new['wpml_strings'])) {
+            $this->wpml_register_strings($old, $new);
+        }
+
+        // Przełącznik automatycznego pobierania świąt zmieniony: planujemy albo zdejmujemy cron
+        if (!empty($old['holidays_auto_fetch'] ?? true) !== !empty($new['holidays_auto_fetch'])) {
+            $this->schedule_holidays_sync();
+        }
 
         // Inny kraj, język albo region = inne święta: pobieramy od razu, żeby lista w panelu i terminy były aktualne
         foreach (['country_code', 'language_code', 'holiday_subdivision'] as $key) {
-            if (($old[$key] ?? null) !== ($new[$key] ?? null)) {
+            if (!empty($new['holidays_auto_fetch']) && ($old[$key] ?? null) !== ($new[$key] ?? null)) {
                 if (!$this->fetch_and_store_holidays()) {
                     add_settings_error(self::OPTION_KEY, 'holidays_fetch', __('Failed to update holidays.', 'wc-ship-today-notice'), 'error');
                 }
@@ -298,7 +338,7 @@ final class WC_Ship_Today_Notice
     /** Czy jest co czyścić o godzinie granicznej: LiteSpeed Cache albo podpięta akcja (te same, które woła purge_cache()). */
     private function cache_purge_enabled()
     {
-        return defined('LSCWP_V') || has_action('wc_ship_today_notice_purge_cache');
+        return !empty($this->get_options()['cache_purge_at_cutoff']) && (defined('LSCWP_V') || has_action('wc_ship_today_notice_purge_cache'));
     }
 
     public function maybe_schedule_cache_purge()
@@ -382,6 +422,7 @@ final class WC_Ship_Today_Notice
         );
         add_settings_field('checkout_enabled', __('Module', 'wc-ship-today-notice'), [$this, 'field_checkout_enabled'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
         add_settings_field('checkout_tiles', __('Tiles', 'wc-ship-today-notice'), [$this, 'field_checkout_tiles'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
+        add_settings_field('checkout_display', __('Dates in orders', 'wc-ship-today-notice'), [$this, 'field_checkout_display'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
         if (WC_STN_Checkout::iconic_active()) {
             add_settings_field('disable_iconic', 'Iconic Delivery Slots', [$this, 'field_disable_iconic'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
         }
@@ -417,6 +458,7 @@ final class WC_Ship_Today_Notice
         add_settings_field('country_code', __('Country ISO code', 'wc-ship-today-notice'), [$this, 'field_country_code'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
         add_settings_field('language_code', __('Language ISO code', 'wc-ship-today-notice'), [$this, 'field_language_code'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
         add_settings_field('holiday_subdivision', __('Region', 'wc-ship-today-notice'), [$this, 'field_holiday_subdivision'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
+        add_settings_field('holidays_auto_fetch', __('Automatic download', 'wc-ship-today-notice'), [$this, 'field_holidays_auto_fetch'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
         add_settings_field('holidays_list', __('Fetched holidays', 'wc-ship-today-notice'), [$this, 'field_holidays_list'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
 
         // --- Sekcja: Frontend texts ---
@@ -430,6 +472,15 @@ final class WC_Ship_Today_Notice
         add_settings_field('text_before_cutoff', __('Text before cutoff', 'wc-ship-today-notice'), [$this, 'field_text_before_cutoff'], 'wc-ship-today-notice', 'wc_ship_today_texts');
         add_settings_field('text_after_cutoff', __('Text after cutoff', 'wc-ship-today-notice'), [$this, 'field_text_after_cutoff'], 'wc-ship-today-notice', 'wc_ship_today_texts');
         add_settings_field('text_not_shipping_day', __('Text when not a shipping day', 'wc-ship-today-notice'), [$this, 'field_text_not_shipping_day'], 'wc-ship-today-notice', 'wc_ship_today_texts');
+
+        // --- Sekcja: funkcje dodatkowe (przełączniki) ---
+        add_settings_section(
+            'wc_ship_today_advanced',
+            __('Advanced', 'wc-ship-today-notice'),
+            '__return_false',
+            'wc-ship-today-notice'
+        );
+        add_settings_field('advanced_toggles', __('Optional features', 'wc-ship-today-notice'), [$this, 'field_advanced_toggles'], 'wc-ship-today-notice', 'wc_ship_today_advanced');
     }
 
     public function sanitize_options($input)
@@ -542,6 +593,13 @@ final class WC_Ship_Today_Notice
         $options['checkout_position']  = in_array($input['checkout_position'] ?? '', ['shortcode', 'after_order_notes', 'before_order_review'], true) ? $input['checkout_position'] : 'shortcode';
         $options['checkout_accent']    = (string) sanitize_hex_color($input['checkout_accent'] ?? '');
         $options['disable_iconic']     = !empty($input['disable_iconic']);
+
+        // Przełączniki: odznaczony checkbox nie przychodzi w POST, więc bez znacznika formularza (zapis z kodu) nic nie zmieniamy
+        if (!empty($input['_toggles'])) {
+            foreach (self::TOGGLES as $key) {
+                $options[$key] = !empty($input[$key]);
+            }
+        }
 
         unset($options['excluded_holidays']);
 
@@ -662,6 +720,16 @@ final class WC_Ship_Today_Notice
             'checkout_position' => 'shortcode', // 'shortcode', 'after_order_notes', 'before_order_review'
             'checkout_accent' => '',
             'disable_iconic' => false,
+            // Przełączniki funkcji opcjonalnych (TOGGLES); domyślnie jak przed ich dodaniem
+            'checkout_review_row' => true, // wiersz z terminem w podsumowaniu zamówienia (checkout)
+            'checkout_order_rows' => true, // wiersze z datami: podziękowanie, maile, Moje konto
+            'checkout_admin_edit' => true, // pole zmiany daty wysyłki w panelu zamówienia
+            'checkout_list_column' => true, // kolumna, sortowanie i filtr na liście zamówień
+            'checkout_dates_when_disabled' => false, // daty z zamówień widoczne także przy wyłączonym module
+            'holidays_auto_fetch' => true, // automatyczne pobieranie świąt (cron, aktywacja, zmiana kraju)
+            'cache_purge_at_cutoff' => true, // czyszczenie cache o godzinie granicznej (LiteSpeed / akcja)
+            'test_mode' => true, // ?stn_now= dla manage_woocommerce
+            'wpml_strings' => true, // rejestracja i tłumaczenie tekstów widgetu w WPML
         ];
 
         $saved = get_option(self::OPTION_KEY, []);
@@ -1071,6 +1139,43 @@ final class WC_Ship_Today_Notice
             <span class="description"><?php esc_html_e('(HEX, empty = dark gray)', 'wc-ship-today-notice'); ?></span>
         </p>
         <?php
+    }
+
+    /**
+     * Checkbox przełącznika z opisem pod spodem. Znacznik _toggles mówi sanitize_options(), że formularz zawierał przełączniki.
+     */
+    private function toggle_checkbox($key, $label, $description)
+    {
+        $o = $this->get_options();
+        printf(
+            '<p style="margin:0 0 2px"><input type="hidden" name="%1$s[_toggles]" value="1" /><label><input type="checkbox" name="%1$s[%2$s]" value="1" %3$s /> %4$s</label></p><p class="description" style="margin:0 0 12px 24px">%5$s</p>',
+            esc_attr(self::OPTION_KEY),
+            esc_attr($key),
+            checked(!empty($o[$key]), true, false),
+            esc_html($label),
+            esc_html($description)
+        );
+    }
+
+    public function field_checkout_display()
+    {
+        $this->toggle_checkbox('checkout_review_row', __('Row with the date in the order summary at checkout', 'wc-ship-today-notice'), __('Classic checkout: the selected date as a row in the order review table, refreshed with it.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('checkout_order_rows', __('"Ship date" and "Planned delivery" rows after the order is placed', 'wc-ship-today-notice'), __('Thank-you page, order emails (customer and admin) and My Account.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('checkout_admin_edit', __('Change the ship date in the order edit screen', 'wc-ship-today-notice'), __('Date field in the order admin; the delivery date is recalculated and an order note is added. Off: the dates are shown read-only.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('checkout_list_column', __('"Shipping" column in the orders list', 'wc-ship-today-notice'), __('Column with sorting and a ship date filter in WooCommerce → Orders.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('checkout_dates_when_disabled', __('Show dates of existing orders also when the module is disabled', 'wc-ship-today-notice'), __('Orders keep their dates when you turn the module off. On: they are still shown in emails, on the thank-you page, in My Account, in the order admin (read-only) and in the orders list, according to the options above. Off: they are hidden until the module is enabled again.', 'wc-ship-today-notice'));
+    }
+
+    public function field_holidays_auto_fetch()
+    {
+        $this->toggle_checkbox('holidays_auto_fetch', __('Download holidays automatically', 'wc-ship-today-notice'), __('Connects to OpenHolidays API right after activation, about every 4 months and after changing the country, language or region. Off: holidays are downloaded only with the "Fetch holidays now" button below.', 'wc-ship-today-notice'));
+    }
+
+    public function field_advanced_toggles()
+    {
+        $this->toggle_checkbox('cache_purge_at_cutoff', __('Purge the page cache at each cutoff time', 'wc-ship-today-notice'), __('Only with LiteSpeed Cache or a hooked wc_ship_today_notice_purge_cache action: a WP-Cron event at each cutoff time, so cached pages get a fresh start text. The cache is still purged after saving the settings.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('test_mode', __('Test mode ?stn_now=', 'wc-ship-today-notice'), __('Shop managers can add ?stn_now=2026-12-20T19:59 to any URL to see the widget and the checkout at another time.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('wpml_strings', __('WPML: translate the widget texts', 'wc-ship-today-notice'), __('With WPML active: the four widget texts are registered as strings when saving and shown translated. Off: the texts are shown as saved.', 'wc-ship-today-notice'));
     }
 
     public function field_disable_iconic()
@@ -1515,6 +1620,12 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
     public function cron_sync_holidays()
     {
+        // Zdarzenie zaplanowane przed wyłączeniem przełącznika: nic nie pobieramy, zdejmujemy resztę
+        if (empty($this->get_options()['holidays_auto_fetch'])) {
+            wp_clear_scheduled_hook(self::CRON_HOOK);
+            return;
+        }
+
         if ($this->fetch_and_store_holidays()) {
             return;
         }
@@ -1894,6 +2005,9 @@ final class WC_Ship_Today_Notice
 
     private function t($key, $fallback)
     {
+        if (empty($this->get_options()['wpml_strings'])) {
+            return $fallback;
+        }
         if (function_exists('icl_t')) {
             return icl_t(self::WPML_DOMAIN, $key, $fallback);
         }

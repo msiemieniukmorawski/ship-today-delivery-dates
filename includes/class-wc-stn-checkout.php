@@ -6,7 +6,9 @@
  * zapis w zamówieniu (HPOS), wyświetlanie w podsumowaniu, mailach, panelu zamówienia i na liście zamówień.
  * Opcjonalnie wyłącza Iconic Delivery Slots w koszyku i checkoucie (okres przejściowy).
  *
- * Hooki rejestruje tylko, gdy moduł jest włączony w ustawieniach.
+ * Hooki rejestruje tylko, gdy moduł jest włączony w ustawieniach. Wyjątek: wyświetlanie dat z istniejących zamówień
+ * (maile, panel tylko do odczytu, lista) przy przełączniku checkout_dates_when_disabled. Każdą część wyświetlania
+ * można wyłączyć osobnym przełącznikiem (WC_Ship_Today_Notice::TOGGLES).
  */
 
 if (!defined('ABSPATH')) {
@@ -26,6 +28,9 @@ final class WC_STN_Checkout
     /** @var WC_Ship_Today_Notice */
     private $plugin;
 
+    /** @var bool Pole zmiany daty w panelu zamówienia (moduł włączony + przełącznik). */
+    private $admin_edit = false;
+
     public function __construct(WC_Ship_Today_Notice $plugin)
     {
         $this->plugin = $plugin;
@@ -33,7 +38,12 @@ final class WC_STN_Checkout
 
         add_shortcode('ship_today_checkout', [$this, 'shortcode']);
 
-        if (empty($o['checkout_enabled'])) {
+        $enabled = !empty($o['checkout_enabled']);
+        if ($enabled || !empty($o['checkout_dates_when_disabled'])) {
+            $this->register_display_hooks($o);
+        }
+
+        if (!$enabled) {
             return;
         }
 
@@ -44,16 +54,41 @@ final class WC_STN_Checkout
             add_action('woocommerce_checkout_before_order_review', [$this, 'print_field']);
         }
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
-        add_action('woocommerce_review_order_after_shipping', [$this, 'review_row']);
+        if (!empty($o['checkout_review_row'])) {
+            add_action('woocommerce_review_order_after_shipping', [$this, 'review_row']);
+        }
         add_action('woocommerce_after_checkout_validation', [$this, 'validate'], 10, 2);
         add_action('woocommerce_checkout_create_order', [$this, 'save_to_order'], 10, 2);
 
+        // Panel zamówienia: zmiana daty
+        if (!empty($o['checkout_admin_edit'])) {
+            $this->admin_edit = true;
+            add_action('woocommerce_process_shop_order_meta', [$this, 'admin_order_save'], 20, 2);
+        }
+
+        // Okres przejściowy: Iconic aktywny, ale nie działa w koszyku i checkoucie
+        if (!empty($o['disable_iconic'])) {
+            add_action('wp_loaded', [$this, 'disable_iconic_checkout'], 99);
+            add_action('wp_enqueue_scripts', [$this, 'dequeue_iconic_assets'], 999);
+        }
+    }
+
+    /**
+     * Wyświetlanie dat zapisanych w zamówieniach: thank you, maile, Moje konto, panel zamówienia, lista zamówień.
+     */
+    private function register_display_hooks(array $o)
+    {
         // Po złożeniu zamówienia: thank you, maile, Moje konto
-        add_filter('woocommerce_get_order_item_totals', [$this, 'order_item_totals'], 20, 2);
+        if (!empty($o['checkout_order_rows'])) {
+            add_filter('woocommerce_get_order_item_totals', [$this, 'order_item_totals'], 20, 2);
+        }
 
         // Panel zamówienia
         add_action('woocommerce_admin_order_data_after_shipping_address', [$this, 'admin_order_box']);
-        add_action('woocommerce_process_shop_order_meta', [$this, 'admin_order_save'], 20, 2);
+
+        if (empty($o['checkout_list_column'])) {
+            return;
+        }
 
         // Lista zamówień: HPOS i stara tabela postów
         add_filter('manage_woocommerce_page_wc-orders_columns', [$this, 'list_columns'], 20);
@@ -66,12 +101,6 @@ final class WC_STN_Checkout
         add_filter('manage_edit-shop_order_sortable_columns', [$this, 'list_sortable_columns']);
         add_filter('request', [$this, 'legacy_list_request']);
         add_action('restrict_manage_posts', [$this, 'legacy_filter_dropdown'], 20);
-
-        // Okres przejściowy: Iconic aktywny, ale nie działa w koszyku i checkoucie
-        if (!empty($o['disable_iconic'])) {
-            add_action('wp_loaded', [$this, 'disable_iconic_checkout'], 99);
-            add_action('wp_enqueue_scripts', [$this, 'dequeue_iconic_assets'], 999);
-        }
     }
 
     public static function iconic_active()
@@ -393,6 +422,12 @@ final class WC_STN_Checkout
         $ship     = $order->get_meta(self::META_SHIP);
         $delivery = $order->get_meta(self::META_DELIVERY);
         $iconic   = $order->get_meta('jckwds_date');
+        $edit     = $this->admin_edit && ($order->is_editable() || current_user_can('edit_shop_orders'));
+
+        // Bez dat i bez pola zmiany (tylko odczyt) nie ma czego pokazać
+        if (!$ship && !$iconic && !$edit) {
+            return;
+        }
 
         echo '<div class="wc-stn-admin-box" style="clear:both;padding-top:8px">';
         echo '<h3>' . esc_html__('Shipping date', 'wc-ship-today-notice') . '</h3>';
@@ -407,7 +442,7 @@ final class WC_STN_Checkout
             echo '<p><strong>' . esc_html__('Ship date (Iconic):', 'wc-ship-today-notice') . '</strong> ' . esc_html($iconic) . '</p>';
         }
 
-        if ($order->is_editable() || current_user_can('edit_shop_orders')) {
+        if ($edit) {
             printf(
                 '<p><label for="wc_stn_admin_ship_date">%s</label><br><input type="date" id="wc_stn_admin_ship_date" name="wc_stn_admin_ship_date" value="%s" /></p>',
                 esc_html__('Change ship date:', 'wc-ship-today-notice'),
