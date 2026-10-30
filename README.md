@@ -510,6 +510,7 @@ wc-ship-today-notice/
 - Walidacja kodów kraju i języka (`[A-Z]{2}`), zapis ustawień nie nadpisuje już `cutoff_time`.
 - Podwójny odstęp przed odliczaniem („Zostało:  2 dni”), ucięty placeholder w zakładce „Styl”.
 - Zapytania do tabeli świąt przez `$wpdb->prepare()`, poprawki escapingu w panelu.
+- Pole godziny granicznej w tabeli dni mieści format 12-godzinny („02:00 PM”, np. przeglądarka en-US); wcześniej było ucięte.
 
 <details>
 <summary><b>Starsze wersje</b></summary>

@@ -1154,7 +1154,7 @@ final class WC_Ship_Today_Notice
                 '<tr>
                     <td>%s</td>
                     <td><input type="checkbox" name="%s[delivery_days][]" value="%d" %s /></td>
-                    <td><input type="time" name="%s[cutoff_times][%d]" value="%s" style="width:100px" /></td>
+                    <td><input type="time" name="%s[cutoff_times][%d]" value="%s" style="width:auto;min-width:100px" /></td>
                     <td><select name="%s[cutoff_offsets][%d]">%s</select></td>
                 </tr>',
                 esc_html($label),
