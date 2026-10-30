@@ -74,6 +74,8 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 - Serwer sprawdza termin przy składaniu zamówienia. Termin, który zamknął się na otwartej stronie, jest odrzucany z komunikatem.
 - Data wysyłki i dostawy w mailach, na stronie podziękowania, w „Moje konto”, w panelu zamówienia (z edycją) i w kolumnie listy
   zamówień z sortowaniem i filtrem.
+- **Godziny graniczne zależne od metody wysyłki** (np. paczkomat do 15:00, kurier do 13:00): kafelki i walidacja wg wybranej metody,
+  zmiana metody przelicza kafelki.
 - Odbiór osobisty nie wymaga daty. Zgodność z HPOS.
 - Przełącznik wyłączający Iconic Delivery Slots na czas przejścia.
 
@@ -118,6 +120,7 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 | Tryb komunikatu | „Wysyłka dziś” | Tryb komunikatu / atrybut `mode` | |
 | Dni wysyłki | pn-pt, do 14:00 tego samego dnia | Delivery weekdays & cutoff times | sob/nd mają domyślnie 12:00, ale nie są zaznaczone. |
 | Data dostawy | nie (0 dni) | Dostawa | Dni bez doręczeń domyślnie: niedziela. |
+| Godziny graniczne dla metod wysyłki | nie (wszystkie metody wg tabeli globalnej) | Metody wysyłki → „Własne dni wysyłki i godziny graniczne” | Dla każdej instancji metody ze stref WooCommerce. Checkout (oba) wg wybranej metody, widget przez atrybut `method`. |
 | Święta | po pobraniu | WP-Cron zaraz po aktywacji, co ok. 4 miesiące, po zmianie kraju/języka/regionu albo „Fetch holidays now” | Kraj i język: PL, bez regionu (tylko święta ogólnokrajowe). |
 | Automatyczne pobieranie świąt (zapytania do OpenHolidays bez kliknięcia) | tak | Public holidays API → Automatyczne pobieranie | Wyłączone: zdarzenia cron zdjęte, święta tylko przyciskiem „Fetch holidays now”. |
 | Daty wykluczone | brak | Excluded dates | |
@@ -160,6 +163,7 @@ wyłączonym module”.
 | `text` | z ustawień | Własny tekst z tokenami. Zastępuje wszystkie teksty z ustawień (przed / po godzinie granicznej / dzień bez wysyłki / najbliższy termin). HTML filtrowany przez `wp_kses_post`. |
 | `mode` | z ustawień | `today` albo `next_slot`. |
 | `class` | - | Dodatkowe klasy CSS kontenera (oddzielone spacją). |
+| `method` | - | ID instancji metody wysyłki, np. `flat_rate:3` - terminy wg jej własnych godzin (sekcja „Metody wysyłki”). Bez atrybutu, dla metody bez własnych godzin albo usuniętej - harmonogram globalny. Widget nie wykrywa metody klienta (strona może być w cache). |
 
 Gdy „Wyświetlanie widgetu” = Wyłączony, shortcode zwraca pusty tekst, a skrypt i styl nie są ładowane.
 
@@ -374,6 +378,37 @@ Odczytywane (Iconic, tylko do wyświetlania): `jckwds_date` (panel zamówienia),
 </details>
 
 <details>
+<summary><b>Godziny graniczne dla metod wysyłki</b></summary>
+
+WooCommerce → Ship Today Notice → **Metody wysyłki** (pod „Najbliższe terminy”): lista wszystkich metod ze stref wysyłki
+WooCommerce (także „Pozostałe regiony” i metody z wtyczek, np. paczkomaty), każda jako instancja `metoda:instancja`
+(np. `flat_rate:3`), więc różne strefy/kraje mogą mieć różne godziny.
+
+- „Własne dni wysyłki i godziny graniczne dla tej metody” → ta sama tabela co globalna (dni wysyłki, godzina graniczna,
+  przesunięcie) i opcjonalnie liczba dni dostawy (puste = jak w „Dostawa”). Pod spodem podgląd 5 najbliższych terminów metody.
+- Metoda bez własnych godzin, z odznaczonym checkboxem albo usunięta w WooCommerce → harmonogram globalny.
+- Wspólne dla wszystkich metod: święta, daty wykluczone, dni bez doręczeń.
+- Zapis w opcji `wc_ship_today_notice_method_schedules` (`["flat_rate:3" => [enabled, delivery_days, cutoff_times,
+  cutoff_offsets, delivery_offset]]`). Bez tej opcji wtyczka działa dokładnie jak wcześniej.
+
+Działanie:
+- **Klasyczny checkout:** kafelki dla wybranej metody (pierwsza paczka). Po zmianie metody `update_checkout` odsyła terminy
+  nowej metody (fragment `#wc-stn-checkout-data`), kafelki się przeliczają. Zaznaczenie zostaje, jeśli ten sam widoczny termin
+  (duży napis kafelka) albo ta sama data wysyłki istnieje dla nowej metody, inaczej przechodzi na najbliższy z komunikatem
+  (Teksty → „Wybranego terminu nie ma dla nowo wybranej metody wysyłki”, tokeny `{slot}`, `{next_slot}`). Wiersz w podsumowaniu,
+  walidacja i zapis w zamówieniu - wg wybranej metody.
+- **Checkout blokowy:** blok „Termin wysyłki” dostaje terminy dla każdej metody z własnymi godzinami i wybiera je wg stawki
+  zaznaczonej w koszyku (`wc/store/cart`). Zmiana metody działa jak w klasycznym. Walidacja w Store API wg wybranej metody.
+- **Odbiór osobisty:** bez zmian, data niewymagana.
+- **Panel zamówienia:** zmiana daty wysyłki liczy dostawę wg metody wysyłki zamówienia.
+- **Widget:** atrybut `method="flat_rate:3"` (jedna metoda). Czyszczenie cache (LiteSpeed / akcja) - o najbliższej godzinie
+  granicznej ze wszystkich harmonogramów.
+- Tryb testowy `?stn_now=` działa przy otwarciu strony, ale nie w AJAX-ie przeliczania checkoutu (`update_order_review`) -
+  po zmianie metody kafelki liczą się od prawdziwego „teraz”.
+
+</details>
+
+<details>
 <summary><b>Święta</b></summary>
 
 Źródło: [OpenHolidays API](https://www.openholidaysapi.org/), bieżący i następny rok, dla kraju i języka z ustawień
@@ -400,20 +435,23 @@ Do API idzie tylko kod kraju, kod języka i zakres dat - bez danych klientów (s
 
 | Funkcja | Zwraca |
 |---|---|
-| `wc_stn_get_slots( $count = 1, $now = null )` | najbliższe terminy, których godzina graniczna jeszcze nie minęła: tablica `['cutoff' => DateTimeImmutable, 'ship' => DateTimeImmutable, 'delivery' => ?DateTimeImmutable]`. `$now` przyjmuje `DateTime` lub `DateTimeImmutable`. |
-| `wc_stn_delivery_for_ship_date( $ship_ymd )` | data dostawy dla daty wysyłki (`Y-m-d` lub `Ymd`) albo `null`, gdy dostawa = 0 lub data jest błędna |
+| `wc_stn_get_slots( $count = 1, $now = null, $method = null )` | najbliższe terminy, których godzina graniczna jeszcze nie minęła: tablica `['cutoff' => DateTimeImmutable, 'ship' => DateTimeImmutable, 'delivery' => ?DateTimeImmutable]`. `$now` przyjmuje `DateTime` lub `DateTimeImmutable`. `$method` = ID instancji metody wysyłki (`flat_rate:3`), `null` = globalny. |
+| `wc_stn_delivery_for_ship_date( $ship_ymd, $method = null )` | data dostawy dla daty wysyłki (`Y-m-d` lub `Ymd`) albo `null`, gdy dostawa = 0 lub data jest błędna |
 | `wc_stn_is_blocked_date( $ymd )` | czy data to nieignorowane święto albo data wykluczona (bez względu na dzień tygodnia); `false` dla błędnej daty |
-| `wc_stn_is_shipping_day( $ymd )` | czy to dzień wysyłki (dzień tygodnia z ustawień, nie święto, nie data wykluczona); `false` dla błędnej daty |
+| `wc_stn_is_shipping_day( $ymd, $method = null )` | czy to dzień wysyłki (dzień tygodnia z ustawień, nie święto, nie data wykluczona); `false` dla błędnej daty |
 
 **Filtry**
 
 | Filtr | Argumenty | Do czego |
 |---|---|---|
 | `wc_ship_today_notice_now` | `DateTimeImmutable $now` | Podmiana „teraz” (używa go tryb testowy). |
-| `wc_ship_today_notice_is_shipping_day` | `bool $is`, `string $ymd` | Własne dni wysyłki / blokady. |
-| `wc_ship_today_notice_cutoff_time` | `string $time` (`H:i`), `int $weekday` (1 = pn), `string $ship_ymd` | Inna godzina graniczna dla konkretnego dnia. |
-| `wc_ship_today_notice_slots` | `array $slots`, `int $count`, `DateTimeImmutable $now` | Zmiana listy terminów (widget, checkout, walidacja). |
-| `wc_ship_today_notice_text` | `string $text`, `string $state` (`next`, `before`, `after`, `not_shipping`), `string $mode` | Tekst widgetu przed wstawieniem tokenów. |
+| `wc_ship_today_notice_is_shipping_day` | `bool $is`, `string $ymd`, `?string $method` | Własne dni wysyłki / blokady. |
+| `wc_ship_today_notice_cutoff_time` | `string $time` (`H:i`), `int $weekday` (1 = pn), `string $ship_ymd`, `?string $method` | Inna godzina graniczna dla konkretnego dnia. |
+| `wc_ship_today_notice_slots` | `array $slots`, `int $count`, `DateTimeImmutable $now`, `?string $method` | Zmiana listy terminów (widget, checkout, walidacja). |
+| `wc_ship_today_notice_text` | `string $text`, `string $state` (`next`, `before`, `after`, `not_shipping`), `string $mode`, `?string $method` | Tekst widgetu przed wstawieniem tokenów. |
+
+`$method` (ostatni argument, opcjonalny - stare callbacki działają bez zmian) to ID instancji metody wysyłki (`flat_rate:3`),
+dla której liczony jest termin, także gdy metoda nie ma własnych godzin, albo `null` dla harmonogramu globalnego.
 | `wc_ship_today_notice_load_assets` | `bool $load` (wynik wykrycia shortcode) | `true` = JS i CSS widgetu w `<head>` na tej stronie. Potrzebne, gdy widget przychodzi w treści doładowanej AJAX-em (popup, PJAX). |
 
 JS i CSS widgetu ładują się tylko tam, gdzie jest widget:
@@ -477,9 +515,10 @@ zmienia się wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jes
 - Opcja `wc_ship_today_notice_options` - wszystkie ustawienia (tablica).
 - Opcja `wc_ship_today_notice_style` - ustawienia zakładki „Styl” (tablica, puste wartości = domyślne).
 - Opcja `wc_ship_today_notice_version` - wersja do migracji (1.x → 2.0: ignorowane święta z ID na daty).
+- Opcja `wc_ship_today_notice_method_schedules` - godziny graniczne dla metod wysyłki (klucz: ID instancji metody).
 - Tabela `{prefix}wc_ship_today_notice_holidays` - pobrane święta.
 
-Dezaktywacja usuwa wszystkie zdarzenia cron wtyczki (`wp_clear_scheduled_hook`). Usunięcie wtyczki (`uninstall.php`) kasuje trzy opcje,
+Dezaktywacja usuwa wszystkie zdarzenia cron wtyczki (`wp_clear_scheduled_hook`). Usunięcie wtyczki (`uninstall.php`) kasuje opcje wtyczki,
 tabelę świąt i zdarzenia cron (także na każdej stronie multisite). Meta zamówień (`_wc_stn_*`) zostają w zamówieniach.
 
 </details>
@@ -538,12 +577,20 @@ wc-ship-today-notice/
 ### Niewydane
 
 **Nowe**
+- **Godziny graniczne zależne od metody wysyłki:** sekcja „Metody wysyłki” w ustawieniach (lista stref → metod WooCommerce,
+  własne dni wysyłki, godziny graniczne, przesunięcia i liczba dni dostawy, podgląd terminów). Klasyczny i blokowy checkout:
+  kafelki, walidacja i zapis wg wybranej metody, zmiana metody przelicza kafelki (zaznaczenie zostaje albo przechodzi
+  z nowym komunikatem). Panel zamówienia liczy dostawę wg metody zamówienia. Widget: atrybut `method`.
+- API: `wc_stn_get_slots()`, `wc_stn_delivery_for_ship_date()`, `wc_stn_is_shipping_day()` z opcjonalnym `$method`; filtry
+  terminów i tekstu dostają ID metody jako ostatni argument (zgodnie wstecz).
 - Checkout blokowy: wiersz z wybranym terminem w **podsumowaniu zamówienia** (blok „Termin wysyłki – wiersz podsumowania”),
   jak w klasycznym checkoucie, aktualizowany na żywo. Wstawiany raz pod wierszem wysyłki (przy wejściu do panelu albo aktualizacji),
   przesuwalny i usuwalny w edytorze. Działa z przełącznikiem „Wiersz z terminem w podsumowaniu zamówienia”.
   Na stronach zamówienia ze starszym układem podsumowania (bez bloku sum `checkout-order-summary-totals-block`, z wcześniejszych
   wersji WooCommerce) wtyczka przy wstawieniu zamyka wiersze sum w tym bloku - tak jak robi to edytor WooCommerce przy otwarciu strony.
   Gdy wiersza nie da się wstawić (np. strona bez podsumowania), ustawienia pokazują to na czerwono.
+
+Bez ustawień dla metod wysyłki wszystko działa jak w 2.3.0.
 
 ### 2.3.0 (30.10.2026)
 
@@ -647,7 +694,7 @@ wc-ship-today-notice/
 
 ## Plany
 
-- [ ] Różne godziny graniczne dla stref wysyłki WooCommerce.
+- [ ] Tryb testowy `?stn_now=` także w AJAX-ie przeliczania checkoutu (`update_order_review`), np. przesunięcie zapamiętane dla managera sklepu.
 - [ ] Publikacja w katalogu WordPress.org.
 
 ## Autorzy

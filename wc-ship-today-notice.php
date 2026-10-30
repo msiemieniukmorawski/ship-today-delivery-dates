@@ -33,6 +33,8 @@ final class WC_Ship_Today_Notice
 {
     const OPTION_KEY       = 'wc_ship_today_notice_options';
     const STYLE_KEY        = 'wc_ship_today_notice_style';
+    /** Harmonogramy metod wysyłki: ["flat_rate:3" => [enabled, delivery_days, cutoff_times, cutoff_offsets, delivery_offset]]. */
+    const METHOD_KEY       = 'wc_ship_today_notice_method_schedules';
     const VERSION_KEY      = 'wc_ship_today_notice_version';
     const CRON_HOOK        = 'wc_ship_today_notice_cron_sync_holidays';
     const CRON_PURGE_HOOK  = 'wc_ship_today_notice_cron_purge_cache';
@@ -52,6 +54,7 @@ final class WC_Ship_Today_Notice
         'checkout_msg_closed',
         'checkout_msg_unavailable',
         'checkout_msg_switched',
+        'checkout_msg_method',
     ];
 
     const TOGGLES = [
@@ -121,6 +124,8 @@ final class WC_Ship_Today_Notice
         // Pierwszy zapis stylu to add_option, kolejne to update_option
         add_action('add_option_' . self::STYLE_KEY, [$this, 'on_style_updated']);
         add_action('update_option_' . self::STYLE_KEY, [$this, 'on_style_updated']);
+        add_action('add_option_' . self::METHOD_KEY, [$this, 'on_method_schedules_updated']);
+        add_action('update_option_' . self::METHOD_KEY, [$this, 'on_method_schedules_updated']);
 
         // Na init, a nie przy wczytaniu pliku: get_options() woła __(), a tłumaczenia nie mogą się ładować przed init
         add_action('init', [$this, 'init_checkout'], 0);
@@ -162,14 +167,107 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Silnik terminów na aktualnych ustawieniach.
+     * Silnik terminów na aktualnych ustawieniach: globalny albo dla metody wysyłki ("flat_rate:3").
+     * Metoda bez własnego harmonogramu (albo usunięta w WooCommerce) dostaje globalny, ale jej ID trafia do filtrów.
      */
-    public function schedule()
+    public function schedule($method = null)
     {
-        if (null === $this->schedule) {
-            $this->schedule = new WC_STN_Schedule($this->get_options());
+        $method = self::valid_method_key($method) ? (string) $method : '';
+
+        if (!is_array($this->schedule)) {
+            $this->schedule = [];
         }
-        return $this->schedule;
+        if (!isset($this->schedule[$method])) {
+            $this->schedule[$method] = new WC_STN_Schedule(
+                array_merge($this->get_options(), $this->method_overrides($method)),
+                null,
+                '' === $method ? null : $method
+            );
+        }
+
+        return $this->schedule[$method];
+    }
+
+    /** ID instancji metody wysyłki: "method_id:instance_id" (np. "flat_rate:3"). */
+    public static function valid_method_key($key)
+    {
+        return is_string($key) && (bool) preg_match('/^[a-z0-9_\-]+:\d+$/i', $key);
+    }
+
+    public function get_method_schedules()
+    {
+        $saved = get_option(self::METHOD_KEY, []);
+
+        return is_array($saved) ? $saved : [];
+    }
+
+    /**
+     * Klucze opcji nadpisywane przez własny harmonogram metody. Pusta tablica = harmonogram globalny
+     * (brak wpisu, wpis wyłączony albo metody nie ma już w strefach WooCommerce).
+     */
+    private function method_overrides($method)
+    {
+        $entry = '' !== $method ? ($this->get_method_schedules()[$method] ?? null) : null;
+        if (empty($entry['enabled']) || !in_array($method, $this->existing_method_keys(), true)) {
+            return [];
+        }
+
+        $overrides = [
+            'delivery_days'  => array_map('intval', (array) ($entry['delivery_days'] ?? [])),
+            'cutoff_times'   => (array) ($entry['cutoff_times'] ?? []),
+            'cutoff_offsets' => (array) ($entry['cutoff_offsets'] ?? []),
+        ];
+        if (isset($entry['delivery_offset']) && '' !== $entry['delivery_offset']) {
+            $overrides['delivery_offset'] = (int) $entry['delivery_offset'];
+        }
+
+        return $overrides;
+    }
+
+    /** @var array<string,string>|null Metody ze stref WooCommerce: klucz => "Strefa - Nazwa metody". */
+    private $shipping_methods = null;
+
+    /**
+     * Wszystkie instancje metod wysyłki ze stref WooCommerce (także "Pozostałe regiony"), z wtyczek też.
+     */
+    public function shipping_methods()
+    {
+        if (null !== $this->shipping_methods) {
+            return $this->shipping_methods;
+        }
+
+        $this->shipping_methods = [];
+        if (!class_exists('WC_Shipping_Zones')) {
+            return $this->shipping_methods;
+        }
+
+        $zones   = WC_Shipping_Zones::get_zones();
+        $zones[] = ['id' => 0];
+        foreach ($zones as $zone_data) {
+            $zone = WC_Shipping_Zones::get_zone((int) $zone_data['id']);
+            if (!$zone) {
+                continue;
+            }
+            foreach ($zone->get_shipping_methods() as $method) {
+                $key = $method->id . ':' . $method->get_instance_id();
+                $this->shipping_methods[$key] = $zone->get_zone_name() . ' - ' . $method->get_title() . ('yes' === $method->enabled ? '' : ' (' . __('disabled', 'wc-ship-today-notice') . ')');
+            }
+        }
+
+        return $this->shipping_methods;
+    }
+
+    private function existing_method_keys()
+    {
+        return array_keys($this->shipping_methods());
+    }
+
+    /** Metody z włączonym własnym harmonogramem (istniejące w WooCommerce). */
+    public function methods_with_schedule()
+    {
+        return array_values(array_filter($this->existing_method_keys(), function ($key) {
+            return [] !== $this->method_overrides($key);
+        }));
     }
 
     /* ---------------------------------------------------------
@@ -369,6 +467,13 @@ final class WC_Ship_Today_Notice
         $this->on_options_updated([], $value);
     }
 
+    public function on_method_schedules_updated()
+    {
+        $this->schedule = null;
+        $this->purge_cache();
+        $this->reschedule_cache_purge();
+    }
+
     public function on_style_updated()
     {
         $this->purge_cache();
@@ -420,9 +525,16 @@ final class WC_Ship_Today_Notice
             return;
         }
 
-        $slots = $this->schedule()->slots(1);
-        if ($slots) {
-            wp_schedule_single_event($slots[0]['cutoff']->getTimestamp() + 5, self::CRON_PURGE_HOOK);
+        // Najbliższa godzina graniczna z harmonogramu globalnego i harmonogramów metod
+        $next = null;
+        foreach (array_merge([null], $this->methods_with_schedule()) as $method) {
+            $slots = $this->schedule($method)->slots(1);
+            if ($slots && (null === $next || $slots[0]['cutoff'] < $next)) {
+                $next = $slots[0]['cutoff'];
+            }
+        }
+        if ($next) {
+            wp_schedule_single_event($next->getTimestamp() + 5, self::CRON_PURGE_HOOK);
         }
     }
 
@@ -445,6 +557,8 @@ final class WC_Ship_Today_Notice
     {
         register_setting(self::OPTION_KEY, self::OPTION_KEY, [$this, 'sanitize_options']);
         register_setting(self::STYLE_KEY, self::STYLE_KEY, [$this, 'sanitize_style']);
+        // Ten sam formularz co główne ustawienia (grupa OPTION_KEY), osobna opcja
+        register_setting(self::OPTION_KEY, self::METHOD_KEY, ['sanitize_callback' => [$this, 'sanitize_method_schedules'], 'default' => []]);
 
         // --- Sekcja: Shortcode Info ---
         add_settings_section(
@@ -467,6 +581,7 @@ final class WC_Ship_Today_Notice
         add_settings_field('delivery', __('Delivery', 'wc-ship-today-notice'), [$this, 'field_delivery'], 'wc-ship-today-notice', 'wc_ship_today_main');
         add_settings_field('excluded_dates', __('Excluded dates', 'wc-ship-today-notice'), [$this, 'field_excluded_dates'], 'wc-ship-today-notice', 'wc_ship_today_main');
         add_settings_field('preview', __('Upcoming dates', 'wc-ship-today-notice'), [$this, 'field_preview'], 'wc-ship-today-notice', 'wc_ship_today_main');
+        add_settings_field('method_schedules', __('Shipping methods', 'wc-ship-today-notice'), [$this, 'field_method_schedules'], 'wc-ship-today-notice', 'wc_ship_today_main');
 
         // --- Sekcja: wybór terminu w checkoucie ---
         add_settings_section(
@@ -803,6 +918,7 @@ final class WC_Ship_Today_Notice
             'checkout_msg_closed' => '',
             'checkout_msg_unavailable' => '',
             'checkout_msg_switched' => '',
+            'checkout_msg_method' => '',
             // Przełączniki funkcji opcjonalnych (TOGGLES); domyślnie jak przed ich dodaniem
             'checkout_review_row' => true, // wiersz z terminem w podsumowaniu zamówienia (checkout)
             'checkout_order_rows' => true, // wiersze z datami: podziękowanie, maile, Moje konto
@@ -1285,6 +1401,7 @@ final class WC_Ship_Today_Notice
         <p><label><?php esc_html_e('Cutoff time of the selected date has passed:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_closed', $messages['checkout_msg_closed']); ?></label></p>
         <p><label><?php esc_html_e('Selected date is not available:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_unavailable', $messages['checkout_msg_unavailable']); ?></label></p>
         <p><label><?php esc_html_e('Selected date closed while the page was open:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_switched', $messages['checkout_msg_switched']); ?></label></p>
+        <p><label><?php esc_html_e('Selected date does not exist for the newly chosen shipping method:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_method', $messages['checkout_msg_method']); ?></label></p>
         <p class="description"><?php esc_html_e('Empty = default text (shown in the field), translated to the store language.', 'wc-ship-today-notice'); ?>
             <?php esc_html_e('Tokens:', 'wc-ship-today-notice'); ?> <code>{field}</code> (<?php esc_html_e('field name', 'wc-ship-today-notice'); ?>), <code>{slot}</code> (<?php esc_html_e('date, e.g. "Tue 03.11"', 'wc-ship-today-notice'); ?>), <code>{next_slot}</code> (<?php esc_html_e('newly selected date', 'wc-ship-today-notice'); ?>).</p>
         <?php
@@ -1368,7 +1485,15 @@ final class WC_Ship_Today_Notice
 
     public function field_delivery_days()
     {
-        $o = $this->get_options();
+        $this->render_days_table(self::OPTION_KEY, $this->get_options());
+        echo '<p class="description">' . esc_html__('The cutoff time belongs to the ship day. Example: shipping on Monday, 20:00, "the day before" = orders until Sunday 20:00 are shipped on Monday.', 'wc-ship-today-notice') . '</p>';
+    }
+
+    /**
+     * Tabela dni wysyłki, godzin granicznych i przesunięć: globalna (name = OPTION_KEY) albo metody (name = METHOD_KEY[klucz]).
+     */
+    private function render_days_table($name, array $o)
+    {
         $days = [
             1 => __('Monday', 'wc-ship-today-notice'),
             2 => __('Tuesday', 'wc-ship-today-notice'),
@@ -1412,20 +1537,19 @@ final class WC_Ship_Today_Notice
                     <td><select name="%s[cutoff_offsets][%d]">%s</select></td>
                 </tr>',
                 esc_html($label),
-                esc_attr(self::OPTION_KEY),
+                esc_attr($name),
                 (int)$num,
-                checked(in_array($num, (array)$o['delivery_days'], true), true, false),
-                esc_attr(self::OPTION_KEY),
+                checked(in_array($num, array_map('intval', (array) ($o['delivery_days'] ?? [])), true), true, false),
+                esc_attr($name),
                 (int)$num,
                 esc_attr($cutoff),
-                esc_attr(self::OPTION_KEY),
+                esc_attr($name),
                 (int)$num,
                 wp_kses($options_html, ['option' => ['value' => true, 'selected' => true]])
             );
         }
 
         echo '</tbody></table>';
-        echo '<p class="description">' . esc_html__('The cutoff time belongs to the ship day. Example: shipping on Monday, 20:00, "the day before" = orders until Sunday 20:00 are shipped on Monday.', 'wc-ship-today-notice') . '</p>';
     }
 
     public function field_delivery()
@@ -1469,13 +1593,27 @@ final class WC_Ship_Today_Notice
      */
     public function field_preview()
     {
-        $schedule = $this->schedule();
+        if ($this->render_preview($this->schedule())) {
+            printf(
+                '<p class="description">%s</p>',
+                sprintf(
+                    /* translators: %s: example URL parameter ?stn_now=... */
+                    esc_html__('Based on the saved settings and fetched holidays. To test another moment, add %s to the page address (shop managers only).', 'wc-ship-today-notice'),
+                    '<code>?stn_now=2026-12-20T19:59</code>'
+                )
+            );
+        }
+    }
+
+    /** Tabela 5 najbliższych terminów. Zwraca, czy były terminy. */
+    private function render_preview(WC_STN_Schedule $schedule)
+    {
         $slots = $schedule->slots(5);
 
         if (!$slots) {
             /* translators: %d: number of days searched */
             echo '<p class="description">' . esc_html(sprintf(_n('No dates in the next %d day. Check the shipping days.', 'No dates in the next %d days. Check the shipping days.', WC_STN_Schedule::HORIZON_DAYS, 'wc-ship-today-notice'), WC_STN_Schedule::HORIZON_DAYS)) . '</p>';
-            return;
+            return false;
         }
 
         printf(
@@ -1495,14 +1633,104 @@ final class WC_Ship_Today_Notice
             );
         }
         echo '</tbody></table>';
-        printf(
-            '<p class="description">%s</p>',
-            sprintf(
-                /* translators: %s: example URL parameter ?stn_now=... */
-                esc_html__('Based on the saved settings and fetched holidays. To test another moment, add %s to the page address (shop managers only).', 'wc-ship-today-notice'),
-                '<code>?stn_now=2026-12-20T19:59</code>'
-            )
-        );
+
+        return true;
+    }
+
+    /**
+     * Harmonogramy metod wysyłki: lista stref i metod WooCommerce, dla każdej "własne godziny" + tabela jak globalna.
+     */
+    public function field_method_schedules()
+    {
+        $methods = $this->shipping_methods();
+        $saved   = $this->get_method_schedules();
+        $global  = $this->get_options();
+
+        printf('<input type="hidden" name="%s[_form]" value="1" />', esc_attr(self::METHOD_KEY));
+
+        if (!$methods) {
+            echo '<p class="description">' . esc_html__('No shipping methods in WooCommerce shipping zones.', 'wc-ship-today-notice') . '</p>';
+            return;
+        }
+
+        echo '<p class="description" style="margin-bottom:8px">' . esc_html__('Different shipping days and cutoff times for a shipping method (e.g. parcel lockers until 15:00, courier until 13:00). Without own times the method uses the table above. Holidays, excluded dates and days without deliveries are shared.', 'wc-ship-today-notice') . '</p>';
+
+        foreach ($methods as $key => $label) {
+            $entry   = $saved[$key] ?? [];
+            $enabled = !empty($entry['enabled']);
+            $name    = self::METHOD_KEY . '[' . $key . ']';
+            // Bez zapisanego wpisu tabela startuje od ustawień globalnych
+            $values  = $entry ? $entry : $global;
+
+            printf(
+                '<details style="margin:0 0 8px;max-width:640px"%s><summary><strong>%s</strong> <code>%s</code>%s</summary><div style="padding:8px 0 4px 16px">',
+                $enabled ? ' open' : '',
+                esc_html($label),
+                esc_html($key),
+                $enabled ? ' &mdash; ' . esc_html__('own times', 'wc-ship-today-notice') : ''
+            );
+            printf(
+                '<p><label><input type="checkbox" name="%s[enabled]" value="1" %s /> %s</label></p>',
+                esc_attr($name),
+                checked($enabled, true, false),
+                esc_html__('Own shipping days and cutoff times for this method', 'wc-ship-today-notice')
+            );
+            $this->render_days_table($name, $values);
+            printf(
+                '<p><label>%s <input type="number" min="0" max="14" name="%s[delivery_offset]" value="%s" placeholder="%s" style="width:70px" /></label> <span class="description">%s</span></p>',
+                esc_html__('Delivery days after shipping:', 'wc-ship-today-notice'),
+                esc_attr($name),
+                esc_attr(isset($entry['delivery_offset']) ? (string) $entry['delivery_offset'] : ''),
+                esc_attr((string) (int) $global['delivery_offset']),
+                esc_html__('empty = as in "Delivery"', 'wc-ship-today-notice')
+            );
+            if ($enabled) {
+                $this->render_preview($this->schedule($key));
+            }
+            echo '</div></details>';
+        }
+    }
+
+    /**
+     * Wpisy dla metod z formularza. Bez znacznika _form (np. sekcja niewyrenderowana) zostaje zapisana wartość.
+     * Wpisy metod, których nie ma w formularzu (usunięte w WooCommerce), znikają przy zapisie.
+     */
+    public function sanitize_method_schedules($input)
+    {
+        if (!is_array($input)) {
+            return $this->get_method_schedules();
+        }
+        // Formularz bez metod (np. WooCommerce wyłączony) niczego nie kasuje. Tablica bez znacznika _form to zapis z kodu albo
+        // drugie wywołanie sanityzacji przy pierwszym zapisie opcji (add_option) - normalizujemy ją tak samo.
+        if (!empty($input['_form']) && !$this->shipping_methods()) {
+            return $this->get_method_schedules();
+        }
+
+        $clean = [];
+        foreach ($input as $key => $entry) {
+            if (!self::valid_method_key($key) || !is_array($entry)) {
+                continue;
+            }
+
+            $times   = [];
+            $offsets = [];
+            foreach ([1, 2, 3, 4, 5, 6, 7] as $day) {
+                $time = (string) ($entry['cutoff_times'][$day] ?? '');
+                $times[$day]   = preg_match('/^\d{2}:\d{2}$/', $time) ? $time : '14:00';
+                $offsets[$day] = max(0, min(6, (int) ($entry['cutoff_offsets'][$day] ?? 0)));
+            }
+            $delivery = trim((string) ($entry['delivery_offset'] ?? ''));
+
+            $clean[$key] = [
+                'enabled'         => !empty($entry['enabled']),
+                'delivery_days'   => array_values(array_intersect([1, 2, 3, 4, 5, 6, 7], array_map('intval', (array) ($entry['delivery_days'] ?? [])))),
+                'cutoff_times'    => $times,
+                'cutoff_offsets'  => $offsets,
+                'delivery_offset' => '' === $delivery ? '' : max(0, min(14, (int) $delivery)),
+            ];
+        }
+
+        return $clean;
     }
 
     public function field_country_code()
@@ -2038,16 +2266,19 @@ final class WC_Ship_Today_Notice
         $atts = shortcode_atts([
             'count' => 1,
             'text'  => '',
-            'mode'  => '',
-            'class' => '',
+            'mode'   => '',
+            'class'  => '',
+            'method' => '',
         ], $atts, 'ship_today_notice');
 
-        $mode  = in_array($atts['mode'], ['today', 'next_slot'], true) ? $atts['mode'] : $o['mode'];
-        $count = max(1, min(10, (int) $atts['count']));
-        $text  = wp_kses_post($atts['text']);
+        $mode     = in_array($atts['mode'], ['today', 'next_slot'], true) ? $atts['mode'] : $o['mode'];
+        $count    = max(1, min(10, (int) $atts['count']));
+        $text     = wp_kses_post($atts['text']);
+        // method="flat_rate:3": harmonogram tej metody (bez wykrywania metody klienta - strona może być w cache)
+        $schedule = $this->schedule(trim((string) $atts['method']));
 
-        $config = $this->frontend_config($o, $mode, $count, $text);
-        $state  = $this->initial_state($config);
+        $config = $this->frontend_config($o, $mode, $count, $text, $schedule);
+        $state  = $this->initial_state($config, $schedule);
 
         $classes = array_merge(['wc-ship-today-notice'], array_filter(array_map('sanitize_html_class', preg_split('/\s+/', (string) $atts['class']))));
         if ($count > 1) {
@@ -2077,9 +2308,8 @@ final class WC_Ship_Today_Notice
     /**
      * Dane dla JS: harmonogram na FRONTEND_DAYS dni (absolutne znaczniki czasu, więc działa ze strony z cache).
      */
-    private function frontend_config(array $o, $mode, $count, $text)
+    private function frontend_config(array $o, $mode, $count, $text, WC_STN_Schedule $schedule)
     {
-        $schedule = $this->schedule();
         $now      = $schedule->now();
         $slots    = [];
 
@@ -2097,7 +2327,7 @@ final class WC_Ship_Today_Notice
             $templates = array_fill_keys(array_keys($templates), $text);
         }
         foreach ($templates as $state => $template) {
-            $templates[$state] = (string) apply_filters('wc_ship_today_notice_text', $template, $state, $mode);
+            $templates[$state] = (string) apply_filters('wc_ship_today_notice_text', $template, $state, $mode, $schedule->method());
         }
 
         return [
@@ -2132,9 +2362,8 @@ final class WC_Ship_Today_Notice
     /**
      * Ten sam stan co w notice.js, policzony na serwerze (pierwsze wyświetlenie i brak JS).
      */
-    private function initial_state(array $config)
+    private function initial_state(array $config, WC_STN_Schedule $schedule)
     {
-        $schedule = $this->schedule();
         $now      = $schedule->now();
         $today    = $now->format('Y-m-d');
         $slots    = $config['slots'];

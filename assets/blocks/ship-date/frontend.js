@@ -7,7 +7,9 @@
  * - termin idzie do Store API przez setExtensionData('wc-stn', 'ship_date'), razem z 'rendered' (blok był widoczny),
  * - bez wybranego terminu blok zgłasza błąd walidacji (wc/store/validation), więc zamówienie nie wyjdzie bez daty,
  * - gdy godzina graniczna minie na otwartej stronie, kafelek znika, dochodzi kolejny, a zaznaczenie przechodzi na
- *   najbliższy z komunikatem. Ostateczna kontrola i tak jest na serwerze (WC_STN_Checkout_Blocks::validate_and_save).
+ *   najbliższy z komunikatem. Ostateczna kontrola i tak jest na serwerze (WC_STN_Checkout_Blocks::validate_and_save),
+ * - harmonogramy metod wysyłki: terminy dla stawki wybranej w koszyku (cfg.methods["metoda:instancja"], inaczej cfg.tiles);
+ *   zmiana metody zostawia zaznaczenie, jeśli termin istnieje dla nowej metody, inaczej przechodzi na najbliższy z komunikatem.
  * Bez kroku build: wp.element.createElement zamiast JSX.
  */
 (function (wc, wp) {
@@ -16,6 +18,7 @@
   var el = wp.element.createElement;
   var useState = wp.element.useState;
   var useEffect = wp.element.useEffect;
+  var useRef = wp.element.useRef;
   var useSelect = wp.data.useSelect;
   var useDispatch = wp.data.useDispatch;
   var cfg = wc.wcSettings.getSetting('wc-stn-ship-date_data', null);
@@ -47,11 +50,27 @@
     return Math.floor((Date.now() + (cfg.nowOffset || 0)) / 1000);
   }
 
+  /** Wszystkie terminy dla metody wysyłki ("flat_rate:3"); metoda bez własnych godzin = globalne. */
+  function tilesFor(method) {
+    return (cfg.methods && cfg.methods[method]) || cfg.tiles;
+  }
+
   /** Terminy, których godzina graniczna jeszcze nie minęła (pierwsze cfg.count). */
-  function openTiles(now) {
-    return cfg.tiles.filter(function (tile) {
+  function openTiles(now, method) {
+    return tilesFor(method).filter(function (tile) {
       return tile.cutoff > now;
     }).slice(0, cfg.count);
+  }
+
+  /** Metoda wysyłki wybrana w koszyku (pierwsza paczka): "method_id:instance_id" albo ''. */
+  function selectedMethod(select) {
+    var packages = select('wc/store/cart').getShippingRates() || [];
+    var rate = packages[0] && (packages[0].shipping_rates || []).filter(function (r) { return r.selected; })[0];
+    return rate ? rate.method_id + ':' + rate.instance_id : '';
+  }
+
+  function label(tile) {
+    return tile.label || tile.main;
   }
 
   function ShipDate(props) {
@@ -67,23 +86,55 @@
       return error && !error.hidden ? error.message : '';
     }, []);
 
-    var initial = openTiles(nowS());
+    var method = useSelect(selectedMethod, []);
+    var methodRef = useRef(method);
+    var initial = openTiles(nowS(), method);
     var state = useState({ now: nowS(), value: cfg.preselect && initial.length ? initial[0].value : '', notice: '' });
     var current = state[0];
     var setCurrent = state[1];
-    var tiles = openTiles(current.now);
+    var tiles = openTiles(current.now, method);
+
+    // Zmiana metody wysyłki: terminy nowej metody, zaznaczenie zostaje albo przechodzi na najbliższy z komunikatem
+    useEffect(function () {
+      var prevMethod = methodRef.current;
+      methodRef.current = method;
+      if (prevMethod === method) {
+        return;
+      }
+      setCurrent(function (prev) {
+        var now = nowS();
+        var open = openTiles(now, method);
+        if (!prev.value) {
+          return prev;
+        }
+        var old = tilesFor(prevMethod).filter(function (tile) { return tile.value === prev.value; })[0];
+        // Ten sam widoczny termin (duży napis, np. ta sama data dostawy z innej daty wysyłki), potem ta sama data wysyłki - bez komunikatu
+        var same = (old && open.filter(function (tile) { return label(tile) === label(old); })[0]) ||
+          open.filter(function (tile) { return tile.value === prev.value; })[0];
+        if (same) {
+          return { now: now, value: same.value, notice: '' };
+        }
+        return {
+          now: now,
+          value: open.length ? open[0].value : '',
+          notice: open.length && old && cfg.moved
+            ? cfg.moved.split('{slot}').join(label(old)).split('{next_slot}').join(label(open[0]))
+            : ''
+        };
+      });
+    }, [method]);
 
     // Zegar: co sekundę sprawdza, czy wybrany termin się nie zamknął
     useEffect(function () {
       var timer = setInterval(function () {
         setCurrent(function (prev) {
           var now = nowS();
-          var open = openTiles(now);
+          var open = openTiles(now, methodRef.current);
           var still = !prev.value || open.some(function (tile) { return tile.value === prev.value; });
           if (still) {
             return prev.now === now ? prev : { now: now, value: prev.value, notice: prev.notice };
           }
-          var closed = cfg.tiles.filter(function (tile) { return tile.value === prev.value; })[0];
+          var closed = tilesFor(methodRef.current).filter(function (tile) { return tile.value === prev.value; })[0];
           return {
             now: now,
             value: open.length ? open[0].value : '',
@@ -149,12 +200,21 @@
     );
   }
 
-  /** Wiersz w podsumowaniu: tylko gdy blok kafelków jest na stronie, widoczny i ma wybrany termin. */
+  /** Wiersze podsumowania dla metody wysyłki (data wysyłki => [wysyłka, dostawa]); metoda bez własnych godzin = globalne. */
+  function rowsFor(method) {
+    return (cfg.methodRows && cfg.methodRows[method]) || cfg.rows;
+  }
+
+  /**
+   * Wiersz w podsumowaniu: tylko gdy blok kafelków jest na stronie, widoczny i ma wybrany termin.
+   * Treść wg metody wybranej w koszyku (ta sama data wysyłki może mieć u metody inną datę dostawy).
+   */
   function ShipDateRow() {
     var shipDate = useSelect(function (select) {
       return select(STORE).getShipDate();
     }, []);
-    var lines = cfg.reviewRow && shipDate ? cfg.rows[shipDate] : null;
+    var method = useSelect(selectedMethod, []);
+    var lines = cfg.reviewRow && shipDate ? rowsFor(method)[shipDate] : null;
 
     if (!lines) {
       return null;

@@ -3,7 +3,9 @@
  *
  * - zaznaczenie kafelka odświeża podsumowanie zamówienia (update_checkout),
  * - gdy godzina graniczna terminu minie na otwartej stronie, kafelek znika, dochodzi kolejny termin,
- *   a zaznaczenie przechodzi na najbliższy z komunikatem.
+ *   a zaznaczenie przechodzi na najbliższy z komunikatem,
+ * - przy harmonogramach metod wysyłki: zmiana metody (fragment #wc-stn-checkout-data z update_checkout) przelicza kafelki;
+ *   zaznaczenie zostaje, jeśli termin istnieje dla nowej metody, inaczej przechodzi na najbliższy z komunikatem.
  * Ostateczna kontrola jest i tak na serwerze przy składaniu zamówienia.
  */
 (function ($) {
@@ -57,7 +59,56 @@
     $fs.find('.wc-stn-checkout__notice').text(text).prop('hidden', !text);
   }
 
-  function refresh($fs, cfg) {
+  // Dane z elementu #wc-stn-checkout-data (tylko przy harmonogramach metod), inaczej z atrybutu data-stn-checkout
+  function readConfig($fs) {
+    var $data = $fs.find('.wc-stn-checkout__data');
+    try {
+      return JSON.parse($data.length ? $data.text() : $fs.attr('data-stn-checkout'));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function applyMethod($fs, cfg) {
+    var prev = $fs.data('stnCfg');
+    var prevValue = $fs.find('.wc-stn-tile__input:checked').val();
+    var $tiles = $fs.find('.wc-stn-checkout__tiles');
+    var now = nowS(cfg);
+    var open = (cfg.tiles || []).filter(function (tile) { return tile.cutoff > now; }).slice(0, cfg.count);
+
+    $fs.data('stnCfg', cfg);
+    $tiles.empty();
+    open.forEach(function (tile) {
+      $tiles.append(buildTile(tile));
+    });
+
+    if (!open.length) {
+      showNotice($fs, cfg.empty || '');
+      return;
+    }
+
+    // Ten sam widoczny termin (duży napis, np. ta sama data dostawy z innej daty wysyłki), potem ta sama data wysyłki - bez komunikatu
+    var prevLabel = prevValue ? slotLabel(prev || cfg, prevValue) : '';
+    var same = open.filter(function (tile) { return prevLabel && (tile.label || tile.main) === prevLabel; })[0] ||
+      open.filter(function (tile) { return tile.value === prevValue; })[0];
+    showNotice($fs, '');
+    if (same) {
+      $tiles.find('.wc-stn-tile__input').filter(function () { return this.value === same.value; }).prop('checked', true);
+      if (same.value !== prevValue) {
+        $(document.body).trigger('update_checkout');
+      }
+    } else if (prevValue) {
+      $tiles.find('.wc-stn-tile__input').first().prop('checked', true);
+      showNotice($fs, (cfg.moved || '')
+        .split('{slot}').join(prevLabel)
+        .split('{next_slot}').join(open[0].label || open[0].main));
+      $(document.body).trigger('update_checkout');
+    }
+    syncChecked($fs);
+  }
+
+  function refresh($fs) {
+    var cfg = $fs.data('stnCfg');
     var now = nowS(cfg);
     var $tiles = $fs.find('.wc-stn-checkout__tiles');
     var closedValue = null;
@@ -100,20 +151,23 @@
   function init() {
     $('.wc-stn-checkout[data-stn-checkout]').each(function () {
       var $fs = $(this);
-      var cfg;
+      var cfg = readConfig($fs);
 
-      if ($fs.data('stnInit')) return;
+      if (!cfg) return;
 
-      try {
-        cfg = JSON.parse($fs.attr('data-stn-checkout'));
-      } catch (e) {
+      if ($fs.data('stnInit')) {
+        // Po update_checkout: inna metoda wysyłki = inne terminy
+        if ((cfg.method || '') !== (($fs.data('stnCfg') || {}).method || '')) {
+          applyMethod($fs, cfg);
+        }
         return;
       }
 
       $fs.data('stnInit', true);
-      refresh($fs, cfg);
+      $fs.data('stnCfg', cfg);
+      refresh($fs);
       setInterval(function () {
-        refresh($fs, cfg);
+        refresh($fs);
       }, 1000);
     });
   }

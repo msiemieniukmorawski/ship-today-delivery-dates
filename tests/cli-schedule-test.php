@@ -86,6 +86,73 @@ foreach ($texts as $row) {
     printf("%s  tekst: %-14s %s%s\n", $ok ? 'OK  ' : 'FAIL', $label, $got, $ok ? '' : "  (oczekiwano: {$expected})");
 }
 
+// Harmonogramy metod wysyłki. Silnik: te same opcje z nadpisanymi dniami / godzinami (jak WC_Ship_Today_Notice::method_overrides).
+// [opis, opcje, teraz, oczekiwane: godzina graniczna, wysyłka, dostawa]
+$method_cases = [
+    ['metoda: do 15:00 zamiast 14:00', array_merge($legacy, ['cutoff_times' => array_fill(1, 5, '15:00')]), '2026-10-16 14:30', '2026-10-16 15:00', '2026-10-16', ''],
+    ['metoda: bez wysyłki w piątek', array_merge($legacy, ['delivery_days' => [1, 2, 3, 4]]), '2026-10-16 10:00', '2026-10-19 14:00', '2026-10-19', ''],
+    ['metoda: 2 dni dostawy', array_merge($two_days, ['delivery_offset' => 2]), '2026-10-25 19:59', '2026-10-25 20:00', '2026-10-26', '2026-10-28'],
+];
+foreach ($method_cases as [$label, $options, $now, $cutoff, $ship, $delivery]) {
+    $schedule = new WC_STN_Schedule($options, $tz, 'flat_rate:901');
+    $slot     = $schedule->slots(1, new DateTimeImmutable($now, $tz))[0] ?? null;
+    $got      = $slot ? [$slot['cutoff']->format('Y-m-d H:i'), $slot['ship']->format('Y-m-d'), $slot['delivery'] ? $slot['delivery']->format('Y-m-d') : ''] : ['-', '-', '-'];
+    $ok       = $got === [$cutoff, $ship, $delivery];
+    $fail    += $ok ? 0 : 1;
+    printf("%s  %-42s teraz %s → do %s, wysyłka %s, dostawa %s%s\n", $ok ? 'OK  ' : 'FAIL', $label, $now, $got[0], $got[1], $got[2] ?: '-', $ok ? '' : "  (oczekiwano: {$cutoff}, {$ship}, {$delivery})");
+}
+
+// Wtyczka: schedule($method) wybiera harmonogram metody tylko dla włączonego wpisu istniejącej metody (bez zapisu ustawień:
+// opcja przez pre_option, lista metod przez refleksję). Filtry dostają ID metody jako ostatni argument.
+$plugin  = WC_Ship_Today_Notice::instance();
+$methods = new ReflectionProperty($plugin, 'shipping_methods');
+$cache   = new ReflectionProperty($plugin, 'schedule');
+$methods->setAccessible(true);
+$cache->setAccessible(true);
+$methods_before = $methods->getValue($plugin);
+$methods->setValue($plugin, ['flat_rate:901' => 'Test - kurier', 'flat_rate:902' => 'Test - paczkomat']);
+$cache->setValue($plugin, null);
+$fixture = function () {
+    return [
+        'flat_rate:901' => ['enabled' => true, 'delivery_days' => [1, 2, 3, 4], 'cutoff_times' => array_fill(1, 7, '13:00'), 'cutoff_offsets' => [], 'delivery_offset' => ''],
+        'flat_rate:902' => ['enabled' => false, 'delivery_days' => [1], 'cutoff_times' => array_fill(1, 7, '09:00'), 'cutoff_offsets' => [], 'delivery_offset' => ''],
+        'flat_rate:999' => ['enabled' => true, 'delivery_days' => [1], 'cutoff_times' => array_fill(1, 7, '09:00'), 'cutoff_offsets' => [], 'delivery_offset' => ''],
+    ];
+};
+add_filter('pre_option_' . WC_Ship_Today_Notice::METHOD_KEY, $fixture);
+$seen = [];
+$spy  = function ($slots, $count, $now, $method = 'brak argumentu') use (&$seen) {
+    $seen[] = $method;
+    return $slots;
+};
+add_filter('wc_ship_today_notice_slots', $spy, 10, 4);
+
+$at     = new DateTimeImmutable('2026-10-15 10:00', $tz); // czwartek
+$global = $plugin->schedule()->slots(1, $at)[0]['cutoff']->format('Y-m-d H:i');
+// [opis, metoda, oczekiwana godzina graniczna (null = jak globalny)]
+$plugin_cases = [
+    ['bez metody = globalny', null, null],
+    ['wpis włączony: do 13:00', 'flat_rate:901', '2026-10-15 13:00'],
+    ['wpis wyłączony = globalny', 'flat_rate:902', null],
+    ['metoda usunięta w WC = globalny', 'flat_rate:999', null],
+    ['brak wpisu = globalny', 'free_shipping:77', null],
+    ['błędny klucz = globalny', 'bzdura', null],
+];
+foreach ($plugin_cases as [$label, $method, $expected]) {
+    $got  = $plugin->schedule($method)->slots(1, $at)[0]['cutoff']->format('Y-m-d H:i');
+    $ok   = $got === ($expected ?? $global);
+    $fail += $ok ? 0 : 1;
+    printf("%s  metoda: %-34s %s%s\n", $ok ? 'OK  ' : 'FAIL', $label, $got, $ok ? '' : '  (oczekiwano: ' . ($expected ?? $global) . ')');
+}
+$ok    = in_array('flat_rate:901', $seen, true) && in_array(null, $seen, true) && in_array('free_shipping:77', $seen, true);
+$fail += $ok ? 0 : 1;
+printf("%s  metoda: filtr slots dostaje ID metody    %s\n", $ok ? 'OK  ' : 'FAIL', implode(', ', array_map('var_export', array_unique($seen, SORT_REGULAR), array_fill(0, count(array_unique($seen, SORT_REGULAR)), true))));
+
+remove_filter('wc_ship_today_notice_slots', $spy, 10);
+remove_filter('pre_option_' . WC_Ship_Today_Notice::METHOD_KEY, $fixture);
+$methods->setValue($plugin, $methods_before);
+$cache->setValue($plugin, null);
+
 // API z błędną datą: false/null zamiast wyjątku. [opis, wywołanie, oczekiwany wynik]
 $api = [
     ['is_shipping_day("bzdura")', function () { return wc_stn_is_shipping_day('bzdura'); }, false],

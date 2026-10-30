@@ -59,6 +59,8 @@ final class WC_STN_Checkout
         }
         add_action('woocommerce_after_checkout_validation', [$this, 'validate'], 10, 2);
         add_action('woocommerce_checkout_create_order', [$this, 'save_to_order'], 10, 2);
+        // Harmonogramy metod: po zmianie metody update_checkout odsyła terminy dla nowej metody (JS przelicza kafelki)
+        add_filter('woocommerce_update_order_review_fragments', [$this, 'checkout_fragments']);
 
         // Panel zamówienia: zmiana daty
         if (!empty($o['checkout_admin_edit'])) {
@@ -132,15 +134,19 @@ final class WC_STN_Checkout
     private function render_field()
     {
         $o        = $this->plugin->get_options();
-        $schedule = $this->plugin->schedule();
+        $method   = $this->current_method();
+        $schedule = $this->plugin->schedule($method);
         $now      = $schedule->now();
         $all      = $schedule->slots(40, $now, WC_Ship_Today_Notice::FRONTEND_DAYS);
         $count    = max(1, (int) $o['checkout_count']);
+        // Tylko gdy któraś metoda ma własne godziny: element z danymi dla JS (odświeżany przy update_checkout).
+        // Bez harmonogramów metod HTML pola jest taki jak wcześniej.
+        $per_method = (bool) $this->plugin->methods_with_schedule();
 
         // Znacznik: walidacja wymaga daty tylko, gdy pole było w formularzu (shortcode bywa niewstawiony albo poza formularzem)
         $marker = '<input type="hidden" name="' . esc_attr(self::RENDERED) . '" value="1" />';
 
-        if (!$all) {
+        if (!$all && !$per_method) {
             return '<p class="wc-stn-checkout__empty">' . esc_html__('No delivery dates available. Please contact us.', 'wc-ship-today-notice') . '</p>' . $marker;
         }
 
@@ -149,7 +155,7 @@ final class WC_STN_Checkout
             return $slot['ship']->format('Y-m-d');
         }, $all);
         if (!in_array($selected, array_slice($values, 0, $count), true)) {
-            $selected = !empty($o['checkout_preselect']) ? $values[0] : '';
+            $selected = !empty($o['checkout_preselect']) && $values ? $values[0] : '';
         }
 
         $tiles = [];
@@ -173,11 +179,86 @@ final class WC_STN_Checkout
             $html .= $this->tile_html($tile, $tile['value'] === $selected);
         }
         $html .= '</div>';
-        $html .= '<p class="wc-stn-checkout__notice" role="status" aria-live="polite" hidden></p>';
+        $html .= '<p class="wc-stn-checkout__notice" role="status" aria-live="polite"' . ($all ? ' hidden>' : '>' . esc_html__('No delivery dates available. Please contact us.', 'wc-ship-today-notice')) . '</p>';
         $html .= $marker;
+        if ($per_method) {
+            $html .= $this->data_element($method, $tiles, $count);
+        }
         $html .= '</fieldset>';
 
         return $html;
+    }
+
+    /**
+     * Terminy dla metody jako JSON w polu (#wc-stn-checkout-data). Fragment update_checkout podmienia ten element,
+     * checkout.js porównuje metodę i przelicza kafelki, zachowując zaznaczenie, jeśli termin istnieje dla nowej metody.
+     */
+    private function data_element($method, array $tiles, $count)
+    {
+        $data = [
+            'method'    => (string) $method,
+            'count'     => $count,
+            'tiles'     => $tiles,
+            'nowOffset' => $this->plugin->now_offset() * 1000,
+            'closed'    => $this->switched_message(),
+            'moved'     => $this->message('checkout_msg_method'),
+            'empty'     => __('No delivery dates available. Please contact us.', 'wc-ship-today-notice'),
+        ];
+
+        return '<script type="application/json" id="wc-stn-checkout-data" class="wc-stn-checkout__data">' . wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP) . '</script>';
+    }
+
+    public function checkout_fragments($fragments)
+    {
+        if (!$this->plugin->methods_with_schedule()) {
+            return $fragments;
+        }
+
+        $method   = $this->current_method();
+        $schedule = $this->plugin->schedule($method);
+        $tiles    = [];
+        foreach ($schedule->slots(40, $schedule->now(), WC_Ship_Today_Notice::FRONTEND_DAYS) as $slot) {
+            $tiles[] = $this->tile_data($slot);
+        }
+        $fragments['#wc-stn-checkout-data'] = $this->data_element($method, $tiles, max(1, (int) $this->plugin->get_options()['checkout_count']));
+
+        return $fragments;
+    }
+
+    /**
+     * Metoda wysyłki wybrana w koszyku/checkoucie (pierwsza paczka): "method_id:instance_id" albo null.
+     * ID metody bierzemy ze stawki w paczce (ID stawki z wtyczek nie zawsze ma postać "metoda:instancja").
+     */
+    public function current_method()
+    {
+        if (!function_exists('WC') || !WC()->session) {
+            return null;
+        }
+
+        $chosen  = (array) WC()->session->get('chosen_shipping_methods', []);
+        $rate_id = (string) ($chosen[0] ?? '');
+        if ('' === $rate_id) {
+            return null;
+        }
+
+        foreach ((array) WC()->shipping()->get_packages() as $package) {
+            $rate = $package['rates'][$rate_id] ?? null;
+            if ($rate instanceof WC_Shipping_Rate) {
+                return $rate->get_method_id() . ':' . $rate->get_instance_id();
+            }
+        }
+
+        return WC_Ship_Today_Notice::valid_method_key($rate_id) ? $rate_id : null;
+    }
+
+    /** Metoda wysyłki zamówienia (pierwsza pozycja wysyłki) albo null. */
+    private function order_method(WC_Order $order)
+    {
+        foreach ($order->get_shipping_methods() as $item) {
+            return $item->get_method_id() . ':' . $item->get_instance_id();
+        }
+
+        return null;
     }
 
     /**
@@ -296,9 +377,12 @@ final class WC_STN_Checkout
     /**
      * Termin (z silnika) dla daty wysyłki, o ile jego godzina graniczna jeszcze nie minęła.
      */
-    public function find_slot($ship_ymd, ?DateTimeImmutable $now = null)
+    public function find_slot($ship_ymd, ?DateTimeImmutable $now = null, $method = null)
     {
-        foreach ($this->plugin->schedule()->slots(40, $now) as $slot) {
+        // Domyślnie metoda wybrana w checkoucie (walidacja, zapis, wiersz w podsumowaniu)
+        $method = null === $method ? $this->current_method() : $method;
+
+        foreach ($this->plugin->schedule($method)->slots(40, $now) as $slot) {
             if ($slot['ship']->format('Y-m-d') === $ship_ymd) {
                 return $slot;
             }
@@ -316,7 +400,7 @@ final class WC_STN_Checkout
         $ymd = $this->posted_ship_date();
 
         if ('' === $ymd && !empty($o['checkout_preselect'])) {
-            $first = $this->plugin->schedule()->slots(1);
+            $first = $this->plugin->schedule($this->current_method())->slots(1);
             $ymd   = $first ? $first[0]['ship']->format('Y-m-d') : '';
         }
 
@@ -424,11 +508,12 @@ final class WC_STN_Checkout
             'checkout_msg_unavailable' => str_replace('%s', '{slot}', __('Shipping on %s is not available. Please choose another date.', 'wc-ship-today-notice')),
             /* translators: checkout notice when the selected date closes on an open page. %1$s: closed date, %2$s: newly selected date */
             'checkout_msg_switched'    => str_replace(['%1$s', '%2$s'], ['{slot}', '{next_slot}'], __('The %1$s date has just closed, we selected %2$s.', 'wc-ship-today-notice')),
+            'checkout_msg_method'      => __('The {slot} date is not available for this shipping method, we selected {next_slot}.', 'wc-ship-today-notice'),
         ];
     }
 
     /** Tekst z ustawień albo domyślny (z tokenami). */
-    private function message($key)
+    public function message($key)
     {
         $o = $this->plugin->get_options();
 
@@ -448,7 +533,7 @@ final class WC_STN_Checkout
      */
     public function unavailable_message($ymd)
     {
-        $schedule = $this->plugin->schedule();
+        $schedule = $this->plugin->schedule($this->current_method());
         $date     = $schedule->date($ymd);
         $closed   = $schedule->is_shipping_day($date) && $schedule->cutoff_for($date) <= $schedule->now();
 
@@ -597,7 +682,8 @@ final class WC_STN_Checkout
             /* translators: order note. %1$s: removed ship date (Y-m-d), %2$s: user name */
             $order->add_order_note(sprintf(__('Ship date %1$s removed (%2$s).', 'wc-ship-today-notice'), $old, $user));
         } else {
-            $schedule = $this->plugin->schedule();
+            // Dostawa wg metody wysyłki zamówienia (własna liczba dni dostawy metody)
+            $schedule = $this->plugin->schedule($this->order_method($order));
             $delivery = $schedule->delivery_for($schedule->date($new));
             $order->update_meta_data(self::META_SHIP, $new);
             $order->update_meta_data(self::META_DELIVERY, $delivery ? $delivery->format('Y-m-d') : '');

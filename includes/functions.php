@@ -12,26 +12,28 @@ if (!defined('ABSPATH')) {
 /**
  * Najbliższe terminy, których godzina graniczna jeszcze nie minęła.
  *
- * @param int                    $count Ile terminów.
- * @param DateTimeInterface|null $now   Inna chwila niż "teraz" (testy).
+ * @param int                    $count  Ile terminów.
+ * @param DateTimeInterface|null $now    Inna chwila niż "teraz" (testy).
+ * @param string|null            $method ID instancji metody wysyłki ("flat_rate:3"); null albo metoda bez własnych godzin = globalne.
  * @return array<int,array{cutoff:DateTimeImmutable,ship:DateTimeImmutable,delivery:?DateTimeImmutable}>
  */
-function wc_stn_get_slots($count = 1, $now = null)
+function wc_stn_get_slots($count = 1, $now = null, $method = null)
 {
     if ($now instanceof DateTime) {
         $now = DateTimeImmutable::createFromMutable($now); // PHP 7.4 nie ma createFromInterface().
     }
 
-    return WC_Ship_Today_Notice::instance()->schedule()->slots((int) $count, $now);
+    return WC_Ship_Today_Notice::instance()->schedule($method)->slots((int) $count, $now);
 }
 
 /**
  * Data dostawy dla daty wysyłki (np. wybranej w kalendarzu w checkoucie).
  *
- * @param string $ship_ymd Data wysyłki Y-m-d (przyjmuje też Ymd).
+ * @param string      $ship_ymd Data wysyłki Y-m-d (przyjmuje też Ymd).
+ * @param string|null $method   ID instancji metody wysyłki (liczba dni dostawy może być inna dla metody).
  * @return string|null Y-m-d albo null, gdy dostawa jest wyłączona w ustawieniach.
  */
-function wc_stn_delivery_for_ship_date($ship_ymd)
+function wc_stn_delivery_for_ship_date($ship_ymd, $method = null)
 {
     $ship_ymd = wc_stn_normalize_ymd($ship_ymd);
 
@@ -39,7 +41,7 @@ function wc_stn_delivery_for_ship_date($ship_ymd)
         return null;
     }
 
-    $schedule = WC_Ship_Today_Notice::instance()->schedule();
+    $schedule = WC_Ship_Today_Notice::instance()->schedule($method);
     $delivery = $schedule->delivery_for($schedule->date($ship_ymd));
 
     return $delivery ? $delivery->format('Y-m-d') : null;
@@ -58,14 +60,14 @@ function wc_stn_is_blocked_date($ymd)
 /**
  * Czy dany dzień jest dniem wysyłki (dzień tygodnia z ustawień, nie święto, nie data wykluczona).
  */
-function wc_stn_is_shipping_day($ymd)
+function wc_stn_is_shipping_day($ymd, $method = null)
 {
     $ymd = wc_stn_normalize_ymd($ymd);
     if (null === $ymd) {
         return false;
     }
 
-    $schedule = WC_Ship_Today_Notice::instance()->schedule();
+    $schedule = WC_Ship_Today_Notice::instance()->schedule($method);
 
     return $schedule->is_shipping_day($schedule->date($ymd));
 }

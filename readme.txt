@@ -65,6 +65,10 @@ Check WooCommerce → Ship Today Notice → "Ship date choice at checkout": it t
 
 Yes, in WooCommerce → Ship Today Notice → "Ship date choice at checkout" → "Texts": the large text and the second line of the tiles (with tokens such as `{delivery_short}`, `{ship_short}`, `{ship_when}`, `{cutoff_when}`; an empty second line hides it), the labels of the ship and delivery date rows in emails, and the four checkout messages (`{field}`, `{slot}`, `{next_slot}`). Empty fields use the default, translated texts.
 
+= Can shipping methods have different cutoff times? =
+
+Yes. In WooCommerce → Ship Today Notice → "Shipping methods" every method of your WooCommerce shipping zones (including methods from other plugins, e.g. parcel lockers) can get its own shipping days, cutoff times and delivery days, e.g. parcel lockers until 15:00 and courier until 13:00. Both checkouts then show the dates of the selected method and recalculate them when the customer changes the method. Methods without own times use the main table. For the notice widget use `[ship_today_notice method="flat_rate:3"]`.
+
 = The checkout module is enabled, but I don't see the date field. =
 
 With the default position "shortcode only" you have to place `[ship_today_checkout]` inside the checkout form. Without it the field is not shown and orders are placed without a ship date. You can also choose an automatic position in the settings.

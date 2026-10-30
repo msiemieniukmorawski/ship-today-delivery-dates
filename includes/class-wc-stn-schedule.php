@@ -8,6 +8,9 @@
  * - dzień wysyłki = dzień tygodnia zaznaczony w ustawieniach, który nie jest świętem ani datą wykluczoną,
  * - godzina graniczna = godzina dla tego dnia tygodnia, przesunięta o N dni wstecz (0 = ten sam dzień),
  * - dostawa = N-ty kolejny dzień doręczeń po wysyłce (bez dni bez doręczeń i świąt), 0 = bez daty dostawy.
+ *
+ * Harmonogram metody wysyłki to te same opcje z nadpisanymi dniami wysyłki, godzinami granicznymi, przesunięciami
+ * (i opcjonalnie liczbą dni dostawy) - WC_Ship_Today_Notice::schedule($method). Święta, daty wykluczone i dni bez doręczeń są wspólne.
  */
 
 if (!defined('ABSPATH')) {
@@ -40,10 +43,19 @@ final class WC_STN_Schedule
     /** @var array<string,bool>|null */
     private $excluded = null;
 
-    public function __construct(array $options, ?DateTimeZone $tz = null)
+    /** @var string|null ID instancji metody wysyłki ("flat_rate:3"), null = harmonogram globalny. Ostatni argument filtrów. */
+    private $method;
+
+    public function __construct(array $options, ?DateTimeZone $tz = null, ?string $method = null)
     {
         $this->options = $options;
         $this->tz      = $tz ?: wp_timezone();
+        $this->method  = $method;
+    }
+
+    public function method(): ?string
+    {
+        return $this->method;
     }
 
     /**
@@ -164,7 +176,7 @@ final class WC_STN_Schedule
         $ymd    = $day->format('Y-m-d');
         $result = $this->is_shipping_weekday($day) && !$this->is_blocked($ymd);
 
-        return (bool) apply_filters('wc_ship_today_notice_is_shipping_day', $result, $ymd);
+        return (bool) apply_filters('wc_ship_today_notice_is_shipping_day', $result, $ymd, $this->method);
     }
 
     /**
@@ -173,7 +185,7 @@ final class WC_STN_Schedule
     public function cutoff_for(DateTimeImmutable $ship_day): DateTimeImmutable
     {
         $weekday = (int) $ship_day->format('N');
-        $time    = (string) apply_filters('wc_ship_today_notice_cutoff_time', $this->cutoff_time($weekday), $weekday, $ship_day->format('Y-m-d'));
+        $time    = (string) apply_filters('wc_ship_today_notice_cutoff_time', $this->cutoff_time($weekday), $weekday, $ship_day->format('Y-m-d'), $this->method);
 
         if (!preg_match('/^(\d{2}):(\d{2})$/', $time, $m)) {
             $time = '14:00';
@@ -273,7 +285,7 @@ final class WC_STN_Schedule
             ];
         }
 
-        return apply_filters('wc_ship_today_notice_slots', $slots, $count, $now);
+        return apply_filters('wc_ship_today_notice_slots', $slots, $count, $now, $this->method);
     }
 
     /**

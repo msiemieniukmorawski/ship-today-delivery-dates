@@ -146,7 +146,7 @@ final class WC_STN_Checkout_Blocks
             $rows[$slot['ship']->format('Y-m-d')] = $this->checkout->review_lines($slot);
         }
 
-        return [
+        $data = [
             'label'     => $o['checkout_label'],
             'count'     => max(1, (int) $o['checkout_count']),
             'preselect' => !empty($o['checkout_preselect']),
@@ -161,6 +161,21 @@ final class WC_STN_Checkout_Blocks
             'reviewRow' => !empty($o['checkout_review_row']),
             'rows'      => $rows,
         ];
+
+        // Harmonogramy metod wysyłki: terminy i wiersze podsumowania dla każdej metody z własnymi godzinami, z tych samych slotów
+        // (JS wybiera wg stawki w koszyku; ta sama data wysyłki może mieć u metody inną datę dostawy). Bez nich dane są jak wcześniej.
+        foreach ($this->plugin->methods_with_schedule() as $method) {
+            $method_schedule = $this->plugin->schedule($method);
+            $data['methods'][$method]    = [];
+            $data['methodRows'][$method] = [];
+            foreach ($method_schedule->slots(40, $method_schedule->now(), WC_Ship_Today_Notice::FRONTEND_DAYS) as $slot) {
+                $data['methods'][$method][] = $this->checkout->tile_data($slot);
+                $data['methodRows'][$method][$slot['ship']->format('Y-m-d')] = $this->checkout->review_lines($slot);
+            }
+            $data['moved'] = $this->checkout->message('checkout_msg_method');
+        }
+
+        return $data;
     }
 
     /**
