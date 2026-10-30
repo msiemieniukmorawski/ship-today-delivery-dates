@@ -229,14 +229,94 @@ final class WC_STN_Checkout_Blocks
 
             if (!has_block($name, $content)) {
                 $blocks = parse_blocks($content);
+                // Starszy układ (strony zapisane we wcześniejszych wersjach WooCommerce): wiersze sum bezpośrednio w podsumowaniu,
+                // bez bloku sum. Edytor WooCommerce i tak zamyka je w checkout-order-summary-totals-block przy otwarciu strony
+                // (gubiąc przy tym nieznane bloki), więc robimy to samo przed wstawieniem wiersza.
+                if (self::ROW_BLOCK === $name && !has_block($parent, $content)) {
+                    $this->wrap_legacy_totals($blocks);
+                }
                 if (!$this->insert_into($blocks, $name, $parent, $after, $before)) {
-                    continue;
+                    continue; // bez znacznika: status w ustawieniach pokazuje, że trzeba dodać ręcznie
                 }
                 wp_update_post(['ID' => $page_id, 'post_content' => wp_slash(serialize_blocks($blocks))]);
             }
 
             update_option($key, $page_id, false);
         }
+    }
+
+    /**
+     * Starszy układ podsumowania: zamyka wiersze sum (subtotal, fee, discount, shipping, taxes) w bloku
+     * woocommerce/checkout-order-summary-totals-block, w miejscu pierwszego z nich - jak migracja układu w edytorze WooCommerce.
+     * Zwraca, czy coś zmienił.
+     */
+    private function wrap_legacy_totals(array &$blocks)
+    {
+        $legacy = [
+            'woocommerce/checkout-order-summary-subtotal-block',
+            'woocommerce/checkout-order-summary-fee-block',
+            'woocommerce/checkout-order-summary-discount-block',
+            'woocommerce/checkout-order-summary-shipping-block',
+            'woocommerce/checkout-order-summary-taxes-block',
+        ];
+
+        foreach ($blocks as &$block) {
+            if ('woocommerce/checkout-order-summary-block' !== $block['blockName']) {
+                if (!empty($block['innerBlocks']) && $this->wrap_legacy_totals($block['innerBlocks'])) {
+                    return true;
+                }
+                continue;
+            }
+
+            $children = [];
+            $totals   = [];
+            $at       = null;
+            foreach ($block['innerBlocks'] as $child) {
+                if (in_array($child['blockName'], $legacy, true)) {
+                    $at       = null === $at ? count($children) : $at;
+                    $totals[] = $child;
+                } else {
+                    $children[] = $child;
+                }
+            }
+            if (!$totals) {
+                return false;
+            }
+
+            $open = '<div class="wp-block-woocommerce-checkout-order-summary-totals-block">';
+            array_splice($children, $at, 0, [[
+                'blockName'    => 'woocommerce/checkout-order-summary-totals-block',
+                'attrs'        => [],
+                'innerBlocks'  => $totals,
+                'innerHTML'    => $open . '</div>',
+                'innerContent' => self::inner_content($open, count($totals), '</div>'),
+            ]]);
+
+            // Treść rodzica od nowa: otwierający i zamykający HTML z oryginału, bloki rozdzielone pustą linią
+            $first = $block['innerContent'][0] ?? '';
+            $last  = end($block['innerContent']);
+            $block['innerBlocks']  = $children;
+            $block['innerContent'] = self::inner_content(is_string($first) ? $first : '', count($children), is_string($last) ? $last : '');
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /** innerContent bloku z $count blokami wewnętrznymi: otwarcie, null, "\n\n", null, ..., zamknięcie. */
+    private static function inner_content($open, $count, $close)
+    {
+        $content = [$open];
+        for ($i = 0; $i < $count; $i++) {
+            if ($i > 0) {
+                $content[] = "\n\n";
+            }
+            $content[] = null;
+        }
+        $content[] = $close;
+
+        return $content;
     }
 
     /**
@@ -341,7 +421,7 @@ final class WC_STN_Checkout_Blocks
      *
      * @return string 'classic', 'present' albo 'missing'
      */
-    public static function block_status()
+    public static function block_status($block = self::BLOCK)
     {
         $page_id = function_exists('wc_get_page_id') ? (int) wc_get_page_id('checkout') : 0;
         $content = $page_id > 0 ? (string) get_post_field('post_content', $page_id) : '';
@@ -350,7 +430,7 @@ final class WC_STN_Checkout_Blocks
             return 'classic';
         }
 
-        return has_block(self::BLOCK, $content) ? 'present' : 'missing';
+        return has_block($block, $content) ? 'present' : 'missing';
     }
 
     /**

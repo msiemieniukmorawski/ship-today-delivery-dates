@@ -339,7 +339,11 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
   rodzic `woocommerce/checkout-order-summary-totals-block`) pokazuje wybrany termin tak jak wiersz w klasycznym checkoucie
   („Termin dostawy: Wysyłka pn 02.11 / dostawa wt 03.11”, etykieta = „Nazwa pola”). Zmienia się od razu po wyborze kafelka
   i po upływie godziny granicznej. Wtyczka wstawia go raz pod wierszem wysyłki (jak blok kafelków, osobny znacznik
-  `wc_ship_today_notice_row_inserted`); można go przesunąć albo usunąć. Wiersza nie ma, gdy przełącznik „Wiersz z terminem
+  `wc_ship_today_notice_row_inserted`); można go przesunąć albo usunąć. Strona ze starszym układem podsumowania (wiersze sum
+  bezpośrednio w `checkout-order-summary-block`, bez `checkout-order-summary-totals-block`) jest przy tym migrowana do nowego
+  układu: edytor WooCommerce robi to sam przy otwarciu strony i gubi przy tym nieznane bloki, więc wiersz musi być już w bloku sum.
+  Gdy wstawienie się nie uda, ustawienia (sekcja checkoutu) pokazują status na czerwono, a wtyczka spróbuje ponownie przy
+  kolejnym wejściu do panelu. Wiersza nie ma, gdy przełącznik „Wiersz z terminem
   w podsumowaniu zamówienia” jest wyłączony, gdy na stronie nie ma bloku kafelków albo gdy termin nie jest wybrany.
   Oba bloki dzielą wybrany termin przez store `wp.data` `wc-stn/ship-date`.
 - Przełącznik Iconic działa tylko w klasycznym checkoucie.
@@ -537,6 +541,9 @@ wc-ship-today-notice/
 - Checkout blokowy: wiersz z wybranym terminem w **podsumowaniu zamówienia** (blok „Termin wysyłki – wiersz podsumowania”),
   jak w klasycznym checkoucie, aktualizowany na żywo. Wstawiany raz pod wierszem wysyłki (przy wejściu do panelu albo aktualizacji),
   przesuwalny i usuwalny w edytorze. Działa z przełącznikiem „Wiersz z terminem w podsumowaniu zamówienia”.
+  Na stronach zamówienia ze starszym układem podsumowania (bez bloku sum `checkout-order-summary-totals-block`, z wcześniejszych
+  wersji WooCommerce) wtyczka przy wstawieniu zamyka wiersze sum w tym bloku - tak jak robi to edytor WooCommerce przy otwarciu strony.
+  Gdy wiersza nie da się wstawić (np. strona bez podsumowania), ustawienia pokazują to na czerwono.
 
 ### 2.3.0 (30.10.2026)
 

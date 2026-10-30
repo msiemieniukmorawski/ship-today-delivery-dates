@@ -1172,6 +1172,10 @@ final class WC_Ship_Today_Notice
         } elseif ('missing' === $status) {
             echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date" block is not on the checkout page, so customers cannot choose a ship date (orders are placed without it). Add the block in the checkout page editor (inside the checkout form).', 'wc-ship-today-notice') . '</p>';
         }
+        // Wiersz w podsumowaniu: wstawiany raz automatycznie; gdy układ strony na to nie pozwolił albo sklep go usunął - informacja
+        if ('missing' === WC_STN_Checkout_Blocks::block_status(WC_STN_Checkout_Blocks::ROW_BLOCK) && !empty($o['checkout_review_row'])) {
+            echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date summary row" block is not in the order summary, so the selected date is not shown there. Add it in the checkout page editor (inside the order summary).', 'wc-ship-today-notice') . '</p>';
+        }
     }
 
     public function field_checkout_enabled()
