@@ -113,7 +113,7 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 
 | Funkcja | Domyślnie | Gdzie się włącza | Uwagi |
 |---|---|---|---|
-| Widget `[ship_today_notice]` | tak, po wstawieniu shortcode | shortcode | „Wyświetlanie widgetu” = Zawsze. JS i CSS widgetu ładują się na każdej stronie. |
+| Widget `[ship_today_notice]` | tak, po wstawieniu shortcode | shortcode | „Wyświetlanie widgetu” = Zawsze. JS i CSS widgetu ładują się tylko na stronach z widgetem (wykrycie shortcode w treści/krótkim opisie albo render shortcode; filtr `wc_ship_today_notice_load_assets`). |
 | Tryb komunikatu | „Wysyłka dziś” | Tryb komunikatu / atrybut `mode` | |
 | Dni wysyłki | pn-pt, do 14:00 tego samego dnia | Delivery weekdays & cutoff times | sob/nd mają domyślnie 12:00, ale nie są zaznaczone. |
 | Data dostawy | nie (0 dni) | Dostawa | Dni bez doręczeń domyślnie: niedziela. |
@@ -379,6 +379,17 @@ Do API idzie tylko kod kraju, kod języka i zakres dat - bez danych klientów (s
 | `wc_ship_today_notice_cutoff_time` | `string $time` (`H:i`), `int $weekday` (1 = pn), `string $ship_ymd` | Inna godzina graniczna dla konkretnego dnia. |
 | `wc_ship_today_notice_slots` | `array $slots`, `int $count`, `DateTimeImmutable $now` | Zmiana listy terminów (widget, checkout, walidacja). |
 | `wc_ship_today_notice_text` | `string $text`, `string $state` (`next`, `before`, `after`, `not_shipping`), `string $mode` | Tekst widgetu przed wstawieniem tokenów. |
+| `wc_ship_today_notice_load_assets` | `bool $load` (wynik wykrycia shortcode) | `true` = JS i CSS widgetu w `<head>` na tej stronie. Potrzebne, gdy widget przychodzi w treści doładowanej AJAX-em (popup, PJAX). |
+
+JS i CSS widgetu ładują się tylko tam, gdzie jest widget:
+- shortcode w treści albo krótkim opisie (np. produktu) wpisów z głównego zapytania, także w bloku „Shortcode” (`core/shortcode`)
+  → CSS w `<head>`, JS w stopce;
+- w każdym innym miejscu, które renderuje shortcode po stronie serwera (widget sidebara, szablon, page builder) → przy renderze:
+  CSS wypisany tuż przed widgetem (bez chwili bez stylu), JS w stopce;
+- styl z zakładki „Styl” zawsze idzie razem z `notice.css`.
+
+Wykrycie patrzy na wpisy z głównego zapytania, więc np. lista produktów, z których któryś ma shortcode w krótkim opisie, też
+załaduje assety, nawet jeśli lista go nie wyświetla.
 
 **Akcje**
 
@@ -396,7 +407,12 @@ tylko przy aktywnym LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_
 window.WcShipTodayNotice.init(root); // inicjuje widgety w treści doładowanej AJAX-em (popupy, PJAX); root domyślnie document
 ```
 
-Widget czyta konfigurację z atrybutu `data-stn`. Każdy element jest inicjowany tylko raz.
+Widget czyta konfigurację z atrybutu `data-stn`. Każdy element jest inicjowany tylko raz. Jeśli na stronie nie ma widgetu w HTML
+(cała treść przychodzi AJAX-em), `notice.js` się nie załaduje - włącz go filtrem:
+
+```php
+add_filter('wc_ship_today_notice_load_assets', '__return_true'); // albo warunek, np. is_front_page()
+```
 
 **Tryb testowy**: użytkownik z `manage_woocommerce` może dodać do adresu dowolnej strony `?stn_now=2026-12-20T19:59`. „Teraz”
 zmienia się wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jest interpretowana w strefie czasowej sklepu.
@@ -499,7 +515,10 @@ wc-ship-today-notice/
 
 **Zmiany**
 - Domyślne teksty „po godzinie granicznej” i „dzień bez wysyłki” to teraz „Wyślemy {ship_when}.” (wcześniej „Wyślemy jutro.”
-  i „Wyślemy w najbliższy dzień roboczy.” - błędne np. w piątek po godzinie granicznej). Zapisane teksty sklepu bez zmian.
+  i „Wyślemy w najbliższy dzień roboczy.” - błędne np. w piątek po godzinie granicznej). Przy aktualizacji do 2.2.0 zapisane
+  teksty **dokładnie równe** starym domyślnym (pl, en, de) są zamieniane na nowe (z rejestracją w WPML); teksty zmienione
+  przez sklep zostają.
+- JS i CSS widgetu tylko na stronach z widgetem (wcześniej na każdej stronie). Nowy filtr `wc_ship_today_notice_load_assets`.
 - Święta pobierane zaraz po aktywacji i po zmianie kraju/języka/regionu, ponowna próba po błędzie crona.
 - Odbiór osobisty (`local_pickup`, `pickup_location`) nie wymaga daty.
 - Kierownik sklepu (`manage_woocommerce`) może zapisywać ustawienia i styl (wcześniej `options.php` wymagał `manage_options`).

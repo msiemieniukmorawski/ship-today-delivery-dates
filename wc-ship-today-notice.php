@@ -208,6 +208,15 @@ final class WC_Ship_Today_Notice
 
         $saved = get_option(self::OPTION_KEY, []);
 
+        // < 2.2.0: stare domyślne teksty "jutro" / "najbliższy dzień roboczy" były błędne np. w piątek po godzinie granicznej
+        if (is_array($saved) && version_compare($installed, '2.2.0', '<')) {
+            $texts = $this->migrate_default_texts($saved);
+            if ($texts !== $saved) {
+                update_option(self::OPTION_KEY, $texts);
+                $saved = $texts;
+            }
+        }
+
         if (is_array($saved) && !empty($saved['excluded_holidays']) && empty($saved['excluded_holiday_dates'])) {
             global $wpdb;
             $table = $wpdb->prefix . self::TABLE_NAME;
@@ -220,6 +229,30 @@ final class WC_Ship_Today_Notice
         }
 
         update_option(self::VERSION_KEY, WC_STN_VERSION);
+    }
+
+    /**
+     * Stare domyślne teksty (do 2.1.0, źródło en i tłumaczenia pl/de) → nowe domyślne z {ship_when} w tym samym języku.
+     * Podmieniamy tylko wartości dokładnie równe staremu tekstowi (po trim), teksty zmienione przez sklep zostają.
+     */
+    public function migrate_default_texts(array $saved)
+    {
+        $map = [
+            'We will ship tomorrow.'                 => 'We will ship {ship_when}.',
+            'We will ship on the next business day.' => 'We will ship {ship_when}.',
+            'Wyślemy jutro.'                         => 'Wyślemy {ship_when}.',
+            'Wyślemy w najbliższy dzień roboczy.'    => 'Wyślemy {ship_when}.',
+            'Wir versenden morgen.'                  => 'Wir versenden {ship_when}.',
+            'Wir versenden am nächsten Werktag.'     => 'Wir versenden {ship_when}.',
+        ];
+
+        foreach (['text_after_cutoff', 'text_not_shipping_day'] as $key) {
+            if (isset($saved[$key]) && is_string($saved[$key]) && isset($map[trim($saved[$key])])) {
+                $saved[$key] = $map[trim($saved[$key])];
+            }
+        }
+
+        return $saved;
     }
 
     public function add_cron_schedules($schedules)
@@ -285,18 +318,21 @@ final class WC_Ship_Today_Notice
     public function on_options_updated($old, $new)
     {
         $this->schedule = null;
-        if (!empty($new['wpml_strings'])) {
+        // Przełączniki z domyślnymi wartościami: zapis z kodu (np. migracja) może mieć opcję bez ich kluczy
+        $new_toggles = $this->get_options();
+
+        if (!empty($new_toggles['wpml_strings'])) {
             $this->wpml_register_strings($old, $new);
         }
 
         // Przełącznik automatycznego pobierania świąt zmieniony: planujemy albo zdejmujemy cron
-        if (!empty($old['holidays_auto_fetch'] ?? true) !== !empty($new['holidays_auto_fetch'])) {
+        if (!empty($old['holidays_auto_fetch'] ?? true) !== !empty($new_toggles['holidays_auto_fetch'])) {
             $this->schedule_holidays_sync();
         }
 
         // Inny kraj, język albo region = inne święta: pobieramy od razu, żeby lista w panelu i terminy były aktualne
         foreach (['country_code', 'language_code', 'holiday_subdivision'] as $key) {
-            if (!empty($new['holidays_auto_fetch']) && ($old[$key] ?? null) !== ($new[$key] ?? null)) {
+            if (!empty($new_toggles['holidays_auto_fetch']) && ($old[$key] ?? null) !== ($new[$key] ?? null)) {
                 if (!$this->fetch_and_store_holidays()) {
                     add_settings_error(self::OPTION_KEY, 'holidays_fetch', __('Failed to update holidays.', 'wc-ship-today-notice'), 'error');
                 }
@@ -1817,7 +1853,42 @@ final class WC_Ship_Today_Notice
             return;
         }
 
-        wp_enqueue_style(
+        $this->register_widget_assets();
+
+        /**
+         * Czy ładować JS i CSS widgetu na tej stronie już w <head> (domyślnie: shortcode w treści wpisów z głównego zapytania).
+         * true wymusza ładowanie, np. dla widgetu w treści doładowanej AJAX-em przed WcShipTodayNotice.init().
+         */
+        if (apply_filters('wc_ship_today_notice_load_assets', $this->page_has_shortcode())) {
+            $this->enqueue_widget_assets();
+        }
+    }
+
+    /**
+     * Shortcode w treści albo krótkim opisie (np. produktu WooCommerce) wpisów z głównego zapytania (pojedynczy wpis, strona,
+     * lista wpisów). Blok "Shortcode" (core/shortcode) zapisuje w post_content zwykły tekst [ship_today_notice], więc też jest wykrywany.
+     */
+    private function page_has_shortcode()
+    {
+        global $wp_query;
+
+        foreach ((array) ($wp_query->posts ?? []) as $post) {
+            if ($post instanceof WP_Post && (has_shortcode($post->post_content, 'ship_today_notice') || has_shortcode($post->post_excerpt, 'ship_today_notice'))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Rejestracja JS i CSS widgetu razem ze stylem z zakładki "Styl" (inline przy notice.css). */
+    private function register_widget_assets()
+    {
+        if (wp_style_is('wc-ship-today-notice', 'registered')) {
+            return;
+        }
+
+        wp_register_style(
             'wc-ship-today-notice',
             plugins_url('assets/css/notice.css', __FILE__),
             [],
@@ -1827,13 +1898,20 @@ final class WC_Ship_Today_Notice
         if ('' !== $style_css) {
             wp_add_inline_style('wc-ship-today-notice', $style_css);
         }
-        wp_enqueue_script(
+        wp_register_script(
             'wc-ship-today-notice',
             plugins_url('assets/js/notice.js', __FILE__),
             [],
             WC_STN_VERSION,
             true
         );
+    }
+
+    private function enqueue_widget_assets()
+    {
+        $this->register_widget_assets();
+        wp_enqueue_style('wc-ship-today-notice');
+        wp_enqueue_script('wc-ship-today-notice');
     }
 
     public function shortcode_output($atts = [])
@@ -1864,7 +1942,17 @@ final class WC_Ship_Today_Notice
         }
         $classes[] = $state['hide'] ? 'wc-ship-today-notice--hidden' : 'wc-ship-today-notice--' . $state['class'];
 
-        return sprintf(
+        // Widget poza treścią wpisu (sidebar, szablon, page builder): skrypt idzie do stopki, a CSS wypisujemy przy widgecie,
+        // jeśli <head> już był, żeby nie było chwili bez stylu
+        $this->enqueue_widget_assets();
+        $css = '';
+        if (did_action('wp_head') && !wp_style_is('wc-ship-today-notice', 'done')) {
+            ob_start();
+            wp_print_styles('wc-ship-today-notice');
+            $css = (string) ob_get_clean();
+        }
+
+        return $css . sprintf(
             '<div class="%s" role="status" aria-live="polite" data-stn="%s"%s>%s</div>',
             esc_attr(implode(' ', $classes)),
             esc_attr(wp_json_encode($config)),

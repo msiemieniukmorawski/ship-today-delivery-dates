@@ -35,7 +35,7 @@ Show customers how long they have to order so the parcel ships in the next slot:
 
 **For developers**
 
-Functions `wc_stn_get_slots()`, `wc_stn_delivery_for_ship_date()`, `wc_stn_is_blocked_date()`, `wc_stn_is_shipping_day()`, filters for the current time, shipping days, cutoff times, slots and texts, the `wc_ship_today_notice_purge_cache` action and `window.WcShipTodayNotice.init()` in JavaScript.
+Functions `wc_stn_get_slots()`, `wc_stn_delivery_for_ship_date()`, `wc_stn_is_blocked_date()`, `wc_stn_is_shipping_day()`, filters for the current time, shipping days, cutoff times, slots and texts, the `wc_ship_today_notice_purge_cache` action and `window.WcShipTodayNotice.init()` in JavaScript. The widget's JS and CSS load only on pages that contain the widget; use the `wc_ship_today_notice_load_assets` filter to force them, e.g. for content loaded with AJAX.
 
 **Language note**
 
