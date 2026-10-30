@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: Powiadomienie o wysyłce dziś 1.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-ship-today-"
 "notice\n"
-"POT-Creation-Date: 2026-10-30T20:23:00+00:00\n"
+"POT-Creation-Date: 2026-10-30T20:59:07+00:00\n"
 "PO-Revision-Date: 2026-07-26\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -43,17 +43,17 @@ msgstr "MS-M.pl"
 msgid "https://ms-m.pl"
 msgstr "https://ms-m.pl"
 
-#: includes/class-wc-stn-checkout-blocks.php:144
+#: includes/class-wc-stn-checkout-blocks.php:156
 #: includes/class-wc-stn-checkout.php:170
 msgid "required"
 msgstr "erforderlich"
 
-#: includes/class-wc-stn-checkout-blocks.php:146
+#: includes/class-wc-stn-checkout-blocks.php:158
 #: includes/class-wc-stn-checkout.php:144
 msgid "No delivery dates available. Please contact us."
 msgstr "Keine Liefertermine verfügbar. Bitte kontaktiere uns."
 
-#: includes/class-wc-stn-checkout-blocks.php:162
+#: includes/class-wc-stn-checkout-blocks.php:177
 msgid ""
 "Ship date tiles. The dates are calculated at checkout. Without this block "
 "the checkout has no ship date choice."
@@ -61,11 +61,21 @@ msgstr ""
 "Kacheln mit dem Versandtermin. Die Termine werden im Checkout berechnet. "
 "Ohne diesen Block gibt es im Checkout keine Terminauswahl."
 
-#: includes/class-wc-stn-checkout-blocks.php:286
-msgid "Ship Today Notice:"
-msgstr "Versandhinweis:"
+#: includes/class-wc-stn-checkout-blocks.php:180
+msgid "Shows the ship date selected in the \"Ship date\" block."
+msgstr "Zeigt den im Block „Versandtermin“ gewählten Termin."
 
-#: includes/class-wc-stn-checkout-blocks.php:287
+#: includes/class-wc-stn-checkout-blocks.php:181
+msgid ""
+"Hidden: the order summary row is turned off in WooCommerce → Ship Today "
+"Notice."
+msgstr "Ausgeblendet: Die Zeile in der Bestellübersicht ist unter WooCommerce → Ship Today Notice deaktiviert."
+
+#: includes/class-wc-stn-checkout-blocks.php:321
+msgid "Ship Today Notice:"
+msgstr "Ship Today Notice:"
+
+#: includes/class-wc-stn-checkout-blocks.php:322
 msgid ""
 "the block checkout has no \"Ship date\" block, so customers cannot choose a "
 "ship date (orders are placed without it). Add the block inside the checkout "
@@ -75,11 +85,11 @@ msgstr ""
 "keinen Versandtermin wählen (Bestellungen gehen ohne Termin durch). Füge den "
 "Block im Editor der Kassenseite innerhalb des Checkout-Formulars hinzu."
 
-#: includes/class-wc-stn-checkout-blocks.php:289
+#: includes/class-wc-stn-checkout-blocks.php:324
 msgid "Edit the checkout page"
 msgstr "Kassenseite bearbeiten"
 
-#: includes/class-wc-stn-checkout-blocks.php:291
+#: includes/class-wc-stn-checkout-blocks.php:326
 msgid "Dismiss"
 msgstr "Nicht mehr anzeigen"
 
@@ -92,7 +102,7 @@ msgstr "Versand %s"
 
 #. translators: checkout tile, order review and orders list. %s: short weekday and date, e.g. "Tue 10.11"
 #: includes/class-wc-stn-checkout.php:198
-#: includes/class-wc-stn-checkout.php:799
+#: includes/class-wc-stn-checkout.php:807
 #, php-format
 msgctxt "short date line"
 msgid "delivery %s"
@@ -122,13 +132,13 @@ msgid "orders until %1$s %2$s"
 msgstr "Bestellungen bis %1$s %2$s"
 
 #. translators: order review row. %s: short weekday and date, e.g. "Mon 09.11"
-#: includes/class-wc-stn-checkout.php:329
+#: includes/class-wc-stn-checkout.php:345
 #, php-format
 msgctxt "order review row"
 msgid "Ship %s"
 msgstr "Versand %s"
 
-#: includes/class-wc-stn-checkout.php:384
+#: includes/class-wc-stn-checkout.php:392
 msgctxt ""
 "Lowercase the field label inside \"Choose %s.\"? Translate as \"no\" to keep "
 "it as entered."
@@ -136,15 +146,15 @@ msgid "yes"
 msgstr "no"
 
 #. translators: checkout error. %s: field label, e.g. "delivery date"
-#: includes/class-wc-stn-checkout.php:398
-#: includes/class-wc-stn-checkout.php:402
-#: includes/class-wc-stn-checkout.php:412
+#: includes/class-wc-stn-checkout.php:406
+#: includes/class-wc-stn-checkout.php:410
+#: includes/class-wc-stn-checkout.php:420
 #, php-format
 msgid "Choose %s."
 msgstr "Bitte %s auswählen."
 
 #. translators: %s: shipping date, e.g. "pn 26.10"
-#: includes/class-wc-stn-checkout.php:414
+#: includes/class-wc-stn-checkout.php:422
 #, php-format
 msgid ""
 "Orders for shipping on %s are no longer accepted. Please choose another date."
@@ -153,82 +163,82 @@ msgstr ""
 "wählen Sie einen anderen Termin."
 
 #. translators: %s: shipping date, e.g. "pn 26.10"
-#: includes/class-wc-stn-checkout.php:416
+#: includes/class-wc-stn-checkout.php:424
 #, php-format
 msgid "Shipping on %s is not available. Please choose another date."
 msgstr ""
 "Der Versand am %s ist nicht verfügbar. Bitte wählen Sie einen anderen Termin."
 
 #. translators: checkout notice when the selected date closes on an open page. %1$s: closed date, %2$s: newly selected date
-#: includes/class-wc-stn-checkout.php:418
+#: includes/class-wc-stn-checkout.php:426
 #, php-format
 msgid "The %1$s date has just closed, we selected %2$s."
 msgstr "Der Termin %1$s ist gerade abgelaufen, wir haben %2$s ausgewählt."
 
-#: includes/class-wc-stn-checkout.php:487 wc-ship-today-notice.php:1273
+#: includes/class-wc-stn-checkout.php:495 wc-ship-today-notice.php:1273
 msgid "Ship date:"
 msgstr "Versanddatum:"
 
-#: includes/class-wc-stn-checkout.php:491 wc-ship-today-notice.php:1276
+#: includes/class-wc-stn-checkout.php:499 wc-ship-today-notice.php:1276
 msgid "Planned delivery:"
 msgstr "Geplante Lieferung:"
 
-#: includes/class-wc-stn-checkout.php:529
+#: includes/class-wc-stn-checkout.php:537
 msgid "Shipping date"
 msgstr "Versandtermin"
 
-#: includes/class-wc-stn-checkout.php:532
+#: includes/class-wc-stn-checkout.php:540
 msgid "Ship:"
 msgstr "Versand:"
 
-#: includes/class-wc-stn-checkout.php:534
+#: includes/class-wc-stn-checkout.php:542
 msgid "Delivery:"
 msgstr "Lieferung:"
 
-#: includes/class-wc-stn-checkout.php:538
+#: includes/class-wc-stn-checkout.php:546
 msgid "Ship date (Iconic):"
 msgstr "Versanddatum (Iconic):"
 
-#: includes/class-wc-stn-checkout.php:544
+#: includes/class-wc-stn-checkout.php:552
 msgid "Change ship date:"
 msgstr "Versanddatum ändern:"
 
 #. translators: %s: date entered in the order edit screen
-#: includes/class-wc-stn-checkout.php:578
+#: includes/class-wc-stn-checkout.php:586
 #, php-format
 msgid "Invalid ship date \"%s\". The ship date was not changed."
 msgstr "Ungültiges Versanddatum „%s“. Das Versanddatum wurde nicht geändert."
 
 #. translators: order note. %1$s: removed ship date (Y-m-d), %2$s: user name
-#: includes/class-wc-stn-checkout.php:590
+#: includes/class-wc-stn-checkout.php:598
 #, php-format
 msgid "Ship date %1$s removed (%2$s)."
 msgstr "Versanddatum %1$s entfernt (%2$s)."
 
 #. translators: order note. %1$s: previous ship date (Y-m-d) or "none", %2$s: new ship date, %3$s: user name
-#: includes/class-wc-stn-checkout.php:598
+#: includes/class-wc-stn-checkout.php:606
 #, php-format
 msgid "Ship date changed from %1$s to %2$s (%3$s)."
 msgstr "Versanddatum von %1$s auf %2$s geändert (%3$s)."
 
 #. translators: order note. %1$s: previous ship date (Y-m-d) or "none", %2$s: new ship date, %3$s: user name
-#: includes/class-wc-stn-checkout.php:598
+#: includes/class-wc-stn-checkout.php:606
 msgctxt "no previous ship date"
 msgid "none"
 msgstr "keins"
 
-#: includes/class-wc-stn-checkout.php:614
-#: includes/class-wc-stn-checkout.php:618 wc-ship-today-notice.php:1480
+#: includes/class-wc-stn-checkout.php:622
+#: includes/class-wc-stn-checkout.php:626 wc-ship-today-notice.php:1480
 msgctxt "column with the ship date"
 msgid "Shipping"
 msgstr "Versand"
 
-#: includes/class-wc-stn-checkout.php:710
+#: includes/class-wc-stn-checkout.php:718
 msgid "Shipping: all"
 msgstr "Versand: alle"
 
 #. translators: orders list filter. %s: short weekday and date, e.g. "Mon 09.11.2026"
-#: includes/class-wc-stn-checkout.php:717
+#: includes/class-wc-stn-checkout.php:725
 #, php-format
 msgid "Shipping: %s"
 msgstr "Versand: %s"
@@ -962,11 +972,10 @@ msgstr "Zeile mit dem Termin in der Bestellübersicht im Checkout"
 
 #: wc-ship-today-notice.php:1307
 msgid ""
-"Classic checkout: the selected date as a row in the order review table, "
-"refreshed with it."
-msgstr ""
-"Klassischer Checkout: der gewählte Termin als Zeile in der Bestellübersicht, "
-"wird mit ihr aktualisiert."
+"The selected date as a row in the order summary: in the classic checkout in "
+"the order review table, in the block checkout as the \"Ship date summary row"
+"\" block."
+msgstr "Der gewählte Termin als Zeile in der Bestellübersicht: im klassischen Checkout in der Übersichtstabelle, im Block-Checkout als Block „Versandtermin – Zeile in der Übersicht“."
 
 #: wc-ship-today-notice.php:1308
 msgid "\"Ship date\" and \"Planned delivery\" rows after the order is placed"
@@ -1411,6 +1420,33 @@ msgid_plural "%d days"
 msgstr[0] "%d Tag"
 msgstr[1] "%d Tage"
 
+#: assets/blocks/ship-date-row/block.json
+msgctxt "block title"
+msgid "Ship date summary row"
+msgstr "Versandtermin – Zeile in der Übersicht"
+
+#: assets/blocks/ship-date-row/block.json
+msgctxt "block description"
+msgid ""
+"The ship date selected in the \"Ship date\" block, as a row in the order "
+"summary. Added below the shipping row once; you can move or remove it."
+msgstr "Der im Block „Versandtermin“ gewählte Termin als Zeile in der Bestellübersicht. Wird einmal unter der Versandzeile eingefügt; du kannst ihn verschieben oder entfernen."
+
+#: assets/blocks/ship-date-row/block.json assets/blocks/ship-date/block.json
+msgctxt "block keyword"
+msgid "ship"
+msgstr "Versand"
+
+#: assets/blocks/ship-date-row/block.json assets/blocks/ship-date/block.json
+msgctxt "block keyword"
+msgid "delivery"
+msgstr "Lieferung"
+
+#: assets/blocks/ship-date-row/block.json
+msgctxt "block keyword"
+msgid "summary"
+msgstr "Übersicht"
+
 #: assets/blocks/ship-date/block.json
 msgctxt "block title"
 msgid "Ship date"
@@ -1424,16 +1460,6 @@ msgid ""
 msgstr ""
 "Kacheln mit dem Versandtermin (Ship Today Notice). Wird einmal unter den "
 "Versandoptionen eingefügt; du kannst ihn verschieben oder entfernen."
-
-#: assets/blocks/ship-date/block.json
-msgctxt "block keyword"
-msgid "ship"
-msgstr "Versand"
-
-#: assets/blocks/ship-date/block.json
-msgctxt "block keyword"
-msgid "delivery"
-msgstr "Lieferung"
 
 #: assets/blocks/ship-date/block.json
 msgctxt "block keyword"

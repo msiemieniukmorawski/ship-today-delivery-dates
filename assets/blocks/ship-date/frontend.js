@@ -1,5 +1,8 @@
 /**
- * Blok "wc-stn/ship-date" na froncie checkoutu blokowego: kafelki z terminami (jak checkout.js w klasycznym checkoucie).
+ * Bloki checkoutu blokowego na froncie:
+ * - "wc-stn/ship-date": kafelki z terminami (jak checkout.js w klasycznym checkoucie),
+ * - "wc-stn/ship-date-row": wiersz z wybranym terminem w podsumowaniu zamówienia (jak review_row() w klasycznym).
+ * Wybrany termin oba bloki dzielą przez mały store wp.data "wc-stn/ship-date" (kafelki zapisują, wiersz czyta).
  *
  * - termin idzie do Store API przez setExtensionData('wc-stn', 'ship_date'), razem z 'rendered' (blok był widoczny),
  * - bez wybranego terminu blok zgłasza błąd walidacji (wc/store/validation), więc zamówienie nie wyjdzie bez daty,
@@ -22,6 +25,24 @@
     return;
   }
 
+  var STORE = 'wc-stn/ship-date';
+  wp.data.register(wp.data.createReduxStore(STORE, {
+    reducer: function (state, action) {
+      state = state || { shipDate: '' };
+      return 'SET_SHIP_DATE' === action.type ? { shipDate: action.shipDate } : state;
+    },
+    actions: {
+      setShipDate: function (shipDate) {
+        return { type: 'SET_SHIP_DATE', shipDate: shipDate };
+      }
+    },
+    selectors: {
+      getShipDate: function (state) {
+        return state.shipDate;
+      }
+    }
+  }));
+
   function nowS() {
     return Math.floor((Date.now() + (cfg.nowOffset || 0)) / 1000);
   }
@@ -39,6 +60,7 @@
       return select('wc/store/cart').getNeedsShipping() && !select('wc/store/checkout').prefersCollection();
     }, []);
     var validation = useDispatch('wc/store/validation');
+    var store = useDispatch(STORE);
     // Sam tekst błędu (string), nie obiekt: useSelect porównuje wynik i obiekt dawałby zbędne odświeżenia
     var errorText = useSelect(function (select) {
       var error = select('wc/store/validation').getValidationError(ERROR_ID);
@@ -79,6 +101,7 @@
     useEffect(function () {
       setExtensionData('wc-stn', 'rendered', visible);
       setExtensionData('wc-stn', 'ship_date', visible ? current.value : '');
+      store.setShipDate(visible ? current.value : '');
 
       if (visible && !current.value) {
         var errors = {};
@@ -125,6 +148,30 @@
       errorText ? el('p', { className: 'wc-block-components-validation-error', role: 'alert' }, errorText) : null
     );
   }
+
+  /** Wiersz w podsumowaniu: tylko gdy blok kafelków jest na stronie, widoczny i ma wybrany termin. */
+  function ShipDateRow() {
+    var shipDate = useSelect(function (select) {
+      return select(STORE).getShipDate();
+    }, []);
+    var lines = cfg.reviewRow && shipDate ? cfg.rows[shipDate] : null;
+
+    if (!lines) {
+      return null;
+    }
+
+    return el(wc.blocksCheckout.TotalsItem, {
+      className: 'wc-block-components-totals-wrapper wc-stn-review',
+      label: cfg.label,
+      value: el('span', null, lines[0], lines[1] ? el('br') : null, lines[1] || null)
+    });
+  }
+
+  wc.blocksCheckout.registerCheckoutBlock({
+    metadata: { name: 'wc-stn/ship-date-row', parent: ['woocommerce/checkout-order-summary-totals-block'] },
+    component: ShipDateRow,
+    force: false
+  });
 
   wc.blocksCheckout.registerCheckoutBlock({
     metadata: { name: 'wc-stn/ship-date', parent: ['woocommerce/checkout-fields-block'] },

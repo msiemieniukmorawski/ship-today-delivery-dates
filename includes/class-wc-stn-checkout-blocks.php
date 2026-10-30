@@ -25,6 +25,12 @@ final class WC_STN_Checkout_Blocks
 {
     const BLOCK = 'wc-stn/ship-date';
 
+    /** Wiersz z wybranym terminem w podsumowaniu zamówienia (jak review_row() w klasycznym checkoucie). */
+    const ROW_BLOCK = 'wc-stn/ship-date-row';
+
+    /** ID strony zamówienia, do której wiersz podsumowania został już raz wstawiony automatycznie. */
+    const ROW_INSERTED_KEY = 'wc_ship_today_notice_row_inserted';
+
     /** Namespace danych rozszerzenia w Store API (extensions.wc-stn). */
     const API_NAMESPACE = 'wc-stn';
 
@@ -91,6 +97,10 @@ final class WC_STN_Checkout_Blocks
             'editor_script_handles' => ['wc-stn-ship-date-editor'],
             'editor_style_handles'  => ['wc-stn-checkout'],
         ]);
+        // Wiersz podsumowania: ten sam skrypt edytora i frontu (frontend.js rejestruje oba bloki)
+        register_block_type(plugin_dir_path(WC_STN_FILE) . 'assets/blocks/ship-date-row/', [
+            'editor_script_handles' => ['wc-stn-ship-date-editor'],
+        ]);
     }
 
     public function register_integration($registry)
@@ -129,9 +139,11 @@ final class WC_STN_Checkout_Blocks
         $o        = $this->plugin->get_options();
         $schedule = $this->plugin->schedule();
         $tiles    = [];
+        $rows     = [];
 
         foreach ($schedule->slots(40, $schedule->now(), WC_Ship_Today_Notice::FRONTEND_DAYS) as $slot) {
             $tiles[] = $this->checkout->tile_data($slot);
+            $rows[$slot['ship']->format('Y-m-d')] = $this->checkout->review_lines($slot);
         }
 
         return [
@@ -145,6 +157,9 @@ final class WC_STN_Checkout_Blocks
             'choose'    => $this->checkout->choose_message(),
             'empty'     => __('No delivery dates available. Please contact us.', 'wc-ship-today-notice'),
             'closed'    => $this->checkout->switched_message(),
+            // Wiersz w podsumowaniu (blok ROW_BLOCK): przełącznik "checkout_review_row", treść jak w klasycznym checkoucie
+            'reviewRow' => !empty($o['checkout_review_row']),
+            'rows'      => $rows,
         ];
     }
 
@@ -160,6 +175,10 @@ final class WC_STN_Checkout_Blocks
             'tiles'  => array_slice($data['tiles'], 0, $data['count']),
             'accent' => $data['accent'],
             'hint'   => __('Ship date tiles. The dates are calculated at checkout. Without this block the checkout has no ship date choice.', 'wc-ship-today-notice'),
+            'row'    => $data['rows'] ? reset($data['rows']) : ['', ''],
+            'rowHint' => $data['reviewRow']
+                ? __('Shows the ship date selected in the "Ship date" block.', 'wc-ship-today-notice')
+                : __('Hidden: the order summary row is turned off in WooCommerce → Ship Today Notice.', 'wc-ship-today-notice'),
         ];
     }
 
@@ -188,49 +207,65 @@ final class WC_STN_Checkout_Blocks
         }
 
         $page_id = function_exists('wc_get_page_id') ? (int) wc_get_page_id('checkout') : 0;
-        if ($page_id <= 0 || $page_id === (int) get_option(self::BLOCK_INSERTED_KEY) || ($check_cap && !current_user_can('edit_post', $page_id))) {
+        if ($page_id <= 0 || ($check_cap && !current_user_can('edit_post', $page_id))) {
             return;
         }
 
-        $content = (string) get_post_field('post_content', $page_id);
-        if (!has_block('woocommerce/checkout', $content)) {
-            return; // klasyczny checkout (shortcode) albo checkout w szablonie motywu
-        }
+        // Każdy blok osobno, raz na stronę zamówienia: [blok, znacznik, rodzic, wstaw za, inaczej przed (null = na koniec)]
+        $placements = [
+            [self::BLOCK, self::BLOCK_INSERTED_KEY, 'woocommerce/checkout-fields-block', 'woocommerce/checkout-shipping-methods-block', 'woocommerce/checkout-payment-block'],
+            [self::ROW_BLOCK, self::ROW_INSERTED_KEY, 'woocommerce/checkout-order-summary-totals-block', 'woocommerce/checkout-order-summary-shipping-block', null],
+        ];
 
-        if (!has_block(self::BLOCK, $content)) {
-            $blocks = parse_blocks($content);
-            if (!$this->insert_into($blocks)) {
-                return;
+        foreach ($placements as list($name, $key, $parent, $after, $before)) {
+            if ($page_id === (int) get_option($key)) {
+                continue;
             }
-            wp_update_post(['ID' => $page_id, 'post_content' => wp_slash(serialize_blocks($blocks))]);
-        }
 
-        update_option(self::BLOCK_INSERTED_KEY, $page_id, false);
+            $content = (string) get_post_field('post_content', $page_id);
+            if (!has_block('woocommerce/checkout', $content)) {
+                return; // klasyczny checkout (shortcode) albo checkout w szablonie motywu
+            }
+
+            if (!has_block($name, $content)) {
+                $blocks = parse_blocks($content);
+                if (!$this->insert_into($blocks, $name, $parent, $after, $before)) {
+                    continue;
+                }
+                wp_update_post(['ID' => $page_id, 'post_content' => wp_slash(serialize_blocks($blocks))]);
+            }
+
+            update_option($key, $page_id, false);
+        }
     }
 
     /**
-     * Wstawia blok do woocommerce/checkout-fields-block za metodami wysyłki (albo przed płatnością). Zwraca, czy wstawił.
+     * Wstawia blok $name do bloku $parent za $after (albo przed $before, a bez $before na koniec). Zwraca, czy wstawił.
      */
-    private function insert_into(array &$blocks)
+    private function insert_into(array &$blocks, $name, $parent, $after, $before)
     {
         foreach ($blocks as &$block) {
-            if ('woocommerce/checkout-fields-block' !== $block['blockName']) {
-                if (!empty($block['innerBlocks']) && $this->insert_into($block['innerBlocks'])) {
+            if ($parent !== $block['blockName']) {
+                if (!empty($block['innerBlocks']) && $this->insert_into($block['innerBlocks'], $name, $parent, $after, $before)) {
                     return true;
                 }
                 continue;
             }
 
             $names = array_column($block['innerBlocks'], 'blockName');
-            $after = array_search('woocommerce/checkout-shipping-methods-block', $names, true);
-            $index = false !== $after ? $after + 1 : array_search('woocommerce/checkout-payment-block', $names, true);
+            $found = array_search($after, $names, true);
+            if (false !== $found) {
+                $index = $found + 1;
+            } else {
+                $index = null === $before ? count($names) : array_search($before, $names, true);
+            }
             if (false === $index) {
                 return false;
             }
 
-            $html = '<div data-block-name="' . self::BLOCK . '" class="wp-block-wc-stn-ship-date"></div>';
+            $html = '<div data-block-name="' . $name . '" class="wp-block-' . str_replace('/', '-', $name) . '"></div>';
             array_splice($block['innerBlocks'], $index, 0, [[
-                'blockName'    => self::BLOCK,
+                'blockName'    => $name,
                 'attrs'        => [],
                 'innerBlocks'  => [],
                 'innerHTML'    => $html,

@@ -7,7 +7,7 @@
 
   var el = wp.element.createElement;
   var useBlockProps = wp.blockEditor.useBlockProps;
-  var data = window.wcStnShipDateEditor || { label: '', tiles: [], accent: '', hint: '' };
+  var data = window.wcStnShipDateEditor || { label: '', tiles: [], accent: '', hint: '', row: ['', ''], rowHint: '' };
 
   function Preview() {
     var props = useBlockProps({
@@ -26,6 +26,26 @@
       el('p', { className: 'wc-stn-checkout__notice' }, data.hint)
     );
   }
+
+  /** Wiersz podsumowania: przykładowy termin (pierwszy z aktualnych) w wyglądzie wiersza sum WooCommerce. */
+  function RowPreview() {
+    var props = useBlockProps({ className: 'wc-block-components-totals-wrapper' });
+
+    return el('div', props,
+      el('div', { className: 'wc-block-components-totals-item wc-stn-review' },
+        el('span', { className: 'wc-block-components-totals-item__label' }, data.label),
+        el('span', { className: 'wc-block-components-totals-item__value' }, data.row[0], data.row[1] ? el('br') : null, data.row[1] || null)
+      ),
+      el('p', { className: 'wc-stn-checkout__notice' }, data.rowHint)
+    );
+  }
+
+  wp.blocks.registerBlockType('wc-stn/ship-date-row', {
+    edit: RowPreview,
+    save: function () {
+      return el('div', wp.blockEditor.useBlockProps.save({ 'data-block-name': 'wc-stn/ship-date-row' }));
+    }
+  });
 
   wp.blocks.registerBlockType('wc-stn/ship-date', {
     edit: Preview,

@@ -1304,7 +1304,7 @@ final class WC_Ship_Today_Notice
 
     public function field_checkout_display()
     {
-        $this->toggle_checkbox('checkout_review_row', __('Row with the date in the order summary at checkout', 'wc-ship-today-notice'), __('Classic checkout: the selected date as a row in the order review table, refreshed with it.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('checkout_review_row', __('Row with the date in the order summary at checkout', 'wc-ship-today-notice'), __('The selected date as a row in the order summary: in the classic checkout in the order review table, in the block checkout as the "Ship date summary row" block.', 'wc-ship-today-notice'));
         $this->toggle_checkbox('checkout_order_rows', __('"Ship date" and "Planned delivery" rows after the order is placed', 'wc-ship-today-notice'), __('Thank-you page, order emails (customer and admin) and My Account.', 'wc-ship-today-notice'));
         $this->toggle_checkbox('checkout_admin_edit', __('Change the ship date in the order edit screen', 'wc-ship-today-notice'), __('Date field in the order admin; the delivery date is recalculated and an order note is added. Off: the dates are shown read-only.', 'wc-ship-today-notice'));
         $this->toggle_checkbox('checkout_list_column', __('"Shipping" column in the orders list', 'wc-ship-today-notice'), __('Column with sorting and a ship date filter in WooCommerce → Orders.', 'wc-ship-today-notice'));

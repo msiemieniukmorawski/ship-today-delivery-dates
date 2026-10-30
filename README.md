@@ -335,6 +335,13 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
   daty („Wybierz termin dostawy.”) i termin spoza aktualnych („Przyjmowanie zamówień na wysyłkę … już się zakończyło. …”)
   i zapisuje te same meta co klasyczny checkout, więc maile, strona podziękowania, panel i lista zamówień działają tak samo.
 - JS bez kroku build (`assets/blocks/ship-date/`: `block.json`, `editor.js`, `frontend.js`), wygląd z `checkout.css`.
+- **Wiersz w podsumowaniu zamówienia** - blok „Termin wysyłki – wiersz podsumowania” (`wc-stn/ship-date-row`, w podsumowaniu sum,
+  rodzic `woocommerce/checkout-order-summary-totals-block`) pokazuje wybrany termin tak jak wiersz w klasycznym checkoucie
+  („Termin dostawy: Wysyłka pn 02.11 / dostawa wt 03.11”, etykieta = „Nazwa pola”). Zmienia się od razu po wyborze kafelka
+  i po upływie godziny granicznej. Wtyczka wstawia go raz pod wierszem wysyłki (jak blok kafelków, osobny znacznik
+  `wc_ship_today_notice_row_inserted`); można go przesunąć albo usunąć. Wiersza nie ma, gdy przełącznik „Wiersz z terminem
+  w podsumowaniu zamówienia” jest wyłączony, gdy na stronie nie ma bloku kafelków albo gdy termin nie jest wybrany.
+  Oba bloki dzielą wybrany termin przez store `wp.data` `wc-stn/ship-date`.
 - Przełącznik Iconic działa tylko w klasycznym checkoucie.
 
 **Okres przejściowy z Iconic Delivery Slots**
@@ -509,7 +516,8 @@ wc-ship-today-notice/
 │   ├── js/notice.js                # Widget: stany, odliczanie, przełączanie terminów
 │   ├── js/checkout.js              # Kafelki: wybór, upływ godziny granicznej
 │   ├── js/style-preview.js         # Podgląd na żywo w zakładce "Styl"
-│   └── blocks/ship-date/           # Blok checkoutu blokowego (block.json, editor.js, frontend.js; bez kroku build)
+│   ├── blocks/ship-date/           # Bloki checkoutu blokowego: kafelki i wiersz podsumowania (editor.js, frontend.js; bez kroku build)
+│   └── blocks/ship-date-row/       # block.json wiersza w podsumowaniu zamówienia
 ├── languages/                      # .pot, pl_PL i de_DE (.po + .mo)
 ├── tests/cli-schedule-test.php     # Tabela przypadków silnika (wp eval-file)
 ├── scripts/                        # lint.sh, build-zip.sh, env/ (seed i start wp-env)
@@ -522,6 +530,13 @@ wc-ship-today-notice/
 </details>
 
 ## Changelog
+
+### Niewydane
+
+**Nowe**
+- Checkout blokowy: wiersz z wybranym terminem w **podsumowaniu zamówienia** (blok „Termin wysyłki – wiersz podsumowania”),
+  jak w klasycznym checkoucie, aktualizowany na żywo. Wstawiany raz pod wierszem wysyłki (przy wejściu do panelu albo aktualizacji),
+  przesuwalny i usuwalny w edytorze. Działa z przełącznikiem „Wiersz z terminem w podsumowaniu zamówienia”.
 
 ### 2.3.0 (30.10.2026)
 
@@ -625,7 +640,6 @@ wc-ship-today-notice/
 
 ## Plany
 
-- [ ] Wiersz z terminem w podsumowaniu zamówienia checkoutu blokowego (w klasycznym checkoucie jest).
 - [ ] Różne godziny graniczne dla stref wysyłki WooCommerce.
 - [ ] Publikacja w katalogu WordPress.org.
 

@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wc-stn/ship-date-row",
+	"version": "1.0.0",
+	"title": "Ship date summary row",
+	"description": "The ship date selected in the \"Ship date\" block, as a row in the order summary. Added below the shipping row once; you can move or remove it.",
+	"category": "woocommerce",
+	"icon": "calendar-alt",
+	"keywords": [
+		"ship",
+		"delivery",
+		"summary"
+	],
+	"textdomain": "wc-ship-today-notice",
+	"parent": [
+		"woocommerce/checkout-order-summary-totals-block"
+	],
+	"supports": {
+		"html": false,
+		"multiple": false,
+		"reusable": false
+	}
+}

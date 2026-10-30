@@ -325,11 +325,7 @@ final class WC_STN_Checkout
             return;
         }
 
-        /* translators: order review row. %s: short weekday and date, e.g. "Mon 09.11" */
-        $text = esc_html(sprintf(_x('Ship %s', 'order review row', 'wc-ship-today-notice'), $this->date_short($slot['ship'])));
-        if ($slot['delivery']) {
-            $text .= '<br>' . esc_html($this->delivery_short($slot['delivery']));
-        }
+        $text = implode('<br>', array_map('esc_html', array_filter($this->review_lines($slot))));
 
         printf(
             '<tr class="wc-stn-review"><th>%s</th><td data-title="%s">%s</td></tr>',
@@ -337,6 +333,18 @@ final class WC_STN_Checkout
             esc_attr($o['checkout_label']),
             wp_kses($text, ['br' => []])
         );
+    }
+
+    /**
+     * Treść wiersza z terminem w podsumowaniu zamówienia: [wysyłka, dostawa albo '']. Wspólne dla klasycznego i blokowego checkoutu.
+     */
+    public function review_lines(array $slot)
+    {
+        return [
+            /* translators: order review row. %s: short weekday and date, e.g. "Mon 09.11" */
+            sprintf(_x('Ship %s', 'order review row', 'wc-ship-today-notice'), $this->date_short($slot['ship'])),
+            $slot['delivery'] ? $this->delivery_short($slot['delivery']) : '',
+        ];
     }
 
     /**

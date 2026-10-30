@@ -55,7 +55,7 @@ All plugin texts are translatable (English source): the admin, weekday names and
 
 = Does it work with the block-based checkout? =
 
-Yes, with WooCommerce 10.1 or newer. In both checkouts the customer picks a date from tiles. In the block-based checkout the tiles are the "Ship date" block: the plugin adds it once below the shipping options of the checkout page, and you can move it, remove it or add it again (search for "Ship date") in the checkout page editor like other checkout blocks. The date is validated on the server and saved to the order like in the classic checkout. Without the block (or with older WooCommerce versions) the block-based checkout shows no date choice and orders are placed without a ship date. The notice widget `[ship_today_notice]` works independently of the checkout type.
+Yes, with WooCommerce 10.1 or newer. In both checkouts the customer picks a date from tiles. In the block-based checkout the tiles are the "Ship date" block: the plugin adds it once below the shipping options of the checkout page, and you can move it, remove it or add it again (search for "Ship date") in the checkout page editor like other checkout blocks. The date is validated on the server and saved to the order like in the classic checkout. The selected date is also shown as a row in the order summary (the "Ship date summary row" block, added once below the shipping row; it follows the "Row with the date in the order summary" setting). Without the block (or with older WooCommerce versions) the block-based checkout shows no date choice and orders are placed without a ship date. The notice widget `[ship_today_notice]` works independently of the checkout type.
 
 = The block checkout does not show the ship date tiles. =
 
