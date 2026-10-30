@@ -70,6 +70,9 @@ final class WC_Ship_Today_Notice
     /** @var string|false Hook strony ustawień (do ładowania skryptów zakładki "Styl"). */
     private $page_hook = false;
 
+    /** @var WC_STN_Checkout_Blocks|null Checkout blokowy (init 0), używany też w maybe_upgrade(). */
+    private $checkout_blocks = null;
+
     public static function instance()
     {
         if (null === self::$instance) {
@@ -119,7 +122,7 @@ final class WC_Ship_Today_Notice
             add_action('init', [$this, 'maybe_enable_test_mode'], 1);
         }
 
-        new WC_STN_Checkout_Blocks($this, new WC_STN_Checkout($this));
+        $this->checkout_blocks = new WC_STN_Checkout_Blocks($this, new WC_STN_Checkout($this));
     }
 
     /**
@@ -226,6 +229,11 @@ final class WC_Ship_Today_Notice
             $saved['excluded_holiday_dates'] = array_values(array_unique((array) $dates));
             unset($saved['excluded_holidays']);
             update_option(self::OPTION_KEY, $saved);
+        }
+
+        // 2.2.0 → nowsza: select w checkoucie blokowym zastąpił blok "Termin wysyłki" - wstawiamy go od razu (raz na stronę zamówienia)
+        if ($this->checkout_blocks) {
+            $this->checkout_blocks->insert_on_upgrade();
         }
 
         update_option(self::VERSION_KEY, WC_STN_VERSION);
@@ -1114,6 +1122,17 @@ final class WC_Ship_Today_Notice
             ?>
         </p>
         <?php
+        $o = $this->get_options();
+        if (empty($o['checkout_enabled']) || !WC_STN_Checkout_Blocks::supported()) {
+            return;
+        }
+        // Checkout blokowy: blok "Termin wysyłki" wstawiany raz automatycznie, sklep może go przesunąć albo usunąć
+        $status = WC_STN_Checkout_Blocks::block_status();
+        if ('present' === $status) {
+            echo '<p class="description">' . esc_html__('Block checkout: the "Ship date" block is on the checkout page. You can move it in the editor like other checkout blocks.', 'wc-ship-today-notice') . '</p>';
+        } elseif ('missing' === $status) {
+            echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date" block is not on the checkout page, so customers cannot choose a ship date (orders are placed without it). Add the block in the checkout page editor (inside the checkout form).', 'wc-ship-today-notice') . '</p>';
+        }
     }
 
     public function field_checkout_enabled()

@@ -2,15 +2,20 @@
 /**
  * Wybór terminu w checkoucie blokowym (WooCommerce Blocks).
  *
- * Pole przez Additional Checkout Fields API (select w sekcji "order"), bez własnego JS:
- * - opcje = najbliższe terminy z silnika, liczone przy każdym żądaniu (render strony i Store API),
- * - wymagane i widoczne tylko, gdy koszyk wymaga wysyłki (reguła na cart.needs_shipping),
- * - termin spoza aktualnych opcji (np. godzina graniczna minęła na otwartej stronie) odrzucamy przed walidacją Store API
- *   z własnym komunikatem,
- * - przy składaniu zamówienia zapis tych samych meta co w klasycznym checkoucie, więc maile, panel i lista działają bez zmian.
+ * Własny blok wewnętrzny checkoutu "wc-stn/ship-date" (rodzic: woocommerce/checkout-fields-block) z kafelkami jak
+ * w klasycznym checkoucie, JS bez kroku build (assets/blocks/ship-date/):
+ * - wtyczka raz wstawia blok do strony zamówienia z blokami (pod "Metody wysyłki"); dalej sklep może go przesuwać i usuwać
+ *   w edytorze jak inne bloki checkoutu, usuniętego nie wstawiamy ponownie (opcja BLOCK_INSERTED_KEY); blok "wymuszony"
+ *   (lock.remove) odpada, bo WooCommerce dokłada takie bloki na koniec formularza, pod przycisk zamówienia,
+ * - termin trafia do Store API przez setExtensionData (namespace "wc-stn"), razem ze znacznikiem, że blok był widoczny,
+ * - walidacja i zapis tych samych meta co w klasycznym checkoucie przy składaniu zamówienia; bez znacznika (np. płatność
+ *   ekspresowa, zamówienie z zewnątrz Store API) data nie jest wymagana, więc brak bloku nie blokuje zamówień.
  *
- * Hooki pola rejestruje tylko, gdy moduł jest włączony w ustawieniach.
+ * Hooki rejestruje tylko, gdy moduł jest włączony w ustawieniach.
  */
+
+use Automattic\WooCommerce\StoreApi\Exceptions\RouteException;
+use Automattic\WooCommerce\StoreApi\Schemas\V1\CheckoutSchema;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -18,12 +23,18 @@ if (!defined('ABSPATH')) {
 
 final class WC_STN_Checkout_Blocks
 {
-    const FIELD_ID = 'wc-stn/ship-date';
+    const BLOCK = 'wc-stn/ship-date';
 
-    /**
-     * Reguły warunkowe required/hidden są od WooCommerce 9.9, ukrywanie pola w potwierdzeniu i mailach
-     * (show_in_order_confirmation, woocommerce_filter_fields_for_order_confirmation) od 10.1. Na starszych pole się nie rejestruje.
-     */
+    /** Namespace danych rozszerzenia w Store API (extensions.wc-stn). */
+    const API_NAMESPACE = 'wc-stn';
+
+    /** ID strony zamówienia, do której blok został już raz wstawiony automatycznie. */
+    const BLOCK_INSERTED_KEY = 'wc_ship_today_notice_block_inserted';
+
+    /** Meta użytkownika: ID strony zamówienia, dla której zamknięto powiadomienie o braku bloku. */
+    const NOTICE_DISMISSED_META = 'wc_stn_block_notice_dismissed';
+
+    /** Sprawdzone na WooCommerce 11.x; na starszych blok się nie rejestruje (checkout blokowy bez wyboru terminu). */
     const MIN_WC_VERSION = '10.1.0';
 
     /** @var WC_Ship_Today_Notice */
@@ -41,14 +52,18 @@ final class WC_STN_Checkout_Blocks
             return;
         }
 
-        // Po trybie testowym (init 1), żeby opcje pola liczyły się od podmienionego "teraz".
-        add_action('init', [$this, 'register_field'], 2);
-        add_filter('woocommerce_get_default_value_for_' . self::FIELD_ID, [$this, 'default_value'], 10, 3);
-        add_filter('rest_pre_dispatch', [$this, 'reject_closed_slot'], 10, 3);
-        add_action('woocommerce_store_api_checkout_update_order_from_request', [$this, 'save_to_order'], 10, 2);
-
-        // Daty pokazuje nasz box w panelu zamówienia, edytowalny select WooCommerce byłby dublem.
-        add_filter('woocommerce_admin_shipping_fields', [$this, 'hide_admin_field'], 20);
+        add_action('init', [$this, 'register_block'], 2);
+        add_action('woocommerce_blocks_checkout_block_registration', [$this, 'register_integration']);
+        // Moduł startuje na init 0, zwykle już po woocommerce_blocks_loaded
+        if (did_action('woocommerce_blocks_loaded')) {
+            $this->register_store_api_data();
+        } else {
+            add_action('woocommerce_blocks_loaded', [$this, 'register_store_api_data']);
+        }
+        add_action('woocommerce_store_api_checkout_update_order_from_request', [$this, 'validate_and_save'], 10, 2);
+        add_action('admin_init', [$this, 'maybe_insert_block']);
+        add_action('admin_init', [$this, 'maybe_dismiss_notice']);
+        add_action('admin_notices', [$this, 'missing_block_notice']);
     }
 
     public static function supported()
@@ -56,117 +71,278 @@ final class WC_STN_Checkout_Blocks
         return defined('WC_VERSION') && version_compare(WC_VERSION, self::MIN_WC_VERSION, '>=');
     }
 
-    public function register_field()
+    /**
+     * Typ bloku dla edytora (block.json) i skrypty. Skrypt frontu rejestruje komponent przez wc.blocksCheckout.
+     */
+    public function register_block()
     {
-        if (!function_exists('woocommerce_register_additional_checkout_field')) {
+        $dir = plugin_dir_path(WC_STN_FILE) . 'assets/blocks/ship-date/';
+        $url = plugins_url('assets/blocks/ship-date/', WC_STN_FILE);
+
+        wp_register_style('wc-stn-checkout', plugins_url('assets/css/checkout.css', WC_STN_FILE), [], WC_STN_VERSION);
+        wp_register_script('wc-stn-ship-date-frontend', $url . 'frontend.js', ['wc-blocks-checkout', 'wc-settings', 'wp-element', 'wp-data'], WC_STN_VERSION, true);
+        wp_register_script('wc-stn-ship-date-editor', $url . 'editor.js', ['wp-blocks', 'wp-block-editor', 'wp-element'], WC_STN_VERSION, true);
+        if (is_admin()) {
+            // Tylko panel (edytor): na froncie nie liczymy terminów przy każdym żądaniu
+            wp_add_inline_script('wc-stn-ship-date-editor', 'window.wcStnShipDateEditor = ' . wp_json_encode($this->editor_data()) . ';', 'before');
+        }
+
+        register_block_type($dir, [
+            'editor_script_handles' => ['wc-stn-ship-date-editor'],
+            'editor_style_handles'  => ['wc-stn-checkout'],
+        ]);
+    }
+
+    public function register_integration($registry)
+    {
+        require_once __DIR__ . '/class-wc-stn-blocks-integration.php';
+        $registry->register(new WC_STN_Blocks_Integration($this));
+    }
+
+    /**
+     * Pola extensions.wc-stn w żądaniu POST /wc/store/v1/checkout.
+     */
+    public function register_store_api_data()
+    {
+        if (!function_exists('woocommerce_store_api_register_endpoint_data')) {
             return;
         }
 
-        $options = $this->field_options();
-        if (!$options) {
-            return; // Select bez opcji WooCommerce odrzuca; bez terminów nie ma czego wybierać.
-        }
-
-        $needs_shipping = function ($value) {
-            return ['cart' => ['properties' => ['needs_shipping' => ['const' => $value]]]];
-        };
-
-        woocommerce_register_additional_checkout_field([
-            'id'                         => self::FIELD_ID,
-            'label'                      => $this->plugin->get_options()['checkout_label'],
-            'location'                   => 'order',
-            'type'                       => 'select',
-            'options'                    => $options,
-            'required'                   => $needs_shipping(true),
-            'hidden'                     => $needs_shipping(false),
-            'show_in_order_confirmation' => false, // wiersze dodaje order_item_totals() z WC_STN_Checkout
+        woocommerce_store_api_register_endpoint_data([
+            'endpoint'        => CheckoutSchema::IDENTIFIER,
+            'namespace'       => self::API_NAMESPACE,
+            'schema_callback' => function () {
+                return [
+                    'ship_date' => ['description' => 'Ship date (Y-m-d)', 'type' => ['string', 'null'], 'context' => ['view', 'edit']],
+                    'rendered'  => ['description' => 'The ship date block was shown', 'type' => ['boolean', 'null'], 'context' => ['view', 'edit']],
+                ];
+            },
         ]);
     }
 
     /**
-     * Najbliższe terminy jako opcje selecta: wartość Y-m-d wysyłki, etykieta jak na kafelku.
+     * Dane dla bloku na froncie (wcSettings "wc-stn-ship-date_data"): terminy na FRONTEND_DAYS dni, jak data-stn-checkout
+     * w klasycznym checkoucie, więc JS dokłada kolejne terminy, gdy godzina graniczna minie na otwartej stronie.
      */
-    private function field_options()
+    public function script_data()
     {
         $o        = $this->plugin->get_options();
         $schedule = $this->plugin->schedule();
-        $options  = [];
+        $tiles    = [];
 
-        foreach ($schedule->slots(max(1, (int) $o['checkout_count'])) as $slot) {
-            $tile      = $this->checkout->tile_data($slot);
-            $options[] = ['value' => $tile['value'], 'label' => $tile['main'] . ', ' . $tile['sub']];
+        foreach ($schedule->slots(40, $schedule->now(), WC_Ship_Today_Notice::FRONTEND_DAYS) as $slot) {
+            $tiles[] = $this->checkout->tile_data($slot);
         }
 
-        return $options;
+        return [
+            'label'     => $o['checkout_label'],
+            'count'     => max(1, (int) $o['checkout_count']),
+            'preselect' => !empty($o['checkout_preselect']),
+            'accent'    => (string) $o['checkout_accent'],
+            'tiles'     => $tiles,
+            'nowOffset' => $this->plugin->now_offset() * 1000,
+            'required'  => __('required', 'wc-ship-today-notice'),
+            'choose'    => $this->checkout->choose_message(),
+            'empty'     => __('No delivery dates available. Please contact us.', 'wc-ship-today-notice'),
+            /* translators: checkout notice when the selected date closes on an open page. %1$s: closed date, %2$s: newly selected date */
+            'closed'    => __('The %1$s date has just closed, we selected %2$s.', 'wc-ship-today-notice'),
+        ];
     }
 
     /**
-     * "Zaznacz najbliższy termin": pierwsza opcja, gdy klient jeszcze nic nie wybrał.
+     * Podgląd w edytorze: etykieta i kilka terminów z aktualnych ustawień.
      */
-    public function default_value($value, $group = '', $wc_object = null)
+    private function editor_data()
     {
-        if (null !== $value || empty($this->plugin->get_options()['checkout_preselect'])) {
-            return $value;
-        }
+        $data = $this->script_data();
 
-        $options = $this->field_options();
-
-        return $options ? $options[0]['value'] : $value;
+        return [
+            'label'  => $data['label'],
+            'tiles'  => array_slice($data['tiles'], 0, $data['count']),
+            'accent' => $data['accent'],
+            'hint'   => __('Ship date tiles. The dates are calculated at checkout. Without this block the checkout has no ship date choice.', 'wc-ship-today-notice'),
+        ];
     }
 
     /**
-     * Store API sprawdza select przez enum z aktualnych opcji i dla terminu, który właśnie się zamknął,
-     * zwróciłby techniczny błąd parametru. Zwracamy wcześniej czytelny komunikat.
+     * Jednorazowe wstawienie bloku do strony zamówienia z checkoutem blokowym (pod "Metody wysyłki", inaczej przed płatnością).
+     * Po wstawieniu albo gdy blok już jest - zapamiętuje stronę i więcej jej nie zmienia, więc usunięty blok nie wraca.
      */
-    public function reject_closed_slot($result, $server, $request)
+    public function maybe_insert_block()
     {
-        if (null !== $result || 'POST' !== $request->get_method() || '/wc/store/v1/checkout' !== untrailingslashit($request->get_route())) {
-            return $result;
-        }
-
-        $fields = $request->get_param('additional_fields');
-        $ymd    = is_array($fields) && isset($fields[self::FIELD_ID]) ? sanitize_text_field((string) $fields[self::FIELD_ID]) : '';
-
-        if ('' === $ymd || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $ymd) || in_array($ymd, array_column($this->field_options(), 'value'), true)) {
-            return $result;
-        }
-
-        $schedule = $this->plugin->schedule();
-        $date     = $schedule->date($ymd);
-        $label    = WC_STN_Schedule::day_label((int) $date->format('N'), 'short') . ' ' . $date->format('d.m');
-        $closed   = $schedule->is_shipping_day($date) && $schedule->cutoff_for($date) <= $schedule->now();
-
-        $message = $closed
-            /* translators: %s: shipping date, e.g. "pn 26.10" */
-            ? __('Orders for shipping on %s are no longer accepted. Please choose another date.', 'wc-ship-today-notice')
-            /* translators: %s: shipping date, e.g. "pn 26.10" */
-            : __('Shipping on %s is not available. Please choose another date.', 'wc-ship-today-notice');
-
-        return new WP_Error('wc_stn_slot_unavailable', sprintf($message, $label), ['status' => 400]);
+        $this->insert_block(true);
     }
 
     /**
-     * Te same meta co w klasycznym checkoucie (WC_STN_Checkout::save_to_order).
+     * Przy aktualizacji wtyczki (WC_Ship_Today_Notice::maybe_upgrade): sklep z checkoutem blokowym miał w 2.2.0 pole select,
+     * które zniknęło, więc blok wstawiamy od razu, bez sprawdzania uprawnień bieżącego użytkownika.
      */
-    public function save_to_order($order, $request)
+    public function insert_on_upgrade()
     {
-        $fields = $request->get_param('additional_fields');
-        $ymd    = is_array($fields) && isset($fields[self::FIELD_ID]) ? sanitize_text_field((string) $fields[self::FIELD_ID]) : '';
-        $slot   = '' !== $ymd ? $this->checkout->find_slot($ymd) : null;
+        $this->insert_block(false);
+    }
 
-        if (!$slot) {
+    private function insert_block($check_cap)
+    {
+        if (empty($this->plugin->get_options()['checkout_enabled']) || !self::supported()) {
             return;
+        }
+
+        $page_id = function_exists('wc_get_page_id') ? (int) wc_get_page_id('checkout') : 0;
+        if ($page_id <= 0 || $page_id === (int) get_option(self::BLOCK_INSERTED_KEY) || ($check_cap && !current_user_can('edit_post', $page_id))) {
+            return;
+        }
+
+        $content = (string) get_post_field('post_content', $page_id);
+        if (!has_block('woocommerce/checkout', $content)) {
+            return; // klasyczny checkout (shortcode) albo checkout w szablonie motywu
+        }
+
+        if (!has_block(self::BLOCK, $content)) {
+            $blocks = parse_blocks($content);
+            if (!$this->insert_into($blocks)) {
+                return;
+            }
+            wp_update_post(['ID' => $page_id, 'post_content' => wp_slash(serialize_blocks($blocks))]);
+        }
+
+        update_option(self::BLOCK_INSERTED_KEY, $page_id, false);
+    }
+
+    /**
+     * Wstawia blok do woocommerce/checkout-fields-block za metodami wysyłki (albo przed płatnością). Zwraca, czy wstawił.
+     */
+    private function insert_into(array &$blocks)
+    {
+        foreach ($blocks as &$block) {
+            if ('woocommerce/checkout-fields-block' !== $block['blockName']) {
+                if (!empty($block['innerBlocks']) && $this->insert_into($block['innerBlocks'])) {
+                    return true;
+                }
+                continue;
+            }
+
+            $names = array_column($block['innerBlocks'], 'blockName');
+            $after = array_search('woocommerce/checkout-shipping-methods-block', $names, true);
+            $index = false !== $after ? $after + 1 : array_search('woocommerce/checkout-payment-block', $names, true);
+            if (false === $index) {
+                return false;
+            }
+
+            $html = '<div data-block-name="' . self::BLOCK . '" class="wp-block-wc-stn-ship-date"></div>';
+            array_splice($block['innerBlocks'], $index, 0, [[
+                'blockName'    => self::BLOCK,
+                'attrs'        => [],
+                'innerBlocks'  => [],
+                'innerHTML'    => $html,
+                'innerContent' => [$html],
+            ]]);
+
+            // innerContent: null w miejscu każdego bloku wewnętrznego; nowy null za $index-tym
+            $content = [];
+            $seen    = 0;
+            $added   = false;
+            foreach ($block['innerContent'] as $chunk) {
+                if (null === $chunk && !$added && $seen === $index) {
+                    array_push($content, null, "\n\n");
+                    $added = true;
+                }
+                $content[] = $chunk;
+                if (null === $chunk) {
+                    $seen++;
+                }
+            }
+            if (!$added) {
+                // za ostatnim blokiem: przed końcowym tekstem (zamknięcie </div> rodzica)
+                $last = count($content) - 1;
+                array_splice($content, is_string($content[$last]) ? $last : $last + 1, 0, ["\n\n", null]);
+            }
+            $block['innerContent'] = $content;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Powiadomienie w całym panelu (manage_woocommerce): checkout blokowy bez bloku terminu, czyli bez wyboru daty.
+     * Na stronie ustawień wtyczki jest ten sam status w sekcji checkoutu, więc tam go pomijamy.
+     */
+    public function missing_block_notice()
+    {
+        if (!current_user_can('manage_woocommerce') || 'missing' !== self::block_status()) {
+            return;
+        }
+
+        $page_id = (int) wc_get_page_id('checkout');
+        // phpcs:ignore WordPress.Security.NonceVerification -- tylko wybór strony panelu, bez zapisu.
+        if ($page_id === (int) get_user_meta(get_current_user_id(), self::NOTICE_DISMISSED_META, true) || 'wc-ship-today-notice' === ($_GET['page'] ?? '')) {
+            return;
+        }
+
+        $dismiss = wp_nonce_url(add_query_arg('wc_stn_dismiss_block_notice', 1), 'wc_stn_dismiss_block_notice');
+        printf(
+            '<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s</p><p><a class="button" href="%3$s">%4$s</a> <a href="%5$s">%6$s</a></p></div>',
+            esc_html__('Ship Today Notice:', 'wc-ship-today-notice'),
+            esc_html__('the block checkout has no "Ship date" block, so customers cannot choose a ship date (orders are placed without it). Add the block inside the checkout form in the checkout page editor.', 'wc-ship-today-notice'),
+            esc_url((string) get_edit_post_link($page_id)),
+            esc_html__('Edit the checkout page', 'wc-ship-today-notice'),
+            esc_url($dismiss),
+            esc_html__('Dismiss', 'wc-ship-today-notice')
+        );
+    }
+
+    public function maybe_dismiss_notice()
+    {
+        if (empty($_GET['wc_stn_dismiss_block_notice']) || !current_user_can('manage_woocommerce')) { // phpcs:ignore WordPress.Security.NonceVerification -- nonce niżej.
+            return;
+        }
+        check_admin_referer('wc_stn_dismiss_block_notice');
+        update_user_meta(get_current_user_id(), self::NOTICE_DISMISSED_META, (int) wc_get_page_id('checkout'));
+    }
+
+    /**
+     * Czy strona zamówienia ma checkout blokowy i czy jest w nim blok terminu (status w panelu).
+     *
+     * @return string 'classic', 'present' albo 'missing'
+     */
+    public static function block_status()
+    {
+        $page_id = function_exists('wc_get_page_id') ? (int) wc_get_page_id('checkout') : 0;
+        $content = $page_id > 0 ? (string) get_post_field('post_content', $page_id) : '';
+
+        if (!has_block('woocommerce/checkout', $content)) {
+            return 'classic';
+        }
+
+        return has_block(self::BLOCK, $content) ? 'present' : 'missing';
+    }
+
+    /**
+     * Walidacja przy składaniu zamówienia (Store API) i zapis tych samych meta co w klasycznym checkoucie.
+     */
+    public function validate_and_save($order, $request)
+    {
+        $data = (array) ($request['extensions'][self::API_NAMESPACE] ?? []);
+
+        // Blok nie był widoczny (brak bloku, płatność ekspresowa, odbiór osobisty) - data nie jest wymagana.
+        if (empty($data['rendered']) || !WC()->cart || !WC()->cart->needs_shipping() || $this->checkout->only_local_pickup()) {
+            return;
+        }
+
+        $ymd = sanitize_text_field((string) ($data['ship_date'] ?? ''));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ymd)) {
+            throw new RouteException('wc_stn_ship_date_required', esc_html($this->checkout->choose_message()), 400);
+        }
+
+        $slot = $this->checkout->find_slot($ymd);
+        if (!$slot) {
+            throw new RouteException('wc_stn_slot_unavailable', esc_html($this->checkout->unavailable_message($ymd)), 400);
         }
 
         $order->update_meta_data(WC_STN_Checkout::META_SHIP, $slot['ship']->format('Y-m-d'));
         $order->update_meta_data(WC_STN_Checkout::META_DELIVERY, $slot['delivery'] ? $slot['delivery']->format('Y-m-d') : '');
         $order->update_meta_data(WC_STN_Checkout::META_CUTOFF, $slot['cutoff']->getTimestamp());
-    }
-
-    public function hide_admin_field($fields)
-    {
-        unset($fields[self::FIELD_ID], $fields['_wc_other/' . self::FIELD_ID]);
-
-        return $fields;
     }
 }

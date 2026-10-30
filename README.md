@@ -70,7 +70,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
   z możliwością ignorowania wybranych. Do tego ręczna lista dat wykluczonych.
 
 **Checkout i zamówienia** (moduł do włączenia)
-- **Klasyczny checkout** - kafelki z terminami. **Checkout blokowy** - pole wyboru terminu (WooCommerce 10.1+).
+- **Klasyczny checkout** - kafelki z terminami. **Checkout blokowy** - te same kafelki jako blok „Ship date”, który można przesuwać w edytorze (WooCommerce 10.1+).
 - Serwer sprawdza termin przy składaniu zamówienia. Termin, który zamknął się na otwartej stronie, jest odrzucany z komunikatem.
 - Data wysyłki i dostawy w mailach, na stronie podziękowania, w „Moje konto”, w panelu zamówienia (z edycją) i w kolumnie listy
   zamówień z sortowaniem i filtrem.
@@ -104,7 +104,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 |---|---|
 | WordPress | 6.8+ (od 6.8 WordPress sam ładuje tłumaczenia z `languages/` wtyczki) |
 | PHP | 7.4+ |
-| WooCommerce | 9.4+ (sprawdzone do 11.2). Checkout blokowy z wyborem terminu: **10.1+** - na starszym pole się nie pojawia, zamówienia przechodzą bez daty. |
+| WooCommerce | 9.4+ (sprawdzone do 11.2). Checkout blokowy z wyborem terminu: **10.1+** - na starszym blok się nie rejestruje, zamówienia przechodzą bez daty. |
 | Uprawnienia | panel i zapis ustawień: `manage_woocommerce` (kierownik sklepu też może je zmieniać) |
 
 Zgodność z HPOS i z checkoutem blokowym jest zadeklarowana (`FeaturesUtil::declare_compatibility`). Kod zamówień używa CRUD
@@ -296,23 +296,29 @@ Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie
 
 **Checkout blokowy**
 
-Wymaga WooCommerce 10.1+: reguły warunkowe pól są od 9.9, ukrywanie pola w potwierdzeniu i mailach od 10.1.
-Na starszej wersji pole się nie rejestruje.
+Wymaga WooCommerce 10.1+ (sprawdzone na 11.3). Na starszej wersji blok się nie rejestruje.
 
-W checkoucie blokowym nie ma kafelków. Wtyczka rejestruje pole `wc-stn/ship-date` (Additional Checkout Fields API,
-`select` w sekcji dodatkowych informacji o zamówieniu), bez własnego JS:
+W checkoucie blokowym termin wybiera się z tych samych kafelków co w klasycznym, w bloku **„Ship date”** (`wc-stn/ship-date`,
+blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block`):
 
-- Opcje to najbliższe terminy (ustawienie „Liczba terminów”), etykieta jak na kafelku, np. `pt 23.10, wysyłka czw 22.10`.
-  „Zaznacz najbliższy termin” ustawia pierwszą opcję. Ustawienia „Miejsce”, „Duży napis” i „Kolor zaznaczenia” nie mają tu znaczenia.
-- Pole jest wymagane i widoczne tylko, gdy koszyk wymaga wysyłki.
-- Serwer (Store API) przyjmuje tylko termin z aktualnej listy. Termin, którego godzina graniczna minęła na otwartej stronie,
-  jest odrzucany komunikatem „Przyjmowanie zamówień na wysyłkę … już się zakończyło. Wybierz inny termin.”.
-  Lista w polu odświeża się dopiero po przeładowaniu strony.
-- Zapis tych samych meta co w klasycznym checkoucie (`woocommerce_store_api_checkout_update_order_from_request`), więc maile,
-  strona podziękowania, panel i lista zamówień działają tak samo. WooCommerce zapisuje też własną kopię
-  `_wc_other/wc-stn/ship-date`. Nie pokazuje jej w potwierdzeniu ani w mailach, a w panelu zamówienia jest ukryta.
+- **Wstawienie:** przy pierwszej wizycie w panelu po włączeniu modułu wtyczka raz wstawia blok do strony zamówienia
+  (pod „Metody wysyłki”, a gdy ich nie ma - przed „Płatnością”). Potem blok należy do sklepu: można go **przesunąć** w edytorze
+  strony zamówienia, **usunąć** i dodać ponownie z insertera (szukaj „Termin wysyłki”, w angielskim panelu „Ship date”). Usuniętego wtyczka nie wstawia drugi raz.
+  Ustawienia → „Wybór terminu w checkoucie” pokazuje, czy blok jest na stronie zamówienia. Checkout w szablonie motywu
+  (Edytor witryny) nie jest zmieniany automatycznie - tam blok trzeba dodać ręcznie.
+- **Bez bloku** klient nie wybiera terminu, a zamówienia przechodzą bez daty (bez blokowania sprzedaży). Panel pokazuje wtedy
+  powiadomienie (użytkownikom z `manage_woocommerce`, do zamknięcia - wraca, jeśli zmieni się strona zamówienia).
+- **Aktualizacja z 2.2.0** (tam był select): blok wstawia się też w `maybe_upgrade()`, przy pierwszym wejściu do panelu po aktualizacji.
+- Ustawienia „Liczba terminów”, „Zaznacz najbliższy termin”, „Duży napis na kafelku”, „Kolor zaznaczenia” i „Nazwa pola” działają
+  jak w klasycznym checkoucie. „Miejsce” dotyczy tylko klasycznego. Blok jest widoczny tylko, gdy koszyk wymaga wysyłki
+  i nie wybrano odbioru osobistego.
+- Gdy godzina graniczna minie na otwartej stronie, kafelek znika, dochodzi kolejny, a zaznaczenie przechodzi na najbliższy z komunikatem.
+- Termin idzie do Store API jako `extensions.wc-stn.ship_date` (z `rendered: true`, gdy blok był widoczny). Przy składaniu
+  zamówienia (`woocommerce_store_api_checkout_update_order_from_request`) serwer wymaga daty tylko przy `rendered`, odrzuca brak
+  daty („Wybierz termin dostawy.”) i termin spoza aktualnych („Przyjmowanie zamówień na wysyłkę … już się zakończyło. …”)
+  i zapisuje te same meta co klasyczny checkout, więc maile, strona podziękowania, panel i lista zamówień działają tak samo.
+- JS bez kroku build (`assets/blocks/ship-date/`: `block.json`, `editor.js`, `frontend.js`), wygląd z `checkout.css`.
 - Przełącznik Iconic działa tylko w klasycznym checkoucie.
-- Na stronie z blokiem checkoutu nie są ładowane `checkout.css` i `checkout.js` (kafelki klasycznego checkoutu).
 
 **Okres przejściowy z Iconic Delivery Slots**
 
@@ -477,14 +483,16 @@ wc-ship-today-notice/
 ├── includes/
 │   ├── class-wc-stn-schedule.php   # Silnik terminów (dni wysyłki, godzina graniczna, dostawa, tokeny, odmiana dni)
 │   ├── class-wc-stn-checkout.php   # Klasyczny checkout, zamówienia, lista zamówień, przełącznik Iconic
-│   ├── class-wc-stn-checkout-blocks.php  # Checkout blokowy (Additional Checkout Fields, Store API)
+│   ├── class-wc-stn-checkout-blocks.php  # Checkout blokowy: blok "Ship date", wstawienie do strony, Store API
+│   ├── class-wc-stn-blocks-integration.php  # Skrypt i dane bloku dla checkoutu blokowego (IntegrationInterface)
 │   └── functions.php               # Publiczne API wc_stn_*
 ├── assets/
 │   ├── css/notice.css              # Widget
 │   ├── css/checkout.css            # Kafelki w checkoucie
 │   ├── js/notice.js                # Widget: stany, odliczanie, przełączanie terminów
 │   ├── js/checkout.js              # Kafelki: wybór, upływ godziny granicznej
-│   └── js/style-preview.js         # Podgląd na żywo w zakładce "Styl"
+│   ├── js/style-preview.js         # Podgląd na żywo w zakładce "Styl"
+│   └── blocks/ship-date/           # Blok checkoutu blokowego (block.json, editor.js, frontend.js; bez kroku build)
 ├── languages/                      # .pot, pl_PL i de_DE (.po + .mo)
 ├── tests/cli-schedule-test.php     # Tabela przypadków silnika (wp eval-file)
 ├── scripts/                        # lint.sh, build-zip.sh, env/ (seed i start wp-env)
@@ -497,6 +505,24 @@ wc-ship-today-notice/
 </details>
 
 ## Changelog
+
+### Niewydane
+
+> **Przy aktualizacji z 2.2.0 (checkout blokowy):** pole wyboru terminu (select w „Dodatkowych informacjach”) zastępuje blok
+> „Termin wysyłki” z kafelkami. Przy pierwszym wejściu do panelu po aktualizacji wtyczka sama wstawia blok do strony zamówienia
+> pod „Metody wysyłki” (raz; potem można go przesunąć albo usunąć). Do tej chwili checkout blokowy nie ma wyboru terminu, ale
+> zamówienia przechodzą normalnie. Jeśli checkout jest w szablonie motywu (Edytor witryny), panel pokaże powiadomienie - blok
+> trzeba dodać ręcznie. Zamówienia złożone z polem select mają te same daty w mailach, panelu i na liście zamówień.
+
+**Nowe**
+- Checkout blokowy: wybór terminu z **kafelków** jak w klasycznym checkoucie, w bloku „Termin wysyłki” (`wc-stn/ship-date`),
+  który można przesuwać, usuwać i dodawać ponownie w edytorze strony zamówienia. Upływ godziny granicznej na otwartej stronie
+  przełącza zaznaczenie z komunikatem. Działają ustawienia „Liczba terminów”, „Zaznacz najbliższy”, „Duży napis”, „Kolor zaznaczenia”.
+- Powiadomienie w panelu (do zamknięcia), gdy checkout blokowy nie ma bloku terminu; status bloku w ustawieniach.
+
+**Zmiany**
+- Usunięte pole select (Additional Checkout Fields) z 2.2.0. Termin idzie do Store API jako `extensions.wc-stn`; bez bloku data
+  nie jest wymagana (zamówienia nie są blokowane).
 
 ### 2.2.0 (30.10.2026)
 
@@ -578,7 +604,7 @@ wc-ship-today-notice/
 
 ## Plany
 
-- [ ] Wybór terminu w checkoucie blokowym jako przenoszalny blok z kafelkami (w toku).
+- [ ] Wiersz z terminem w podsumowaniu zamówienia checkoutu blokowego (w klasycznym checkoucie jest).
 - [ ] Różne godziny graniczne dla stref wysyłki WooCommerce.
 - [ ] Publikacja w katalogu WordPress.org.
 

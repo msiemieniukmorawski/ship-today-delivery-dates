@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wc-stn/ship-date",
+	"version": "1.0.0",
+	"title": "Ship date",
+	"description": "Ship date tiles from Ship Today Notice. Added below the shipping options once; you can move or remove it.",
+	"category": "woocommerce",
+	"icon": "calendar-alt",
+	"keywords": [
+		"ship",
+		"delivery",
+		"date"
+	],
+	"textdomain": "wc-ship-today-notice",
+	"parent": [
+		"woocommerce/checkout-fields-block"
+	],
+	"supports": {
+		"html": false,
+		"multiple": false,
+		"reusable": false
+	}
+}

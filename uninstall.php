@@ -14,7 +14,7 @@ function wc_stn_uninstall_site()
 {
     global $wpdb;
 
-    foreach (['wc_ship_today_notice_options', 'wc_ship_today_notice_style', 'wc_ship_today_notice_version'] as $option) {
+    foreach (['wc_ship_today_notice_options', 'wc_ship_today_notice_style', 'wc_ship_today_notice_version', 'wc_ship_today_notice_block_inserted'] as $option) {
         delete_option($option);
     }
 

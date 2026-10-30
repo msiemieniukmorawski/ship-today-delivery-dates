@@ -311,7 +311,7 @@ final class WC_STN_Checkout
     /**
      * Czy wszystkie wybrane metody wysyłki to odbiór osobisty (wtedy data nie jest wymagana).
      */
-    private function only_local_pickup()
+    public function only_local_pickup()
     {
         $ids = function_exists('wc_get_chosen_shipping_method_ids') ? wc_get_chosen_shipping_method_ids() : [];
         if (!$ids) {
@@ -330,30 +330,50 @@ final class WC_STN_Checkout
             return;
         }
 
-        $label = $this->plugin->get_options()['checkout_label'];
-        $ymd   = $this->posted_ship_date();
+        $ymd = $this->posted_ship_date();
 
         if ('' === $ymd) {
-            // Po polsku nazwa pola małą literą ("Wybierz termin dostawy."); tłumaczenie "no" zostawia ją bez zmian (np. niemieckie rzeczowniki)
-            $lower = 'yes' === _x('yes', 'Lowercase the field label inside "Choose %s."? Translate as "no" to keep it as entered.', 'wc-ship-today-notice')
-                ? (function_exists('mb_strtolower') ? mb_strtolower($label) : strtolower($label))
-                : $label;
-            /* translators: checkout error. %s: field label, e.g. "delivery date" */
-            $errors->add(self::FIELD, sprintf(esc_html__('Choose %s.', 'wc-ship-today-notice'), '<strong>' . esc_html($lower) . '</strong>'));
+            $errors->add(self::FIELD, $this->choose_message(true));
             return;
         }
 
         if (!$this->find_slot($ymd)) {
-            $schedule = $this->plugin->schedule();
-            $date     = $schedule->date($ymd);
-            $closed   = $schedule->is_shipping_day($date) && $schedule->cutoff_for($date) <= $schedule->now();
-            $message  = $closed
-                /* translators: %s: shipping date, e.g. "pn 26.10" */
-                ? __('Orders for shipping on %s are no longer accepted. Please choose another date.', 'wc-ship-today-notice')
-                /* translators: %s: shipping date, e.g. "pn 26.10" */
-                : __('Shipping on %s is not available. Please choose another date.', 'wc-ship-today-notice');
-            $errors->add(self::FIELD, sprintf($message, esc_html($this->date_short($date))));
+            $errors->add(self::FIELD, esc_html($this->unavailable_message($ymd)));
         }
+    }
+
+    /**
+     * "Wybierz termin dostawy." - wspólne dla klasycznego i blokowego checkoutu.
+     */
+    public function choose_message($html = false)
+    {
+        $label = $this->plugin->get_options()['checkout_label'];
+        // Po polsku nazwa pola małą literą ("Wybierz termin dostawy."); tłumaczenie "no" zostawia ją bez zmian (np. niemieckie rzeczowniki)
+        $lower = 'yes' === _x('yes', 'Lowercase the field label inside "Choose %s."? Translate as "no" to keep it as entered.', 'wc-ship-today-notice')
+            ? (function_exists('mb_strtolower') ? mb_strtolower($label) : strtolower($label))
+            : $label;
+
+        /* translators: checkout error. %s: field label, e.g. "delivery date" */
+        return $html
+            ? sprintf(esc_html__('Choose %s.', 'wc-ship-today-notice'), '<strong>' . esc_html($lower) . '</strong>')
+            : sprintf(__('Choose %s.', 'wc-ship-today-notice'), $lower);
+    }
+
+    /**
+     * Komunikat dla daty wysyłki, której nie ma wśród aktualnych terminów (godzina graniczna minęła albo dzień bez wysyłki).
+     */
+    public function unavailable_message($ymd)
+    {
+        $schedule = $this->plugin->schedule();
+        $date     = $schedule->date($ymd);
+        $closed   = $schedule->is_shipping_day($date) && $schedule->cutoff_for($date) <= $schedule->now();
+        $message  = $closed
+            /* translators: %s: shipping date, e.g. "pn 26.10" */
+            ? __('Orders for shipping on %s are no longer accepted. Please choose another date.', 'wc-ship-today-notice')
+            /* translators: %s: shipping date, e.g. "pn 26.10" */
+            : __('Shipping on %s is not available. Please choose another date.', 'wc-ship-today-notice');
+
+        return sprintf($message, $this->date_short($date));
     }
 
     public function save_to_order($order, $data)
