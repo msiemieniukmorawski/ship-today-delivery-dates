@@ -43,7 +43,7 @@ Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po
 
 1. Skopiuj katalog do `wp-content/plugins/wc-ship-today-notice/` (albo wgraj ZIP w Wtyczki → Dodaj nową).
 2. Aktywuj wtyczkę. Aktywacja tworzy tabelę `{prefix}wc_ship_today_notice_holidays` i planuje pobieranie świąt
-   (pierwsze po ok. godzinie, potem co 4 miesiące).
+   (pierwsze przy najbliższym wywołaniu WP-Cron, potem co 4 miesiące).
 3. Wejdź w **WooCommerce → Ship Today Notice**.
 
 Strona ustawień i zapis obu zakładek wymagają uprawnienia `manage_woocommerce`, więc kierownik sklepu może je zmieniać
@@ -66,7 +66,7 @@ Strona ustawień i zapis obu zakładek wymagają uprawnienia `manage_woocommerce
 | Tryb komunikatu | "Wysyłka dziś" | Tryb komunikatu / atrybut `mode` | |
 | Dni wysyłki | pn-pt, do 14:00 tego samego dnia | Delivery weekdays & cutoff times | sob/nd mają domyślnie 12:00, ale nie są zaznaczone. |
 | Data dostawy | nie (0 dni) | Dostawa | Dni bez doręczeń domyślnie: niedziela. |
-| Święta | po pobraniu | cron ok. 1 h po aktywacji albo "Fetch holidays now" | Kraj i język: PL. Po zmianie kraju trzeba pobrać święta ręcznie. |
+| Święta | po pobraniu | WP-Cron zaraz po aktywacji, co ok. 4 miesiące, po zmianie kraju/języka/regionu albo "Fetch holidays now" | Kraj i język: PL, bez regionu (tylko święta ogólnokrajowe). Patrz [Święta](#święta). |
 | Daty wykluczone | brak | Excluded dates | |
 | Tekst po godzinie granicznej / w dzień bez wysyłki | tak | checkboxy przy tekstach | Dotyczy trybu "wysyłka dziś". |
 | Sekundy w odliczaniu | tak | Countdown format | |
@@ -83,6 +83,21 @@ Strona ustawień i zapis obu zakładek wymagają uprawnienia `manage_woocommerce
 
 Gdy moduł checkoutu jest wyłączony, wtyczka nie rejestruje jego hooków. Daty zapisane wcześniej w zamówieniach zostają
 w meta, ale nie są wtedy pokazywane w mailach, panelu ani na liście.
+
+## Święta
+
+Źródło: [OpenHolidays API](https://www.openholidaysapi.org/), bieżący i następny rok, dla kraju i języka z ustawień
+(`[A-Z]{2}`; błędny kod nie jest zapisywany, zostaje poprzedni z komunikatem).
+
+- **Kiedy pobierane:** zaraz po aktywacji (pojedyncze zdarzenie WP-Cron), co ok. 4 miesiące, od razu po zapisie ustawień ze zmienionym
+  krajem, językiem albo regionem, przyciskiem "Fetch holidays now". Gdy pobranie z crona się nie uda (sieć, API), ponowna próba za 6 h.
+- **Pusta albo błędna odpowiedź** (brak sieci, błąd HTTP, pusta lista, nie-JSON) nie kasuje zapisanych świąt danego roku.
+- **Święta regionalne** (`nationwide: false` w API, np. Boże Ciało w części landów DE) są pomijane. Pole **Region** (kod ISO 3166-2,
+  np. `DE-BY`) dokłada święta tego regionu i regionów nadrzędnych (region `DE-BY-AU` dostaje święta `DE-BY` i `DE-BY-AU`, region
+  `DE-BY` nie dostaje świąt samego Augsburga). Kody: `https://openholidaysapi.org/Subdivisions?countryIsoCode=DE`. Region z innego
+  kraju jest czyszczony z komunikatem. Dla PL API nie zwraca świąt regionalnych, więc nic się nie zmienia.
+- **Święta wielodniowe** (`startDate`..`endDate`, np. Nowy Rok 1-2.01 w SI, RO, RS) są zapisywane jako kolejne dni.
+- Pojedyncze święta można ignorować (wysyłka możliwa), do tego ręczna lista dat wykluczonych.
 
 ## Shortcode `[ship_today_notice]`
 
@@ -293,8 +308,9 @@ Daty jako `Y-m-d` w strefie czasowej sklepu.
 |---|---|
 | `wc_ship_today_notice_purge_cache` | O godzinie granicznej (+5 s, WP-Cron) i po zapisie ustawień, razem z `litespeed_purge_all`. Podepnij czyszczenie innego cache. |
 
-Zdarzenia WP-Cron: `wc_ship_today_notice_cron_sync_holidays` (święta, co ok. 4 miesiące) i
-`wc_ship_today_notice_cron_purge_cache` (pojedyncze zdarzenie na najbliższą godzinę graniczną).
+Zdarzenia WP-Cron: `wc_ship_today_notice_cron_sync_holidays` (święta, co ok. 4 miesiące, plus pojedyncze zdarzenia po aktywacji
+i przy ponownej próbie) i `wc_ship_today_notice_cron_purge_cache` (pojedyncze zdarzenie na najbliższą godzinę graniczną, planowane
+tylko przy aktywnym LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_purge_cache`; bez nich zdejmowane).
 
 ### JS
 
@@ -373,6 +389,12 @@ do katalogu `assets/` w SVN WordPress.org. Nie wchodzi do paczki.
 ## Changelog
 
 ### Niewydane
+- Święta: pomijane święta regionalne, opcjonalny region (ISO 3166-2, np. `DE-BY`), święta wielodniowe zapisywane jako kolejne dni,
+  pusta/błędna odpowiedź API nie kasuje zapisanych świąt, pobieranie zaraz po aktywacji i po zmianie kraju/języka/regionu,
+  ponowna próba po błędzie crona.
+- Walidacja kodów kraju i języka (`[A-Z]{2}`; błędny = poprzedni + komunikat).
+- Cron czyszczenia cache tylko przy LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_purge_cache`.
+- Zapis ustawień nie nadpisuje już `cutoff_time` wartością 14:00.
 - Wybór terminu w checkoucie blokowym, WooCommerce 10.1+ (pole Additional Checkout Fields, walidacja w Store API, te same meta zamówienia);
   deklaracja zgodności z checkoutem blokowym.
 - Przygotowanie do WordPress.org: `readme.txt`, nagłówek wtyczki (licencja, wymagania WP/PHP/WooCommerce,

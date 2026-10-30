@@ -19,7 +19,7 @@ Show customers how long they have to order so the parcel ships in the next slot:
 * Shortcode `[ship_today_notice]` with two modes: "ships today" (countdown to today's cutoff) and "next slot" (always the nearest cutoff).
 * Shipping weekdays with a cutoff time per day. The cutoff can fall 0-6 days before the ship day (e.g. ships on Monday, order by Sunday 8 pm).
 * Delivery date: N delivery days after shipping, skipping days without deliveries and public holidays.
-* Public holidays from the OpenHolidays API for the current and next year, with the option to ignore selected holidays, plus a manual list of excluded dates.
+* Public holidays from the OpenHolidays API for the current and next year: nationwide holidays, optionally plus those of one region (e.g. DE-BY), with the option to ignore selected holidays, plus a manual list of excluded dates.
 * Tokens such as `{countdown}`, `{cutoff_when}`, `{ship_when}`, `{delivery_when}` with Polish day declension ("dziś do 20:00", "do niedzieli 20:00", "we wtorek").
 * Works with full-page cache: the next 42 days of slots are in the HTML and the browser switches slots itself. Optional cache purge (LiteSpeed Cache or your own hook) at each cutoff time.
 * "Style" tab: colors, border, font and alignment of the widget with a live preview, output as CSS variables.
@@ -44,7 +44,7 @@ The admin is partly translated (English source, Polish and German translations i
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/` or install the ZIP via Plugins → Add New → Upload Plugin. WooCommerce must be active.
-2. Activate the plugin. It creates a table for public holidays and schedules the holiday download.
+2. Activate the plugin. It creates a table for public holidays and downloads them on the next WP-Cron run.
 3. Go to WooCommerce → Ship Today Notice. Set the shipping weekdays and cutoff times.
 4. Click "Fetch holidays now" at the bottom of the settings page to download holidays right away.
 5. Optionally set the delivery days, then save and check the "Next slots" preview.
@@ -67,7 +67,11 @@ Yes. The widget does not use AJAX: the schedule for the next 42 days is embedded
 
 = Where do the public holidays come from? =
 
-From the OpenHolidays API, for the country and language set in the settings (default: PL), for the current and the next year. They are downloaded automatically about every 4 months and when you click "Fetch holidays now". You can ignore single holidays (shipping possible on that day) and add your own excluded dates. After changing the country, download the holidays again.
+From the OpenHolidays API, for the country and language set in the settings (default: PL), for the current and the next year. They are downloaded right after activation, about every 4 months, after you change the country, language or region, and when you click "Fetch holidays now". If the service is unreachable or returns no data, the holidays already saved are kept and the download is retried later. You can ignore single holidays (shipping possible on that day) and add your own excluded dates.
+
+= What about regional holidays? =
+
+By default only nationwide holidays are used. To include the holidays of one region, enter its ISO 3166-2 code in the "Region" field (e.g. DE-BY for Bavaria). Holidays of parent regions are included too. Holidays that last several days are saved as separate days.
 
 = Who can change the settings? =
 
@@ -85,7 +89,7 @@ Deleting the plugin removes its settings, the holiday table and its scheduled ev
 
 This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/), an open data service with public holidays, to know on which days there is no shipping or delivery.
 
-* When: automatically about every 4 months (WP-Cron, first run about an hour after activation) and when an administrator clicks "Fetch holidays now" in the settings. The storefront never calls the service.
+* When: by WP-Cron right after activation and then about every 4 months (with a retry after 6 hours if a download fails), when an administrator saves the settings with a changed country, language or region, and when an administrator clicks "Fetch holidays now". The storefront never calls the service.
 * What is sent: a GET request to `https://openholidaysapi.org/PublicHolidays` with the country code and language code from the settings and the date range (start and end of the year), once for the current and once for the next year. No customer or order data is sent. As with any request made by WordPress, the service receives your server's IP address and the WordPress user agent, which contains your site URL.
 * Provider: OpenHolidays API project (https://www.openholidaysapi.org/), operated by STÜBER SYSTEMS GmbH, Berlin. The service does not publish separate terms of use. Privacy policy: https://www.stueber.de/en/legal/privacy.php. Legal notice: https://www.stueber.de/en/legal/imprint.php. The holiday data is published under the Open Database License (ODbL 1.0): https://github.com/openpotato/openholidaysapi.data
 

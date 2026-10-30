@@ -467,3 +467,25 @@ msgstr "Przyjmowanie zamówień na wysyłkę %s już się zakończyło. Wybierz 
 #, php-format
 msgid "Shipping on %s is not available. Please choose another date."
 msgstr "Termin z wysyłką %s jest niedostępny. Wybierz inny termin."
+
+#: wc-ship-today-notice.php
+msgid "Region"
+msgstr "Region"
+
+#: wc-ship-today-notice.php
+#, php-format
+msgid "%1$s: \"%2$s\" is not a two-letter code. The previous value %3$s was kept."
+msgstr "%1$s: „%2$s” to nie jest kod dwuliterowy. Zostawiono poprzednią wartość %3$s."
+
+#: wc-ship-today-notice.php
+#, php-format
+msgid "Region \"%1$s\" is not a region code of %2$s (e.g. DE-BY). Only nationwide holidays are used."
+msgstr "Region „%1$s” nie jest kodem regionu kraju %2$s (np. DE-BY). Używane są tylko święta ogólnokrajowe."
+
+#: wc-ship-today-notice.php
+msgid "Optional ISO 3166-2 region code, e.g. DE-BY. Empty: only nationwide holidays. With a region, its regional holidays also block shipping."
+msgstr "Opcjonalny kod regionu ISO 3166-2, np. DE-BY. Puste: tylko święta ogólnokrajowe. Z regionem wysyłkę blokują też jego święta regionalne."
+
+#: wc-ship-today-notice.php
+msgid "Region codes for this country"
+msgstr "Kody regionów dla tego kraju"

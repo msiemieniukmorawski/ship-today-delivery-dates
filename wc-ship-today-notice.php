@@ -148,6 +148,8 @@ final class WC_Ship_Today_Notice
         if (!wp_next_scheduled(self::CRON_HOOK)) {
             wp_schedule_event(time() + HOUR_IN_SECONDS, 'every_four_months', self::CRON_HOOK);
         }
+        // Święta od razu (przy najbliższym wywołaniu WP-Cron), bez blokowania aktywacji zapytaniem do API
+        wp_schedule_single_event(time(), self::CRON_HOOK);
     }
 
     public function on_deactivate()
@@ -251,6 +253,17 @@ final class WC_Ship_Today_Notice
     {
         $this->schedule = null;
         $this->wpml_register_strings($old, $new);
+
+        // Inny kraj, język albo region = inne święta: pobieramy od razu, żeby lista w panelu i terminy były aktualne
+        foreach (['country_code', 'language_code', 'holiday_subdivision'] as $key) {
+            if (($old[$key] ?? null) !== ($new[$key] ?? null)) {
+                if (!$this->fetch_and_store_holidays()) {
+                    add_settings_error(self::OPTION_KEY, 'holidays_fetch', __('Failed to update holidays.', 'wc-ship-today-notice'), 'error');
+                }
+                break;
+            }
+        }
+
         $this->purge_cache();
         $this->reschedule_cache_purge();
     }
@@ -282,12 +295,24 @@ final class WC_Ship_Today_Notice
         $this->reschedule_cache_purge();
     }
 
+    /** Czy jest co czyścić o godzinie granicznej: LiteSpeed Cache albo podpięta akcja (te same, które woła purge_cache()). */
+    private function cache_purge_enabled()
+    {
+        return defined('LSCWP_V') || has_action('wc_ship_today_notice_purge_cache');
+    }
+
     public function maybe_schedule_cache_purge()
     {
-        if (!defined('LSCWP_V') && !has_action('wc_ship_today_notice_purge_cache')) {
+        $scheduled = wp_next_scheduled(self::CRON_PURGE_HOOK);
+
+        if (!$this->cache_purge_enabled()) {
+            // Np. po wyłączeniu LiteSpeed: zdejmujemy zaplanowane czyszczenie, żeby się dalej nie przeplanowywało
+            if ($scheduled) {
+                wp_clear_scheduled_hook(self::CRON_PURGE_HOOK);
+            }
             return;
         }
-        if (!wp_next_scheduled(self::CRON_PURGE_HOOK)) {
+        if (!$scheduled) {
             $this->reschedule_cache_purge();
         }
     }
@@ -295,6 +320,10 @@ final class WC_Ship_Today_Notice
     private function reschedule_cache_purge()
     {
         wp_clear_scheduled_hook(self::CRON_PURGE_HOOK);
+
+        if (!$this->cache_purge_enabled()) {
+            return;
+        }
 
         $slots = $this->schedule()->slots(1);
         if ($slots) {
@@ -387,6 +416,7 @@ final class WC_Ship_Today_Notice
 
         add_settings_field('country_code', __('Country ISO code', 'wc-ship-today-notice'), [$this, 'field_country_code'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
         add_settings_field('language_code', __('Language ISO code', 'wc-ship-today-notice'), [$this, 'field_language_code'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
+        add_settings_field('holiday_subdivision', __('Region', 'wc-ship-today-notice'), [$this, 'field_holiday_subdivision'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
         add_settings_field('holidays_list', __('Fetched holidays', 'wc-ship-today-notice'), [$this, 'field_holidays_list'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
 
         // --- Sekcja: Frontend texts ---
@@ -406,8 +436,10 @@ final class WC_Ship_Today_Notice
     {
         $options = $this->get_options();
 
-        // Cutoff time - legacy fallback
-        $options['cutoff_time'] = preg_match('/^\d{2}:\d{2}$/', $input['cutoff_time'] ?? '') ? $input['cutoff_time'] : '14:00';
+        // Cutoff time - legacy fallback (bez pola w formularzu: zostaje poprzednia wartość)
+        if (preg_match('/^\d{2}:\d{2}$/', $input['cutoff_time'] ?? '')) {
+            $options['cutoff_time'] = $input['cutoff_time'];
+        }
 
         // Mode
         $options['mode'] = in_array($input['mode'] ?? '', ['today', 'next_slot'], true) ? $input['mode'] : 'today';
@@ -439,9 +471,44 @@ final class WC_Ship_Today_Notice
             }
         ));
 
-        // Country & language codes
-        $options['country_code'] = strtoupper(sanitize_text_field($input['country_code'] ?? 'PL'));
-        $options['language_code'] = strtoupper(sanitize_text_field($input['language_code'] ?? 'PL'));
+        // Country & language codes: dwie litery, błędna wartość = poprzednia + komunikat
+        $codes = [
+            'country_code'  => __('Country ISO code', 'wc-ship-today-notice'),
+            'language_code' => __('Language ISO code', 'wc-ship-today-notice'),
+        ];
+        foreach ($codes as $key => $label) {
+            if (!isset($input[$key])) {
+                continue;
+            }
+            $value = strtoupper(trim(sanitize_text_field($input[$key])));
+            if (preg_match('/^[A-Z]{2}$/', $value)) {
+                $options[$key] = $value;
+            } else {
+                add_settings_error(self::OPTION_KEY, 'invalid_' . $key, sprintf(
+                    /* translators: 1: field label, 2: entered value, 3: previous value */
+                    __('%1$s: "%2$s" is not a two-letter code. The previous value %3$s was kept.', 'wc-ship-today-notice'),
+                    esc_html($label),
+                    esc_html($value),
+                    esc_html($options[$key])
+                ));
+            }
+        }
+
+        // Region (ISO 3166-2, np. DE-BY): puste = tylko święta ogólnokrajowe
+        if (isset($input['holiday_subdivision'])) {
+            $value = strtoupper(trim(sanitize_text_field($input['holiday_subdivision'])));
+            if ('' === $value || self::valid_subdivision($value, $options['country_code'])) {
+                $options['holiday_subdivision'] = $value;
+            } else {
+                $options['holiday_subdivision'] = '';
+                add_settings_error(self::OPTION_KEY, 'invalid_holiday_subdivision', sprintf(
+                    /* translators: 1: entered value, 2: country code */
+                    __('Region "%1$s" is not a region code of %2$s (e.g. DE-BY). Only nationwide holidays are used.', 'wc-ship-today-notice'),
+                    esc_html($value),
+                    esc_html($options['country_code'])
+                ));
+            }
+        }
 
         // Frontend texts
         $options['text_next_slot'] = wp_kses_post($input['text_next_slot'] ?? '');
@@ -569,6 +636,7 @@ final class WC_Ship_Today_Notice
             'excluded_holiday_dates' => [], // święta ignorowane (wysyłka możliwa), daty Y-m-d
             'country_code' => 'PL',
             'language_code' => 'PL',
+            'holiday_subdivision' => '', // region ISO 3166-2 (np. DE-BY), puste = tylko święta ogólnokrajowe
             'text_next_slot' => 'Zamów {cutoff_when}, wyślemy {ship_when}. Zostało: {countdown}',
             'text_before_cutoff' => __('Order within: {countdown} — we will ship today!', 'wc-ship-today-notice'),
             'text_after_cutoff' => __('We will ship tomorrow.', 'wc-ship-today-notice'),
@@ -1160,6 +1228,24 @@ final class WC_Ship_Today_Notice
         echo '</p>';
     }
 
+    public function field_holiday_subdivision()
+    {
+        $o = $this->get_options();
+        printf(
+            '<input type="text" name="%s[holiday_subdivision]" value="%s" maxlength="20" placeholder="%s" style="width:120px;text-transform:uppercase" />',
+            esc_attr(self::OPTION_KEY),
+            esc_attr($o['holiday_subdivision']),
+            esc_attr($o['country_code'] . '-…')
+        );
+        echo '<p class="description">';
+        esc_html_e('Optional ISO 3166-2 region code, e.g. DE-BY. Empty: only nationwide holidays. With a region, its regional holidays also block shipping.', 'wc-ship-today-notice');
+        printf(
+            ' <a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p>',
+            esc_url('https://openholidaysapi.org/Subdivisions?countryIsoCode=' . rawurlencode($o['country_code'])),
+            esc_html__('Region codes for this country', 'wc-ship-today-notice')
+        );
+    }
+
     /**
      * Field: lista świąt (bieżący i następny rok) z możliwością ignorowania po dacie.
      */
@@ -1371,7 +1457,15 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
     public function cron_sync_holidays()
     {
-        $this->fetch_and_store_holidays();
+        if ($this->fetch_and_store_holidays()) {
+            return;
+        }
+
+        // Błąd sieci / API: ponowna próba za 6 h, chyba że coś jest już zaplanowane wcześniej
+        $next = wp_next_scheduled(self::CRON_HOOK);
+        if (!$next || $next > time() + 6 * HOUR_IN_SECONDS) {
+            wp_schedule_single_event(time() + 6 * HOUR_IN_SECONDS, self::CRON_HOOK);
+        }
     }
 
     /**
@@ -1397,16 +1491,19 @@ final class WC_Ship_Today_Notice
 
         $country = $o['country_code'];
         $lang    = $o['language_code'];
+        if (!preg_match('/^[A-Z]{2}$/', $country) || !preg_match('/^[A-Z]{2}$/', $lang)) {
+            return false;
+        }
 
         $validFrom = $year . '-01-01';
         $validTo   = $year . '-12-31';
 
-        $url = add_query_arg([
+        $url = add_query_arg(array_map('rawurlencode', [
             'countryIsoCode'  => $country,
             'languageIsoCode' => $lang,
             'validFrom'       => $validFrom,
             'validTo'         => $validTo,
-        ], 'https://openholidaysapi.org/PublicHolidays');
+        ]), 'https://openholidaysapi.org/PublicHolidays');
 
         $response = wp_remote_get($url, ['timeout' => 20]);
         if (is_wp_error($response)) {
@@ -1420,9 +1517,14 @@ final class WC_Ship_Today_Notice
 
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
-        if (!is_array($data)) {
+
+        // Pusta albo błędna odpowiedź nie kasuje zapisanych świąt (każdy kraj ma choć jedno święto w roku)
+        if (!is_array($data) || !$data) {
             return false;
         }
+
+        $subdivision = self::valid_subdivision($o['holiday_subdivision'], $country) ? $o['holiday_subdivision'] : '';
+        $holidays    = self::holidays_from_api($data, $lang, $subdivision, $validFrom, $validTo);
 
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE_NAME;
@@ -1439,11 +1541,63 @@ final class WC_Ship_Today_Notice
             )
         );
 
+        foreach ($holidays as $date => $name) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- własna tabela świąt.
+            $wpdb->insert($table, [
+                'country_code' => $country,
+                'holiday_date' => $date,
+                'holiday_name' => $name,
+            ]);
+        }
+
+        return true;
+    }
+
+    /**
+     * Kod regionu ISO 3166-2 danego kraju, np. DE-BY albo DE-BY-AU (kody OpenHolidays są hierarchiczne).
+     */
+    public static function valid_subdivision($code, $country)
+    {
+        return is_string($code) && (bool) preg_match('/^' . preg_quote((string) $country, '/') . '(-[A-Z0-9]{1,5})+$/', $code);
+    }
+
+    /**
+     * Odpowiedź OpenHolidays /PublicHolidays → [Y-m-d => nazwa].
+     * Święta regionalne (nationwide: false) tylko dla wybranego regionu albo jego regionu nadrzędnego
+     * (region DE-BY-AU dostaje święta DE-BY, region DE-BY nie dostaje świąt DE-BY-AU).
+     * Święta wielodniowe (startDate..endDate) rozwijane na kolejne dni, przycięte do zakresu roku.
+     */
+    public static function holidays_from_api(array $data, $lang, $subdivision, $from, $to)
+    {
+        $holidays = [];
+
         foreach ($data as $row) {
-            // The API returns date in ISO format under 'startDate' or 'date'
-            $date = $row['startDate'] ?? $row['date'] ?? null;
-            if (!$date) {
+            if (!is_array($row)) {
                 continue;
+            }
+
+            if (isset($row['nationwide']) && false === $row['nationwide']) {
+                $match = false;
+                foreach ((array) ($row['subdivisions'] ?? []) as $sub) {
+                    $code = (string) ($sub['code'] ?? '');
+                    if ('' !== $subdivision && '' !== $code && ($code === $subdivision || 0 === strpos($subdivision, $code . '-'))) {
+                        $match = true;
+                        break;
+                    }
+                }
+                if (!$match) {
+                    continue;
+                }
+            }
+
+            // The API returns date in ISO format under 'startDate' or 'date'
+            $start = (string) ($row['startDate'] ?? $row['date'] ?? '');
+            $end   = (string) ($row['endDate'] ?? $start);
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) {
+                continue;
+            }
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $end) || $end < $start) {
+                $end = $start;
             }
 
             $name = '';
@@ -1457,15 +1611,23 @@ final class WC_Ship_Today_Notice
                 }
             }
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- własna tabela świąt.
-            $wpdb->insert($table, [
-                'country_code' => $country,
-                'holiday_date' => $date,
-                'holiday_name' => $name,
-            ]);
+            // Kolejne dni jako tekst Y-m-d (bez stref czasowych); limit 31 dni na wypadek błędnych danych
+            $day = new DateTimeImmutable($start . ' 12:00:00', new DateTimeZone('UTC'));
+            for ($i = 0; $i < 31; $i++) {
+                $ymd = $day->format('Y-m-d');
+                if ($ymd > $end) {
+                    break;
+                }
+                if ($ymd >= $from && $ymd <= $to && !isset($holidays[$ymd])) {
+                    $holidays[$ymd] = (string) $name;
+                }
+                $day = $day->modify('+1 day');
+            }
         }
 
-        return true;
+        ksort($holidays);
+
+        return $holidays;
     }
 
     /* ---------------------------------------------------------
