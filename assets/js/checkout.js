@@ -17,7 +17,6 @@
     var label = document.createElement('label');
     var input = document.createElement('input');
     var main = document.createElement('span');
-    var sub = document.createElement('span');
 
     label.className = 'wc-stn-tile';
     input.type = 'radio';
@@ -28,12 +27,16 @@
     input.setAttribute('aria-label', tile.aria);
     main.className = 'wc-stn-tile__main';
     main.textContent = tile.main;
-    sub.className = 'wc-stn-tile__sub';
-    sub.textContent = tile.sub;
 
     label.appendChild(input);
     label.appendChild(main);
-    label.appendChild(sub);
+    // Pusta druga linia (ustawienia) = bez elementu, jak w HTML z PHP
+    if (tile.sub) {
+      var sub = document.createElement('span');
+      sub.className = 'wc-stn-tile__sub';
+      sub.textContent = tile.sub;
+      label.appendChild(sub);
+    }
 
     return label;
   }
@@ -44,6 +47,12 @@
     });
   }
 
+  // Termin w komunikacie: tile.label (domyślny duży napis), niezależnie od własnych tekstów kafelka
+  function slotLabel(cfg, value) {
+    var tile = (cfg.tiles || []).filter(function (t) { return t.value === value; })[0];
+    return tile ? (tile.label || tile.main) : value;
+  }
+
   function showNotice($fs, text) {
     $fs.find('.wc-stn-checkout__notice').text(text).prop('hidden', !text);
   }
@@ -51,13 +60,13 @@
   function refresh($fs, cfg) {
     var now = nowS(cfg);
     var $tiles = $fs.find('.wc-stn-checkout__tiles');
-    var closedLabel = null;
+    var closedValue = null;
 
     $tiles.find('.wc-stn-tile').each(function () {
       var $input = $(this).find('.wc-stn-tile__input');
       if (parseInt($input.attr('data-cutoff'), 10) <= now) {
         if ($input.prop('checked')) {
-          closedLabel = $(this).find('.wc-stn-tile__main').text();
+          closedValue = $input.val();
         }
         $(this).remove();
       }
@@ -74,13 +83,13 @@
       }
     });
 
-    if (closedLabel !== null) {
+    if (closedValue !== null) {
       var $first = $tiles.find('.wc-stn-tile__input').first();
       if ($first.length) {
         $first.prop('checked', true);
         showNotice($fs, cfg.closed
-          .replace('%1$s', closedLabel)
-          .replace('%2$s', $first.closest('.wc-stn-tile').find('.wc-stn-tile__main').text()));
+          .split('{slot}').join(slotLabel(cfg, closedValue))
+          .split('{next_slot}').join(slotLabel(cfg, $first.val())));
       }
       $(document.body).trigger('update_checkout');
     }

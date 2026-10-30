@@ -43,6 +43,17 @@ final class WC_Ship_Today_Notice
      * Przełączniki funkcji opcjonalnych (checkboxy). Domyślne wartości w get_options() = zachowanie sprzed przełączników.
      * Zapisywane tylko z formularza (znacznik _toggles), zapis z kodu bez nich zostawia poprzednie wartości.
      */
+    /** Teksty checkoutu z ustawień (sanitize_text_field, WPML). Pusty = domyślny przetłumaczony. Druga linia kafelka osobno. */
+    const CHECKOUT_TEXTS = [
+        'checkout_tile_main',
+        'checkout_row_ship_label',
+        'checkout_row_delivery_label',
+        'checkout_msg_choose',
+        'checkout_msg_closed',
+        'checkout_msg_unavailable',
+        'checkout_msg_switched',
+    ];
+
     const TOGGLES = [
         'checkout_review_row',
         'checkout_order_rows',
@@ -466,6 +477,7 @@ final class WC_Ship_Today_Notice
         );
         add_settings_field('checkout_enabled', __('Module', 'wc-ship-today-notice'), [$this, 'field_checkout_enabled'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
         add_settings_field('checkout_tiles', __('Tiles', 'wc-ship-today-notice'), [$this, 'field_checkout_tiles'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
+        add_settings_field('checkout_texts', __('Texts', 'wc-ship-today-notice'), [$this, 'field_checkout_texts'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
         add_settings_field('checkout_display', __('Dates in orders', 'wc-ship-today-notice'), [$this, 'field_checkout_display'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
         if (WC_STN_Checkout::iconic_active()) {
             add_settings_field('disable_iconic', 'Iconic Delivery Slots', [$this, 'field_disable_iconic'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
@@ -638,6 +650,24 @@ final class WC_Ship_Today_Notice
         $options['checkout_accent']    = (string) sanitize_hex_color($input['checkout_accent'] ?? '');
         $options['disable_iconic']     = !empty($input['disable_iconic']);
 
+        // Teksty kafelka, wierszy zamówienia i komunikatów: puste = domyślny przetłumaczony tekst; brak w wejściu (zapis z kodu) = bez zmian
+        foreach (self::CHECKOUT_TEXTS as $key) {
+            if (isset($input[$key])) {
+                $options[$key] = trim(sanitize_text_field((string) $input[$key]));
+            }
+        }
+        // Druga linia kafelka: null = domyślna, '' = ukryta. Formularz pokazuje domyślną jako wartość pola, więc jej odesłanie
+        // (dla poprzedniego albo nowego "Duży napis" / dostawy) zapisujemy jako null - dalej idzie za tłumaczeniem i presetem.
+        if (isset($input['checkout_tile_sub'])) {
+            $prev = $this->get_options();
+            $sub  = trim(sanitize_text_field((string) $input['checkout_tile_sub']));
+            $defaults = [
+                WC_STN_Checkout::default_tile_texts($prev['checkout_primary'], (int) $prev['delivery_offset'] > 0)['sub'],
+                WC_STN_Checkout::default_tile_texts($options['checkout_primary'], (int) $options['delivery_offset'] > 0)['sub'],
+            ];
+            $options['checkout_tile_sub'] = in_array($sub, $defaults, true) ? null : $sub;
+        }
+
         // Przełączniki: odznaczony checkbox nie przychodzi w POST, więc bez znacznika formularza (zapis z kodu) nic nie zmieniamy
         if (!empty($input['_toggles'])) {
             foreach (self::TOGGLES as $key) {
@@ -764,6 +794,15 @@ final class WC_Ship_Today_Notice
             'checkout_position' => 'shortcode', // 'shortcode', 'after_order_notes', 'before_order_review'
             'checkout_accent' => '',
             'disable_iconic' => false,
+            // Teksty checkoutu (CHECKOUT_TEXTS): puste = domyślne przetłumaczone; druga linia kafelka: null = domyślna, '' = ukryta
+            'checkout_tile_main' => '',
+            'checkout_tile_sub' => null,
+            'checkout_row_ship_label' => '',
+            'checkout_row_delivery_label' => '',
+            'checkout_msg_choose' => '',
+            'checkout_msg_closed' => '',
+            'checkout_msg_unavailable' => '',
+            'checkout_msg_switched' => '',
             // Przełączniki funkcji opcjonalnych (TOGGLES); domyślnie jak przed ich dodaniem
             'checkout_review_row' => true, // wiersz z terminem w podsumowaniu zamówienia (checkout)
             'checkout_order_rows' => true, // wiersze z datami: podziękowanie, maile, Moje konto
@@ -1185,6 +1224,7 @@ final class WC_Ship_Today_Notice
             <?php esc_html_e('Large text on the tile:', 'wc-ship-today-notice'); ?>
             <label><input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_primary]" value="delivery" <?php checked($o['checkout_primary'], 'delivery'); ?> /> <?php esc_html_e('delivery date', 'wc-ship-today-notice'); ?></label>
             <label style="margin-left:10px"><input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_primary]" value="ship" <?php checked($o['checkout_primary'], 'ship'); ?> /> <?php esc_html_e('ship date', 'wc-ship-today-notice'); ?></label>
+            <br><span class="description"><?php esc_html_e('Sets the default tile texts (see "Texts" below).', 'wc-ship-today-notice'); ?></span>
         </p>
         <p>
             <label>
@@ -1193,6 +1233,56 @@ final class WC_Ship_Today_Notice
             </label>
             <span class="description"><?php esc_html_e('(HEX, empty = dark gray)', 'wc-ship-today-notice'); ?></span>
         </p>
+        <?php
+    }
+
+    /**
+     * Teksty kafelka, wierszy w zamówieniu i komunikatów checkoutu. Puste pole = domyślny tekst (podpowiedź w polu),
+     * wyjątek: druga linia kafelka - pusta = ukryta, domyślna jest wpisana w pole (przycisk przywraca ją).
+     */
+    public function field_checkout_texts()
+    {
+        $o        = $this->get_options();
+        $defaults = WC_STN_Checkout::default_tile_texts($o['checkout_primary'], (int) $o['delivery_offset'] > 0);
+        $messages = WC_STN_Checkout::default_messages();
+        $input    = function ($key, $placeholder, $value = null) use ($o) {
+            printf(
+                '<input type="text" name="%s[%s]" value="%s" placeholder="%s" class="regular-text" />',
+                esc_attr(self::OPTION_KEY),
+                esc_attr($key),
+                esc_attr(null === $value ? (string) $o[$key] : $value),
+                esc_attr($placeholder)
+            );
+        };
+        $sub = null === $o['checkout_tile_sub'] ? $defaults['sub'] : (string) $o['checkout_tile_sub'];
+        ?>
+        <p><strong><?php esc_html_e('Tile', 'wc-ship-today-notice'); ?></strong></p>
+        <p>
+            <label><?php esc_html_e('Large text:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_tile_main', $defaults['main']); ?></label>
+        </p>
+        <p>
+            <label><?php esc_html_e('Second line:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_tile_sub', '', $sub); ?></label>
+            <button type="button" class="button button-small" data-default="<?php echo esc_attr($defaults['sub']); ?>" onclick="this.previousElementSibling.querySelector('input').value = this.dataset.default;"><?php esc_html_e('Restore default', 'wc-ship-today-notice'); ?></button>
+        </p>
+        <p class="description"><?php esc_html_e('Large text: empty = default. Second line: empty = no second line.', 'wc-ship-today-notice'); ?>
+            <?php esc_html_e('Tokens:', 'wc-ship-today-notice'); ?> <code>{ship_short}</code> <code>{delivery_short}</code> (<?php esc_html_e('e.g. "Mon 02.11"', 'wc-ship-today-notice'); ?>), <code>{ship_when}</code> <code>{ship_day}</code> <code>{ship_date}</code> <code>{delivery_when}</code> <code>{delivery_day}</code> <code>{delivery_date}</code> <code>{cutoff_when}</code> <code>{cutoff_time}</code> <code>{cutoff_date}</code>.
+            <?php esc_html_e('The screen reader label of the tile always contains the full ship and delivery date.', 'wc-ship-today-notice'); ?></p>
+
+        <p style="margin-top:14px"><strong><?php esc_html_e('Rows after the order is placed (emails, thank-you page, My Account)', 'wc-ship-today-notice'); ?></strong></p>
+        <p>
+            <label><?php esc_html_e('Ship date label:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_row_ship_label', __('Ship date:', 'wc-ship-today-notice')); ?></label>
+        </p>
+        <p>
+            <label><?php esc_html_e('Delivery date label:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_row_delivery_label', __('Planned delivery:', 'wc-ship-today-notice')); ?></label>
+        </p>
+
+        <p style="margin-top:14px"><strong><?php esc_html_e('Checkout messages', 'wc-ship-today-notice'); ?></strong></p>
+        <p><label><?php esc_html_e('No date selected:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_choose', $messages['checkout_msg_choose']); ?></label></p>
+        <p><label><?php esc_html_e('Cutoff time of the selected date has passed:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_closed', $messages['checkout_msg_closed']); ?></label></p>
+        <p><label><?php esc_html_e('Selected date is not available:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_unavailable', $messages['checkout_msg_unavailable']); ?></label></p>
+        <p><label><?php esc_html_e('Selected date closed while the page was open:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_switched', $messages['checkout_msg_switched']); ?></label></p>
+        <p class="description"><?php esc_html_e('Empty = default text (shown in the field), translated to the store language.', 'wc-ship-today-notice'); ?>
+            <?php esc_html_e('Tokens:', 'wc-ship-today-notice'); ?> <code>{field}</code> (<?php esc_html_e('field name', 'wc-ship-today-notice'); ?>), <code>{slot}</code> (<?php esc_html_e('date, e.g. "Tue 03.11"', 'wc-ship-today-notice'); ?>), <code>{next_slot}</code> (<?php esc_html_e('newly selected date', 'wc-ship-today-notice'); ?>).</p>
         <?php
     }
 
@@ -2108,9 +2198,17 @@ final class WC_Ship_Today_Notice
         icl_register_string(self::WPML_DOMAIN, 'text_before_cutoff', $new['text_before_cutoff'] ?? '');
         icl_register_string(self::WPML_DOMAIN, 'text_after_cutoff', $new['text_after_cutoff'] ?? '');
         icl_register_string(self::WPML_DOMAIN, 'text_not_shipping_day', $new['text_not_shipping_day'] ?? '');
+
+        // Teksty checkoutu: tylko własne (puste = domyślne z tłumaczeń wtyczki)
+        foreach (array_merge(self::CHECKOUT_TEXTS, ['checkout_tile_sub']) as $key) {
+            if (isset($new[$key]) && '' !== (string) $new[$key]) {
+                icl_register_string(self::WPML_DOMAIN, $key, (string) $new[$key]);
+            }
+        }
     }
 
-    private function t($key, $fallback)
+    /** Tekst z ustawień przetłumaczony przez WPML (przy włączonym przełączniku), inaczej bez zmian. */
+    public function t($key, $fallback)
     {
         if (empty($this->get_options()['wpml_strings'])) {
             return $fallback;

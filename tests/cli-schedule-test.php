@@ -69,11 +69,17 @@ foreach ($cases as [$label, $options, $now, $cutoff, $ship, $delivery]) {
     printf("%s  %-42s teraz %s → do %s, wysyłka %s, dostawa %s%s\n", $ok ? 'OK  ' : 'FAIL', $label, $now, $got[0], $got[1], $got[2] ?: '-', $ok ? '' : "  (oczekiwano: {$cutoff}, {$ship}, {$delivery})");
 }
 
-foreach ($texts as [$label, $now, $text, $expected]) {
+// Tokeny kafelka checkoutu: {ship_short} / {delivery_short} tylko, gdy podane w etykietach (w widgecie zostają bez zmian)
+$texts[] = ['kafelek: krótkie formy', '2026-10-25 15:00', '{delivery_short} | wysyłka {ship_short} | {ship_when}', 'wt 27.10 | wysyłka pn 26.10 | jutro', ['ship_short' => 'pn 26.10', 'delivery_short' => 'wt 27.10']];
+$texts[] = ['widget: bez krótkich form', '2026-10-25 15:00', 'Wyślemy {ship_when} {ship_short}', 'Wyślemy jutro {ship_short}', []];
+
+foreach ($texts as $row) {
+    [$label, $now, $text, $expected] = $row;
+    $extra = $row[4] ?? [];
     $schedule = new WC_STN_Schedule($two_days, $tz);
     $now      = new DateTimeImmutable($now, $tz);
     $slot     = $schedule->slots(1, $now)[0];
-    $got      = $schedule->render_text($text, $schedule->slot_labels($slot), $now);
+    $got      = $schedule->render_text($text, $extra + $schedule->slot_labels($slot), $now);
     $ok       = $got === $expected;
     $fail    += $ok ? 0 : 1;
 

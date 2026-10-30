@@ -320,6 +320,7 @@ final class WC_STN_Schedule
 
     /**
      * Wstawia tokeny terminu do tekstu. {countdown} zostaje jako znacznik do podmiany przez JS.
+     * Opcjonalne $labels['ship_short'] / ['delivery_short'] dają tokeny {ship_short} / {delivery_short} (kafelki checkoutu).
      */
     public function render_text(string $text, array $labels, ?DateTimeImmutable $now = null): string
     {
@@ -352,6 +353,12 @@ final class WC_STN_Schedule
             '{delivery_day}'  => $labels['delivery_day'],
             '{delivery_date}' => $labels['delivery_date'],
         ];
+        // Krótkie formy z kafelka checkoutu ("pn 02.11"), tylko gdy wywołujący je poda (widget ich nie ma)
+        foreach (['ship_short', 'delivery_short'] as $key) {
+            if (isset($labels[$key])) {
+                $replace['{' . $key . '}'] = (string) $labels[$key];
+            }
+        }
 
         return strtr($text, $replace);
     }

@@ -161,8 +161,7 @@ final class WC_STN_Checkout
             'count'     => $count,
             'tiles'     => $tiles,
             'nowOffset' => $this->plugin->now_offset() * 1000,
-            /* translators: checkout notice when the selected date closes on an open page. %1$s: closed date, %2$s: newly selected date */
-            'closed'    => __('The %1$s date has just closed, we selected %2$s.', 'wc-ship-today-notice'),
+            'closed'    => $this->switched_message(),
         ];
 
         $style = '' !== $o['checkout_accent'] ? ' style="--wc-stn-accent:' . esc_attr($o['checkout_accent']) . '"' : '';
@@ -181,22 +180,52 @@ final class WC_STN_Checkout
         return $html;
     }
 
+    /**
+     * Domyślne teksty kafelka jako szablony z tokenami (z tłumaczeń), wg "Duży napis na kafelku" i tego, czy termin ma dostawę.
+     * Te same szablony pokazuje panel (podpowiedź / wartość drugiej linii), więc wyrenderowane dają dokładnie dotychczasowy kafelek.
+     */
+    public static function default_tile_texts($primary, $has_delivery)
+    {
+        if ($has_delivery && 'delivery' === $primary) {
+            /* translators: checkout tile, second line. %s: short weekday and date, e.g. "Mon 09.11" */
+            return ['main' => '{delivery_short}', 'sub' => sprintf(_x('ship %s', 'checkout tile', 'wc-ship-today-notice'), '{ship_short}')];
+        }
+
+        return [
+            'main' => '{ship_short}',
+            'sub'  => $has_delivery
+                /* translators: checkout tile, order review and orders list. %s: short weekday and date, e.g. "Tue 10.11" */
+                ? sprintf(_x('delivery %s', 'short date line', 'wc-ship-today-notice'), '{delivery_short}')
+                : _x('ship', 'checkout tile without a delivery date', 'wc-ship-today-notice'),
+        ];
+    }
+
     public function tile_data(array $slot)
     {
         $o        = $this->plugin->get_options();
+        $schedule = $this->plugin->schedule();
         $ship     = $slot['ship'];
         $delivery = $slot['delivery'];
         $name     = function (DateTimeImmutable $d) {
             return WC_STN_Schedule::day_label((int) $d->format('N'), 'name') . ' ' . $d->format('d.m');
         };
 
-        if ($delivery && 'delivery' === $o['checkout_primary']) {
-            $main = $this->date_short($delivery);
-            $sub  = $this->ship_short($ship);
-        } else {
-            $main = $this->date_short($ship);
-            $sub  = $delivery ? $this->delivery_short($delivery) : _x('ship', 'checkout tile without a delivery date', 'wc-ship-today-notice');
+        // Teksty kafelka: własne z ustawień (tokeny jak w widgecie + {ship_short}/{delivery_short}) albo domyślne.
+        // "Dziś/jutro" w {*_when} liczy PHP przy renderze (strona checkoutu nie jest cache'owana).
+        $labels   = $schedule->slot_labels($slot) + [
+            'ship_short'     => $this->date_short($ship),
+            'delivery_short' => $delivery ? $this->date_short($delivery) : '',
+        ];
+        $defaults = self::default_tile_texts($o['checkout_primary'], (bool) $delivery);
+        $main_tpl = '' !== (string) $o['checkout_tile_main'] ? $this->plugin->t('checkout_tile_main', $o['checkout_tile_main']) : $defaults['main'];
+        // Druga linia: null = domyślna, '' = ukryta
+        $sub_tpl  = null === $o['checkout_tile_sub'] ? $defaults['sub'] : (string) $o['checkout_tile_sub'];
+        if ('' !== $sub_tpl && null !== $o['checkout_tile_sub']) {
+            $sub_tpl = $this->plugin->t('checkout_tile_sub', $sub_tpl);
         }
+
+        $main = trim($schedule->render_text($main_tpl, $labels));
+        $sub  = '' === $sub_tpl ? '' : trim($schedule->render_text($sub_tpl, $labels));
 
         /* translators: checkout tile for screen readers. %s: weekday and date, e.g. "Monday 09.11" */
         $aria = sprintf(__('Ship %s', 'wc-ship-today-notice'), $name($ship));
@@ -213,20 +242,22 @@ final class WC_STN_Checkout
             'main'   => $main,
             'sub'    => $sub,
             'aria'   => $aria,
+            // Termin w komunikatach ({slot}, {next_slot}): domyślny duży napis, niezależnie od własnych tekstów kafelka
+            'label'  => $schedule->render_text($defaults['main'], $labels),
         ];
     }
 
     private function tile_html(array $tile, $checked)
     {
         return sprintf(
-            '<label class="wc-stn-tile"><input type="radio" class="wc-stn-tile__input" name="%1$s" value="%2$s" data-cutoff="%3$d" aria-label="%4$s"%5$s /><span class="wc-stn-tile__main">%6$s</span><span class="wc-stn-tile__sub">%7$s</span></label>',
+            '<label class="wc-stn-tile"><input type="radio" class="wc-stn-tile__input" name="%1$s" value="%2$s" data-cutoff="%3$d" aria-label="%4$s"%5$s /><span class="wc-stn-tile__main">%6$s</span>%7$s</label>',
             esc_attr(self::FIELD),
             esc_attr($tile['value']),
             (int) $tile['cutoff'],
             esc_attr($tile['aria']),
             $checked ? ' checked' : '',
             esc_html($tile['main']),
-            esc_html($tile['sub'])
+            '' !== $tile['sub'] ? '<span class="wc-stn-tile__sub">' . esc_html($tile['sub']) . '</span>' : ''
         );
     }
 
@@ -347,16 +378,61 @@ final class WC_STN_Checkout
      */
     public function choose_message($html = false)
     {
-        $label = $this->plugin->get_options()['checkout_label'];
+        $o     = $this->plugin->get_options();
+        $label = $o['checkout_label'];
         // Po polsku nazwa pola małą literą ("Wybierz termin dostawy."); tłumaczenie "no" zostawia ją bez zmian (np. niemieckie rzeczowniki)
         $lower = 'yes' === _x('yes', 'Lowercase the field label inside "Choose %s."? Translate as "no" to keep it as entered.', 'wc-ship-today-notice')
             ? (function_exists('mb_strtolower') ? mb_strtolower($label) : strtolower($label))
             : $label;
 
+        // Własny komunikat z ustawień: {field} = nazwa pola (jak w domyślnym, pogrubiona w HTML)
+        if ('' !== (string) $o['checkout_msg_choose']) {
+            $text = $this->plugin->t('checkout_msg_choose', $o['checkout_msg_choose']);
+            return $html
+                ? str_replace('{field}', '<strong>' . esc_html($lower) . '</strong>', esc_html($text))
+                : str_replace('{field}', $lower, $text);
+        }
+
+        if ($html) {
+            /* translators: checkout error. %s: field label, e.g. "delivery date" */
+            return sprintf(esc_html__('Choose %s.', 'wc-ship-today-notice'), '<strong>' . esc_html($lower) . '</strong>');
+        }
+
         /* translators: checkout error. %s: field label, e.g. "delivery date" */
-        return $html
-            ? sprintf(esc_html__('Choose %s.', 'wc-ship-today-notice'), '<strong>' . esc_html($lower) . '</strong>')
-            : sprintf(__('Choose %s.', 'wc-ship-today-notice'), $lower);
+        return sprintf(__('Choose %s.', 'wc-ship-today-notice'), $lower);
+    }
+
+    /**
+     * Domyślne komunikaty checkoutu z tokenami zamiast %s (podpowiedzi w panelu, wartość, gdy pole w ustawieniach jest puste).
+     */
+    public static function default_messages()
+    {
+        return [
+            /* translators: checkout error. %s: field label, e.g. "delivery date" */
+            'checkout_msg_choose'      => str_replace('%s', '{field}', __('Choose %s.', 'wc-ship-today-notice')),
+            /* translators: %s: shipping date, e.g. "pn 26.10" */
+            'checkout_msg_closed'      => str_replace('%s', '{slot}', __('Orders for shipping on %s are no longer accepted. Please choose another date.', 'wc-ship-today-notice')),
+            /* translators: %s: shipping date, e.g. "pn 26.10" */
+            'checkout_msg_unavailable' => str_replace('%s', '{slot}', __('Shipping on %s is not available. Please choose another date.', 'wc-ship-today-notice')),
+            /* translators: checkout notice when the selected date closes on an open page. %1$s: closed date, %2$s: newly selected date */
+            'checkout_msg_switched'    => str_replace(['%1$s', '%2$s'], ['{slot}', '{next_slot}'], __('The %1$s date has just closed, we selected %2$s.', 'wc-ship-today-notice')),
+        ];
+    }
+
+    /** Tekst z ustawień albo domyślny (z tokenami). */
+    private function message($key)
+    {
+        $o = $this->plugin->get_options();
+
+        return '' !== (string) $o[$key] ? $this->plugin->t($key, $o[$key]) : self::default_messages()[$key];
+    }
+
+    /**
+     * Komunikat w JS, gdy wybrany termin zamknie się na otwartej stronie: tokeny {slot} i {next_slot} wstawia JS (tile.label).
+     */
+    public function switched_message()
+    {
+        return $this->message('checkout_msg_switched');
     }
 
     /**
@@ -367,13 +443,8 @@ final class WC_STN_Checkout
         $schedule = $this->plugin->schedule();
         $date     = $schedule->date($ymd);
         $closed   = $schedule->is_shipping_day($date) && $schedule->cutoff_for($date) <= $schedule->now();
-        $message  = $closed
-            /* translators: %s: shipping date, e.g. "pn 26.10" */
-            ? __('Orders for shipping on %s are no longer accepted. Please choose another date.', 'wc-ship-today-notice')
-            /* translators: %s: shipping date, e.g. "pn 26.10" */
-            : __('Shipping on %s is not available. Please choose another date.', 'wc-ship-today-notice');
 
-        return sprintf($message, $this->date_short($date));
+        return str_replace('{slot}', $this->date_short($date), $this->message($closed ? 'checkout_msg_closed' : 'checkout_msg_unavailable'));
     }
 
     public function save_to_order($order, $data)
@@ -407,12 +478,17 @@ final class WC_STN_Checkout
             return $rows;
         }
 
+        $o        = $this->plugin->get_options();
         $schedule = $this->plugin->schedule();
-        $add      = ['wc_stn_ship' => ['label' => __('Ship date:', 'wc-ship-today-notice'), 'value' => $this->date_long($schedule->date($ship))]];
+        // Etykiety z ustawień, puste = domyślne (przetłumaczone)
+        $label    = function ($key, $default) use ($o) {
+            return '' !== (string) $o[$key] ? $this->plugin->t($key, $o[$key]) : $default;
+        };
+        $add      = ['wc_stn_ship' => ['label' => $label('checkout_row_ship_label', __('Ship date:', 'wc-ship-today-notice')), 'value' => $this->date_long($schedule->date($ship))]];
 
         $delivery = $order->get_meta(self::META_DELIVERY);
         if ($delivery) {
-            $add['wc_stn_delivery'] = ['label' => __('Planned delivery:', 'wc-ship-today-notice'), 'value' => $this->date_long($schedule->date($delivery))];
+            $add['wc_stn_delivery'] = ['label' => $label('checkout_row_delivery_label', __('Planned delivery:', 'wc-ship-today-notice')), 'value' => $this->date_long($schedule->date($delivery))];
         }
 
         $result = [];
@@ -714,13 +790,6 @@ final class WC_STN_Checkout
     private function date_long(DateTimeImmutable $d)
     {
         return WC_STN_Schedule::day_label((int) $d->format('N'), 'name') . ', ' . $d->format('d.m.Y');
-    }
-
-    /** "wysyłka pn 09.11" (kafelek). */
-    private function ship_short(DateTimeImmutable $d)
-    {
-        /* translators: checkout tile, second line. %s: short weekday and date, e.g. "Mon 09.11" */
-        return sprintf(_x('ship %s', 'checkout tile', 'wc-ship-today-notice'), $this->date_short($d));
     }
 
     /** "dostawa wt 10.11" (kafelek, podsumowanie zamówienia, lista zamówień). */

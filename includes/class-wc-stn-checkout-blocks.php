@@ -144,8 +144,7 @@ final class WC_STN_Checkout_Blocks
             'required'  => __('required', 'wc-ship-today-notice'),
             'choose'    => $this->checkout->choose_message(),
             'empty'     => __('No delivery dates available. Please contact us.', 'wc-ship-today-notice'),
-            /* translators: checkout notice when the selected date closes on an open page. %1$s: closed date, %2$s: newly selected date */
-            'closed'    => __('The %1$s date has just closed, we selected %2$s.', 'wc-ship-today-notice'),
+            'closed'    => $this->checkout->switched_message(),
         ];
     }
 

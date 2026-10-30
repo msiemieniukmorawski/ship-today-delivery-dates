@@ -13,7 +13,7 @@ done < <(find "$ROOT" -name '*.php' -not -path '*/.git/*' -not -path '*/node_mod
 if command -v node >/dev/null 2>&1; then
   while IFS= read -r -d '' f; do
     node --check "$f" || fail=1
-  done < <(find "$ROOT/assets/js" -name '*.js' -print0)
+  done < <(find "$ROOT/assets/js" "$ROOT/assets/blocks" -name '*.js' -print0)
 fi
 
 [ "$fail" = 0 ] && echo "lint: OK"

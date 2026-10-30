@@ -20,7 +20,7 @@
       el('div', { className: 'wc-stn-checkout__tiles' }, data.tiles.map(function (tile, i) {
         return el('div', { key: tile.value, className: 'wc-stn-tile' + (i === 0 ? ' is-checked' : '') },
           el('span', { className: 'wc-stn-tile__main' }, tile.main),
-          el('span', { className: 'wc-stn-tile__sub' }, tile.sub)
+          tile.sub ? el('span', { className: 'wc-stn-tile__sub' }, tile.sub) : null
         );
       })),
       el('p', { className: 'wc-stn-checkout__notice' }, data.hint)

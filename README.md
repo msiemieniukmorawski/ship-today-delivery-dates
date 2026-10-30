@@ -265,9 +265,26 @@ Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie
 | Nazwa pola | `Termin dostawy` | Legenda pola, wiersz w podsumowaniu, komunikat walidacji. |
 | Liczba terminów | 6 | 1-12 kafelków. |
 | Zaznacz najbliższy termin | tak | |
-| Duży napis na kafelku | data dostawy | Albo data wysyłki. Bez ustawionej dostawy zawsze data wysyłki. |
+| Duży napis na kafelku | data dostawy | Albo data wysyłki. Bez ustawionej dostawy zawsze data wysyłki. Ustala **domyślne** teksty kafelka (pola „Teksty” niżej). |
 | Kolor zaznaczenia | ciemnoszary | HEX albo zmienna CSS `--wc-stn-accent`. |
+| Teksty → Kafelek | jak wyżej | „Duży napis” (puste = domyślny) i „Druga linia” (pole ma wpisaną domyślną; **puste = bez drugiej linii**, przycisk „Przywróć domyślną”). Tokeny niżej. |
+| Teksty → Wiersze po złożeniu zamówienia | `Data wysyłki:` / `Planowana dostawa:` | Etykiety w mailach, na stronie podziękowania i w Moim koncie. Puste = domyślne (przetłumaczone). Oba wiersze wyłącza przełącznik w „Daty w zamówieniach”. |
+| Teksty → Komunikaty | jak dotąd | „Nie wybrano terminu” (`{field}`), „Minęła godzina graniczna” i „Termin niedostępny” (`{slot}`), „Termin zamknął się przy otwartej stronie” (`{slot}`, `{next_slot}`). Puste = domyślny (pole pokazuje go w podpowiedzi). |
 | Iconic Delivery Slots | - | Patrz niżej. |
+
+**Teksty kafelka.** Tokeny jak w widgecie, liczone dla terminu z kafelka: `{ship_when}`, `{ship_day}`, `{ship_date}`, `{delivery_when}`,
+`{delivery_day}`, `{delivery_date}`, `{cutoff_when}`, `{cutoff_time}`, `{cutoff_date}` oraz krótkie formy z kafelka `{ship_short}`
+i `{delivery_short}` (np. „pn 02.11”). Domyślne teksty to szablony z tych tokenów: „Duży napis = data dostawy” →
+`{delivery_short}` / `wysyłka {ship_short}`, „data wysyłki” → `{ship_short}` / `dostawa {delivery_short}`, bez dostawy →
+`{ship_short}` / `wysyłka` (przetłumaczone, np. de `Versand {ship_short}`). Przykład: tylko pogrubiona data dostawy -
+„Duży napis” pusty, „Druga linia” pusta. Tokeny `{delivery_*}` są puste, gdy termin nie ma daty dostawy.
+„Dziś/jutro” w `{*_when}` liczy serwer przy otwarciu strony (checkout nie jest cache'owany); kafelki dokładane po upływie godziny
+granicznej mają teksty z tej samej chwili, więc tylko strona otwarta przez północ pokazałaby nieaktualne „dziś/jutro”.
+Etykieta kafelka dla czytników ekranu (`aria-label`) zawsze zawiera pełną datę wysyłki, dostawy i godzinę graniczną.
+W komunikatach `{slot}` / `{next_slot}` to termin w formie domyślnego dużego napisu, niezależnie od własnych tekstów kafelka.
+
+Własne teksty (kafelek, etykiety, komunikaty) przechodzą przez WPML jak teksty widgetu (przełącznik „WPML”). Puste pola biorą
+tekst z tłumaczeń wtyczki, więc sklep pl/de bez zmian dostaje tłumaczenie.
 
 > **Uwaga:** przy miejscu „tylko shortcode” trzeba wstawić `[ship_today_checkout]` do formularza checkoutu. Bez tego
 > (albo z shortcode poza formularzem) pole się nie pokaże, a zamówienia będą składane bez daty wysyłki. Panel pokazuje
@@ -309,8 +326,8 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
 - **Bez bloku** klient nie wybiera terminu, a zamówienia przechodzą bez daty (bez blokowania sprzedaży). Panel pokazuje wtedy
   powiadomienie (użytkownikom z `manage_woocommerce`, do zamknięcia - wraca, jeśli zmieni się strona zamówienia).
 - **Aktualizacja z 2.2.0** (tam był select): blok wstawia się też w `maybe_upgrade()`, przy pierwszym wejściu do panelu po aktualizacji.
-- Ustawienia „Liczba terminów”, „Zaznacz najbliższy termin”, „Duży napis na kafelku”, „Kolor zaznaczenia” i „Nazwa pola” działają
-  jak w klasycznym checkoucie. „Miejsce” dotyczy tylko klasycznego. Blok jest widoczny tylko, gdy koszyk wymaga wysyłki
+- Ustawienia „Liczba terminów”, „Zaznacz najbliższy termin”, „Duży napis na kafelku”, „Kolor zaznaczenia”, „Nazwa pola”
+  i „Teksty” (kafelek, komunikaty) działają jak w klasycznym checkoucie. „Miejsce” dotyczy tylko klasycznego. Blok jest widoczny tylko, gdy koszyk wymaga wysyłki
   i nie wybrano odbioru osobistego.
 - Gdy godzina graniczna minie na otwartej stronie, kafelek znika, dochodzi kolejny, a zaznaczenie przechodzi na najbliższy z komunikatem.
 - Termin idzie do Store API jako `extensions.wc-stn.ship_date` (z `rendered: true`, gdy blok był widoczny). Przy składaniu
@@ -515,6 +532,10 @@ wc-ship-today-notice/
 > trzeba dodać ręcznie. Zamówienia złożone z polem select mają te same daty w mailach, panelu i na liście zamówień.
 
 **Nowe**
+- **Teksty kafelków, wierszy i komunikatów w ustawieniach** (Wybór terminu w checkoucie → Teksty): duży napis i druga linia
+  kafelka z tokenami (dotychczasowe z widgetu + `{ship_short}`, `{delivery_short}`; pusta druga linia = ukryta), etykiety
+  „Data wysyłki” / „Planowana dostawa”, cztery komunikaty checkoutu z `{field}` / `{slot}` / `{next_slot}`. Klasyczny i blokowy
+  checkout, maile, WPML. Puste pola = dotychczasowe przetłumaczone teksty (bez zmian dla sklepów, które nic nie ustawią).
 - Checkout blokowy: wybór terminu z **kafelków** jak w klasycznym checkoucie, w bloku „Termin wysyłki” (`wc-stn/ship-date`),
   który można przesuwać, usuwać i dodawać ponownie w edytorze strony zamówienia. Upływ godziny granicznej na otwartej stronie
   przełącza zaznaczenie z komunikatem. Działają ustawienia „Liczba terminów”, „Zaznacz najbliższy”, „Duży napis”, „Kolor zaznaczenia”.

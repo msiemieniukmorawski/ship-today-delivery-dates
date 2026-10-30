@@ -65,7 +65,10 @@
           return {
             now: now,
             value: open.length ? open[0].value : '',
-            notice: open.length && closed ? cfg.closed.replace('%1$s', closed.main).replace('%2$s', open[0].main) : ''
+            // {slot} / {next_slot}: tile.label (domyślny duży napis), niezależnie od własnych tekstów kafelka
+            notice: open.length && closed
+              ? cfg.closed.split('{slot}').join(closed.label || closed.main).split('{next_slot}').join(open[0].label || open[0].main)
+              : ''
           };
         });
       }, 1000);
@@ -115,7 +118,7 @@
             }
           }),
           el('span', { className: 'wc-stn-tile__main' }, tile.main),
-          el('span', { className: 'wc-stn-tile__sub' }, tile.sub)
+          tile.sub ? el('span', { className: 'wc-stn-tile__sub' }, tile.sub) : null
         );
       })),
       current.notice ? el('p', { className: 'wc-stn-checkout__notice', role: 'status', 'aria-live': 'polite' }, current.notice) : null,
