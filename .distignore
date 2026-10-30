@@ -4,6 +4,7 @@
 /.gitattributes
 /.distignore
 /.wp-env.json
+/.wordpress-org
 /build
 /node_modules
 /scripts

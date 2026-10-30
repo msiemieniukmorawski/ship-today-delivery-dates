@@ -91,7 +91,7 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 
 == Screenshots ==
 
-1. The notice widget before and after the cutoff time.
+1. The notice widget with the countdown to today's cutoff time.
 2. The "next slot" mode with the delivery date.
 3. Ship date tiles in the classic checkout.
 4. Shipping weekdays, cutoff times and the next slots preview in the settings.

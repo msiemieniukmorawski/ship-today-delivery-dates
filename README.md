@@ -367,6 +367,8 @@ wc-ship-today-notice/
 └── README.md
 ```
 
+`.wordpress-org/` to zrzuty ekranu (`screenshot-N.png`, opisy w sekcji Screenshots w `readme.txt`) i docelowo ikona i banner
+do katalogu `assets/` w SVN WordPress.org. Nie wchodzi do paczki.
 
 ## Changelog
 
