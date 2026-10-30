@@ -26,6 +26,12 @@ $zone->add_shipping_method("free_shipping");
 echo "Strefa wysyłki Polska utworzona\n";
 '
 
+# Płatność przy odbiorze, żeby dało się złożyć zamówienie z przeglądarki.
+wp option update woocommerce_cod_settings '{"enabled":"yes","title":"Płatność przy odbiorze"}' --format=json >/dev/null
+
+# Ładne adresy (/checkout/ itd.); --hard zapisuje .htaccess dla Apache w kontenerze.
+wp rewrite structure '/%postname%/' --hard >/dev/null
+
 # Ten sam kod co przycisk "Fetch holidays now" (cron wtyczki): święta dla kraju z ustawień, bieżący i następny rok.
 wp eval 'do_action("wc_ship_today_notice_cron_sync_holidays");'
 wp eval 'global $wpdb; foreach ($wpdb->get_results("SELECT YEAR(holiday_date) y, COUNT(*) n FROM {$wpdb->prefix}wc_ship_today_notice_holidays GROUP BY y") as $r) { echo "Święta {$r->y}: {$r->n}\n"; }'
