@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/wersja-2.2.0-orange" alt="Wersja 2.2.0">
+  <img src="https://img.shields.io/badge/wersja-2.3.0-orange" alt="Wersja 2.3.0">
   <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
   <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
@@ -70,7 +70,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
   z możliwością ignorowania wybranych. Do tego ręczna lista dat wykluczonych.
 
 **Checkout i zamówienia** (moduł do włączenia)
-- **Klasyczny checkout** - kafelki z terminami. **Checkout blokowy** - te same kafelki jako blok „Ship date”, który można przesuwać w edytorze (WooCommerce 10.1+).
+- **Klasyczny checkout** - kafelki z terminami. **Checkout blokowy** - te same kafelki jako blok „Termin wysyłki”, który można przesuwać w edytorze (WooCommerce 10.1+).
 - Serwer sprawdza termin przy składaniu zamówienia. Termin, który zamknął się na otwartej stronie, jest odrzucany z komunikatem.
 - Data wysyłki i dostawy w mailach, na stronie podziękowania, w „Moje konto”, w panelu zamówienia (z edycją) i w kolumnie listy
   zamówień z sortowaniem i filtrem.
@@ -523,7 +523,7 @@ wc-ship-today-notice/
 
 ## Changelog
 
-### Niewydane
+### 2.3.0 (30.10.2026)
 
 > **Przy aktualizacji z 2.2.0 (checkout blokowy):** pole wyboru terminu (select w „Dodatkowych informacjach”) zastępuje blok
 > „Termin wysyłki” z kafelkami. Przy pierwszym wejściu do panelu po aktualizacji wtyczka sama wstawia blok do strony zamówienia

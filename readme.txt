@@ -4,7 +4,7 @@ Tags: woocommerce, shipping, countdown, delivery date, cutoff time
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,13 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 
 == Changelog ==
 
+= 2.3.0 =
+* New: in the block-based checkout the date is picked from tiles, like in the classic checkout, in a "Ship date" block that can be moved, removed and added again in the checkout page editor. It replaces the 2.2.0 select field.
+* New: tile texts in the settings (Ship date at checkout → Texts): the big text and the second line with tokens, including {ship_short} and {delivery_short}; an empty second line hides it.
+* New: custom labels for the "Ship date" and "Planned delivery" rows (emails, thank-you page, My Account) and for the checkout messages.
+* New: admin notice when the block checkout has no ship date block.
+* Changed: on upgrade from 2.2.0 the ship date block is added once to the checkout page below the shipping methods. Until then (and without the block) orders go through without a date. Orders placed with the 2.2.0 select keep their dates.
+
 = 2.2.0 =
 * New: ship date choice in the block-based checkout (WooCommerce 10.1+), validated by the Store API and stored like in the classic checkout.
 * New: "Style" tab with a live preview: colors before and after the cutoff, countdown color, border, radius, padding, font and alignment.
@@ -150,6 +157,9 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 * First version: countdown, OpenHolidays API, settings in WooCommerce, WPML support.
 
 == Upgrade Notice ==
+
+= 2.3.0 =
+Block checkout: the date select is replaced by a movable "Ship date" block with tiles, added automatically on the first admin visit after the update. If your checkout is in a theme template (Site Editor), add the block there yourself. New settings for tile texts, order row labels and checkout messages.
 
 = 2.2.0 =
 Requires WordPress 6.8. Adds block checkout support, a Style tab and German translation. Old default "tomorrow" texts are updated automatically. If the widget is loaded via AJAX (e.g. in a popup), add the wc_ship_today_notice_load_assets filter.
