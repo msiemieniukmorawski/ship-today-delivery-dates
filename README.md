@@ -1,81 +1,131 @@
-# WooCommerce Ship Today Notice
+<h1 align="center">WooCommerce Ship Today Notice</h1>
 
-![WordPress](https://img.shields.io/badge/WordPress-6.8%2B-blue)
-![WooCommerce](https://img.shields.io/badge/WooCommerce-wymagany-purple)
-![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4)
-![License](https://img.shields.io/badge/license-GPL--2.0%2B-green)
+<p align="center">
+  <b>„Zamów w ciągu 2h 39min - wyślemy dziś!”</b><br>
+  Odliczanie do godziny granicznej, dzień wysyłki i data dostawy w sklepie WooCommerce,<br>
+  plus wybór terminu dostawy w checkoucie, który trafia do zamówienia, maili i panelu.
+</p>
 
-Wtyczka WooCommerce, która pokazuje klientowi, do kiedy musi zamówić, żeby paczka wyszła w najbliższym terminie:
-odliczanie do godziny granicznej, dzień wysyłki i (opcjonalnie) planowany dzień dostawy. Opcjonalny moduł dodaje
-do klasycznego checkoutu wybór terminu wysyłki, który trafia do zamówienia, maili i panelu.
+<p align="center">
+  <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
+  <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
+  <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
+  <img src="https://img.shields.io/badge/HPOS-zgodna-2ea44f" alt="HPOS">
+  <img src="https://img.shields.io/badge/checkout-klasyczny%20%2B%20blokowy-2ea44f" alt="Checkout klasyczny i blokowy">
+  <img src="https://img.shields.io/badge/i18n-pl__PL%20%7C%20de__DE-blue" alt="pl_PL, de_DE">
+  <img src="https://img.shields.io/badge/license-GPL--2.0%2B-lightgrey" alt="GPL-2.0+">
+</p>
 
-Wszystkie teksty wtyczki (dni tygodnia z odmianą, "dziś"/"jutro", kafelki, maile, panel) są do tłumaczenia.
-W paczce są tłumaczenia pl_PL i de_DE.
+<p align="center">
+  <img src=".wordpress-org/screenshot-2.png" alt="Widget: najbliższe terminy z datą dostawy" width="760">
+</p>
 
-## Funkcje w skrócie
+## Po co
 
-- **Widget z odliczaniem** - shortcode `[ship_today_notice]`, dwa tryby: "wysyłka dziś" i "najbliższy termin".
-- **Harmonogram wysyłek** - dni wysyłki, godzina graniczna dla każdego dnia, godzina graniczna wypadająca 0-6 dni przed dniem wysyłki
-  (np. wysyłka w poniedziałek, zamówienia do niedzieli 20:00).
-- **Data dostawy** - N dni doręczeń po wysyłce, z pominięciem dni bez doręczeń i świąt.
-- **Święta** z [OpenHolidays API](https://www.openholidaysapi.org/) na bieżący i następny rok, z możliwością ignorowania wybranych.
-  Do tego ręczna lista dat wykluczonych.
-- **Tokeny z polską odmianą dni**: "dziś do 20:00", "do niedzieli 20:00", "we wtorek".
-- **Działa ze stron w cache** - harmonogram na 42 dni jest w HTML, przeglądarka sama przełącza terminy. Czyszczenie cache LiteSpeed
-  o godzinie granicznej.
-- **Wybór terminu w checkoucie** (klasyczny i blokowy checkout) - kafelki, walidacja, zapis w zamówieniu, maile, panel zamówienia,
-  kolumna z sortowaniem i filtrem na liście zamówień, przełącznik wyłączający Iconic Delivery Slots.
-- **Zakładka „Styl”** - kolory, ramka, czcionka i wyrównanie widgetu wyklikane w panelu, z podglądem na żywo.
-- **Podgląd 5 najbliższych terminów** w panelu i **tryb testowy** `?stn_now=`.
-- **API dla motywu i innych wtyczek** - funkcje `wc_stn_*`, filtry, akcja, JS.
+Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi mu to wprost, w miejscu, gdzie podejmuje decyzję:
 
-## Wymagania
+- **na karcie produktu i w koszyku** - ile zostało do godziny granicznej i kiedy paczka wyjdzie („dziś”, „jutro”, „w poniedziałek”),
+- **w checkoucie** - klient wybiera termin dostawy, a sklep dostaje go w zamówieniu, mailu i na liście zamówień,
+- **bez pilnowania kalendarza** - święta pobierają się same, weekendy i dni bez doręczeń są pomijane, a po godzinie granicznej
+  widget sam przełącza się na kolejny termin, także na stronach z cache.
 
-- WordPress 6.8+ (od 6.8 WordPress sam ładuje tłumaczenia z `languages/` wtyczki; sprawdzone na 6.8 z WooCommerce 9.4.3)
-- PHP 7.4+
-- WooCommerce - wymagany: strona ustawień jest w menu WooCommerce, a dostęp sprawdza uprawnienie `manage_woocommerce`.
-- Checkout blokowy (WooCommerce Blocks): wybór terminu przez Additional Checkout Fields API z regułami warunkowymi,
-  od **WooCommerce 10.1** (sprawdzone na 11.2.1, patrz „Checkout blokowy”). Na starszym WooCommerce pole w checkoucie
-  blokowym się nie pojawia, a zamówienia przechodzą bez daty jak wcześniej. Sam widget `[ship_today_notice]` działa niezależnie od checkoutu.
-- Zgodność z HPOS i z checkoutem blokowym jest zadeklarowana (`FeaturesUtil::declare_compatibility('custom_order_tables')`,
-  `'cart_checkout_blocks'`): kod zamówień używa CRUD WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
+## Zrzuty
 
-## Instalacja
+<table>
+  <tr>
+    <th width="50%">Kafelki z terminami w checkoucie</th>
+    <th width="50%">Kolumna „Wysyłka” na liście zamówień</th>
+  </tr>
+  <tr>
+    <td valign="top"><img src=".wordpress-org/screenshot-3.png" alt="Kafelki terminów w checkoucie"></td>
+    <td valign="top"><img src=".wordpress-org/screenshot-6.png" alt="Lista zamówień z kolumną Wysyłka"></td>
+  </tr>
+</table>
 
-1. Skopiuj katalog do `wp-content/plugins/wc-ship-today-notice/` (albo wgraj ZIP w Wtyczki → Dodaj nową).
-2. Aktywuj wtyczkę. Aktywacja tworzy tabelę `{prefix}wc_ship_today_notice_holidays` i planuje pobieranie świąt
-   (pierwsze przy najbliższym wywołaniu WP-Cron, potem co 4 miesiące).
-3. Wejdź w **WooCommerce → Ship Today Notice**.
+**Zakładka „Styl”** - wygląd widgetu wyklikany w panelu, podgląd zmienia się na żywo:
 
-Strona ustawień i zapis obu zakładek wymagają uprawnienia `manage_woocommerce`, więc kierownik sklepu może je zmieniać
-(filtr `option_page_capability_*` dla grup `wc_ship_today_notice_options` i `wc_ship_today_notice_style`).
+<p align="center"><img src=".wordpress-org/screenshot-5.png" alt="Zakładka Styl z podglądem na żywo" width="820"></p>
+
+<details>
+<summary>Ustawienia: dni wysyłki, godziny graniczne i podgląd najbliższych terminów</summary>
+
+<p align="center"><img src=".wordpress-org/screenshot-4.png" alt="Ustawienia dni wysyłki i najbliższe terminy" width="820"></p>
+
+</details>
+
+## Funkcje
+
+**Widget `[ship_today_notice]`**
+- Dwa tryby: **„wysyłka dziś”** (odliczanie do dzisiejszej godziny granicznej) i **„najbliższy termin”** (zawsze najbliższa wysyłka, np. 2 razy w tygodniu).
+- Teksty z tokenami i poprawną odmianą dni: „do niedzieli 20:00”, „we wtorek”, „bis Sonntag”, „am Dienstag”.
+- Lista kilku kolejnych terminów (`count="3"`), własny tekst i klasa CSS w shortcode.
+- **Działa ze stron w cache** - harmonogram na 42 dni jest w HTML, przeglądarka sama liczy stan. LiteSpeed Cache czyszczony o godzinie granicznej.
+- **Zakładka „Styl”** - kolory, ramka, czcionka i wyrównanie wyklikane w panelu, z podglądem na żywo, bez pisania CSS.
+
+**Harmonogram**
+- Dni wysyłki i godzina graniczna dla każdego dnia, także wypadająca wcześniej (wysyłka w poniedziałek, zamówienia do niedzieli 20:00).
+- Data dostawy: N dni doręczeń po wysyłce, z pominięciem dni bez doręczeń i świąt.
+- **Święta** z [OpenHolidays API](https://www.openholidaysapi.org/) dla kraju sklepu, opcjonalnie z regionem (np. `DE-BY`),
+  z możliwością ignorowania wybranych. Do tego ręczna lista dat wykluczonych.
+
+**Checkout i zamówienia** (moduł do włączenia)
+- **Klasyczny checkout** - kafelki z terminami. **Checkout blokowy** - pole wyboru terminu (WooCommerce 10.1+).
+- Serwer sprawdza termin przy składaniu zamówienia. Termin, który zamknął się na otwartej stronie, jest odrzucany z komunikatem.
+- Data wysyłki i dostawy w mailach, na stronie podziękowania, w „Moje konto”, w panelu zamówienia (z edycją) i w kolumnie listy
+  zamówień z sortowaniem i filtrem.
+- Odbiór osobisty nie wymaga daty. Zgodność z HPOS.
+- Przełącznik wyłączający Iconic Delivery Slots na czas przejścia.
+
+**Dla programistów**
+- Funkcje `wc_stn_*`, filtry, akcja czyszczenia cache, `window.WcShipTodayNotice.init()`.
+- Tryb testowy `?stn_now=2026-12-20T19:59` - widget, kafelki i walidacja w dowolnej chwili.
+- Wszystkie teksty do tłumaczenia, w paczce pl_PL i de_DE.
 
 ## Szybki start
 
-1. **Dni wysyłki i godziny graniczne** - zaznacz dni, ustaw godzinę i to, kiedy wypada (tego samego dnia / N dni wcześniej).
-2. **Pobierz święta** - przycisk "Fetch holidays now" na dole strony ustawień (od razu, bez czekania na cron).
-3. Opcjonalnie **Dostawa** - liczba dni doręczeń po wysyłce i dni bez doręczeń.
-4. Zapisz i sprawdź tabelę **Najbliższe terminy**.
-5. Wstaw `[ship_today_notice]` na kartę produktu, do koszyka, nagłówka albo popupu.
-6. Opcjonalnie włącz **Wybór terminu w checkoucie** (sekcja niżej).
+1. Wgraj wtyczkę do `wp-content/plugins/wc-ship-today-notice/` i aktywuj ją (wymaga aktywnego WooCommerce).
+2. **WooCommerce → Ship Today Notice**: zaznacz dni wysyłki i ustaw godziny graniczne.
+3. Opcjonalnie ustaw **Dostawę** (ile dni doręczeń po wysyłce) i sprawdź tabelę **Najbliższe terminy**.
+4. Wstaw shortcode na kartę produktu, do koszyka albo nagłówka:
+
+   ```
+   [ship_today_notice]
+   [ship_today_notice mode="next_slot" text="Zamów {cutoff_when}, dostarczymy {delivery_when}. Zostało: {countdown}"]
+   ```
+
+5. Opcjonalnie włącz **Wybór terminu w checkoucie** i zakładkę **Styl**.
+
+Święta pobierają się same zaraz po aktywacji (WP-Cron). Od razu: przycisk „Fetch holidays now” na dole ustawień.
+
+## Wymagania
+
+| | |
+|---|---|
+| WordPress | 6.8+ (od 6.8 WordPress sam ładuje tłumaczenia z `languages/` wtyczki) |
+| PHP | 7.4+ |
+| WooCommerce | 9.4+ (sprawdzone do 11.2). Checkout blokowy z wyborem terminu: **10.1+** - na starszym pole się nie pojawia, zamówienia przechodzą bez daty. |
+| Uprawnienia | panel i zapis ustawień: `manage_woocommerce` (kierownik sklepu też może je zmieniać) |
+
+Zgodność z HPOS i z checkoutem blokowym jest zadeklarowana (`FeaturesUtil::declare_compatibility`). Kod zamówień używa CRUD
+WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 
 ## Co działa od razu, a co trzeba włączyć
 
-| Funkcja | Domyślnie aktywna? | Gdzie się włącza | Uwagi |
+| Funkcja | Domyślnie | Gdzie się włącza | Uwagi |
 |---|---|---|---|
-| Widget `[ship_today_notice]` | tak, po wstawieniu shortcode | shortcode | "Wyświetlanie widgetu" = Zawsze. JS i CSS widgetu ładują się na każdej stronie. |
-| Tryb komunikatu | "Wysyłka dziś" | Tryb komunikatu / atrybut `mode` | |
+| Widget `[ship_today_notice]` | tak, po wstawieniu shortcode | shortcode | „Wyświetlanie widgetu” = Zawsze. JS i CSS widgetu ładują się na każdej stronie. |
+| Tryb komunikatu | „Wysyłka dziś” | Tryb komunikatu / atrybut `mode` | |
 | Dni wysyłki | pn-pt, do 14:00 tego samego dnia | Delivery weekdays & cutoff times | sob/nd mają domyślnie 12:00, ale nie są zaznaczone. |
 | Data dostawy | nie (0 dni) | Dostawa | Dni bez doręczeń domyślnie: niedziela. |
-| Święta | po pobraniu | WP-Cron zaraz po aktywacji, co ok. 4 miesiące, po zmianie kraju/języka/regionu albo "Fetch holidays now" | Kraj i język: PL, bez regionu (tylko święta ogólnokrajowe). Patrz [Święta](#święta). |
+| Święta | po pobraniu | WP-Cron zaraz po aktywacji, co ok. 4 miesiące, po zmianie kraju/języka/regionu albo „Fetch holidays now” | Kraj i język: PL, bez regionu (tylko święta ogólnokrajowe). |
 | Daty wykluczone | brak | Excluded dates | |
-| Tekst po godzinie granicznej / w dzień bez wysyłki | tak | checkboxy przy tekstach | Dotyczy trybu "wysyłka dziś". |
+| Tekst po godzinie granicznej / w dzień bez wysyłki | tak | checkboxy przy tekstach | Dotyczy trybu „wysyłka dziś”. |
 | Sekundy w odliczaniu | tak | Countdown format | |
-| Własny wygląd widgetu | nie (domyślne style z `notice.css`) | zakładka **Styl** | Puste pole = domyślny wygląd. |
+| Własny wygląd widgetu | nie (style z `notice.css`) | zakładka **Styl** | Puste pole = domyślny wygląd. |
 | Wybór terminu w checkoucie | **nie** | Wybór terminu w checkoucie → Moduł | Domyślne miejsce: tylko shortcode `[ship_today_checkout]`. |
 | Wiersz w podsumowaniu, maile, strona podziękowania, Moje konto | z modułem | j.w. | |
 | Panel zamówienia (daty + zmiana daty wysyłki) | z modułem | j.w. | |
-| Kolumna "Wysyłka", sortowanie, filtr na liście zamówień | z modułem | j.w. | HPOS i stara tabela postów. |
+| Kolumna „Wysyłka”, sortowanie, filtr na liście zamówień | z modułem | j.w. | HPOS i stara tabela postów. |
 | Wyłączenie Iconic Delivery Slots | nie | Iconic Delivery Slots | Pole widać tylko przy aktywnym Iconic, działa tylko z włączonym modułem. |
 | Czyszczenie cache o godzinie granicznej | tak, gdy aktywny LiteSpeed Cache albo podpięta akcja `wc_ship_today_notice_purge_cache` | automatycznie | Też po każdym zapisie ustawień. |
 | WPML | gdy aktywny WPML | automatycznie | Cztery teksty widgetu rejestrowane przy zapisie ustawień. |
@@ -85,22 +135,10 @@ Strona ustawień i zapis obu zakładek wymagają uprawnienia `manage_woocommerce
 Gdy moduł checkoutu jest wyłączony, wtyczka nie rejestruje jego hooków. Daty zapisane wcześniej w zamówieniach zostają
 w meta, ale nie są wtedy pokazywane w mailach, panelu ani na liście.
 
-## Święta
+## Dokumentacja
 
-Źródło: [OpenHolidays API](https://www.openholidaysapi.org/), bieżący i następny rok, dla kraju i języka z ustawień
-(`[A-Z]{2}`; błędny kod nie jest zapisywany, zostaje poprzedni z komunikatem).
-
-- **Kiedy pobierane:** zaraz po aktywacji (pojedyncze zdarzenie WP-Cron), co ok. 4 miesiące, od razu po zapisie ustawień ze zmienionym
-  krajem, językiem albo regionem, przyciskiem "Fetch holidays now". Gdy pobranie z crona się nie uda (sieć, API), ponowna próba za 6 h.
-- **Pusta albo błędna odpowiedź** (brak sieci, błąd HTTP, pusta lista, nie-JSON) nie kasuje zapisanych świąt danego roku.
-- **Święta regionalne** (`nationwide: false` w API, np. Boże Ciało w części landów DE) są pomijane. Pole **Region** (kod ISO 3166-2,
-  np. `DE-BY`) dokłada święta tego regionu i regionów nadrzędnych (region `DE-BY-AU` dostaje święta `DE-BY` i `DE-BY-AU`, region
-  `DE-BY` nie dostaje świąt samego Augsburga). Kody: `https://openholidaysapi.org/Subdivisions?countryIsoCode=DE`. Region z innego
-  kraju jest czyszczony z komunikatem. Dla PL API nie zwraca świąt regionalnych, więc nic się nie zmienia.
-- **Święta wielodniowe** (`startDate`..`endDate`, np. Nowy Rok 1-2.01 w SI, RO, RS) są zapisywane jako kolejne dni.
-- Pojedyncze święta można ignorować (wysyłka możliwa), do tego ręczna lista dat wykluczonych.
-
-## Shortcode `[ship_today_notice]`
+<details>
+<summary><b>Shortcode, tryby i widoczność</b></summary>
 
 ```
 [ship_today_notice]
@@ -116,33 +154,39 @@ w meta, ale nie są wtedy pokazywane w mailach, panelu ani na liście.
 | `mode` | z ustawień | `today` albo `next_slot`. |
 | `class` | - | Dodatkowe klasy CSS kontenera (oddzielone spacją). |
 
-Gdy "Wyświetlanie widgetu" = Wyłączony, shortcode zwraca pusty tekst, a skrypt i styl nie są ładowane.
+Gdy „Wyświetlanie widgetu” = Wyłączony, shortcode zwraca pusty tekst, a skrypt i styl nie są ładowane.
 
-### Tryby
+**Tryby**
 
-- **Wysyłka dziś** (`today`) - przed dzisiejszą godziną graniczną: "Text before cutoff" z odliczaniem. Po niej, w dzień wysyłki:
-  "Text after cutoff". W dzień bez wysyłki (dzień tygodnia, święto, data wykluczona): "Text when not a shipping day".
+- **Wysyłka dziś** (`today`) - przed dzisiejszą godziną graniczną: „Text before cutoff” z odliczaniem. Po niej, w dzień wysyłki:
+  „Text after cutoff”. W dzień bez wysyłki (dzień tygodnia, święto, data wykluczona): „Text when not a shipping day”.
 - **Najbliższy termin** (`next_slot`) - zawsze odliczanie do najbliższej godziny granicznej i jeden tekst
-  ("Tekst w trybie najbliższy termin"). Opcja widoczności "tylko przed godziną graniczną" działa tu jak "zawsze".
+  („Tekst w trybie najbliższy termin”). Opcja widoczności „tylko przed godziną graniczną” działa tu jak „zawsze”.
 
-Przy `count > 1` pierwszy termin ma tekst stanu, kolejne tekst trybu "najbliższy termin".
+Przy `count > 1` pierwszy termin ma tekst stanu, kolejne tekst trybu „najbliższy termin”.
 
-### Widoczność
+**Widoczność**
 
 | Ustawienie | Działanie |
 |---|---|
 | Disabled | Widget i jego zasoby wyłączone. |
 | Always visible | Zawsze. |
-| Only before cutoff time | W trybie "wysyłka dziś" ukryty po godzinie granicznej. |
+| Only before cutoff time | W trybie „wysyłka dziś” ukryty po godzinie granicznej. |
 | Only N hour(s) before cutoff | Widoczny dopiero N godzin (0,5-168) przed godziną graniczną. |
 
 Niezależnie od tego widget jest ukryty, gdy w najbliższych 42 dniach nie ma żadnego terminu.
 
-### Tokeny
+**Odliczanie**: etykiety godzin, minut i sekund (domyślnie `h`, `min`, `s`), przełącznik sekund. Pusta etykieta = sama liczba
+(np. `01:30`). Powyżej doby odliczanie pokazuje dni („1 dzień”, „3 dni”).
+
+</details>
+
+<details>
+<summary><b>Tokeny i domyślne teksty</b></summary>
 
 | Token | Przykład |
 |---|---|
-| `{countdown}` | `1 dzień 05h 12min 10s` (format w "Countdown format") |
+| `{countdown}` | `1 dzień 05h 12min 10s` (format w „Countdown format”) |
 | `{cutoff_when}` | `dziś do 20:00` / `jutro do 20:00` / `do niedzieli 20:00` |
 | `{cutoff_day}` | `niedzieli` (dopełniacz) |
 | `{cutoff_time}` | `20:00` |
@@ -154,11 +198,11 @@ Niezależnie od tego widget jest ukryty, gdy w najbliższych 42 dniach nie ma ż
 | `{delivery_day}` | `we wtorek` |
 | `{delivery_date}` | `27.10` |
 
-Tokeny `{delivery_*}` są puste, gdy dostawa = 0. "Dziś" i "jutro" liczy przeglądarka w strefie czasowej sklepu, więc są
+Tokeny `{delivery_*}` są puste, gdy dostawa = 0. „Dziś” i „jutro” liczy przeglądarka w strefie czasowej sklepu, więc są
 poprawne także na stronie z cache. Nieznane tokeny zostają w tekście bez zmian.
 
-Odmiana dni zależy od języka sklepu (tłumaczenia `_x()` w `.po`): po polsku "do niedzieli 20:00", "we wtorek",
-po niemiecku "bis Sonntag 20:00", "am Dienstag".
+Odmiana dni zależy od języka sklepu (tłumaczenia `_x()` w `.po`): po polsku „do niedzieli 20:00”, „we wtorek”,
+po niemiecku „bis Sonntag 20:00”, „am Dienstag”.
 
 Domyślne teksty (źródło po angielsku, tłumaczenie z `.po`; tekst zapisany w ustawieniach ma pierwszeństwo):
 
@@ -169,45 +213,43 @@ Domyślne teksty (źródło po angielsku, tłumaczenie z `.po`; tekst zapisany w
 | Po godzinie granicznej | `We will ship {ship_when}.` | `Wyślemy {ship_when}.` |
 | Dzień bez wysyłki | `We will ship {ship_when}.` | `Wyślemy {ship_when}.` |
 
-W tekstach "po godzinie granicznej" i "dzień bez wysyłki" warto używać `{ship_when}` zamiast stałego "jutro": w piątek
-po godzinie granicznej albo przed świętem następna wysyłka nie jest jutro, a `{ship_when}` da "w poniedziałek".
-Do wersji 2.1.0 domyślnie było "Wyślemy jutro." / "Wyślemy w najbliższy dzień roboczy." - sklepy, które zapisały
+W tekstach „po godzinie granicznej” i „dzień bez wysyłki” warto używać `{ship_when}` zamiast stałego „jutro”: w piątek
+po godzinie granicznej albo przed świętem następna wysyłka nie jest jutro, a `{ship_when}` da „w poniedziałek”.
+Do wersji 2.1.0 domyślnie było „Wyślemy jutro.” / „Wyślemy w najbliższy dzień roboczy.” - sklepy, które zapisały
 ustawienia z tymi tekstami, mają je dalej i mogą je zmienić ręcznie.
 
-### Odliczanie
+</details>
 
-Etykiety godzin, minut i sekund (domyślnie `h`, `min`, `s`), przełącznik sekund. Pusta etykieta = sama liczba
-(np. `01:30`). Powyżej doby odliczanie pokazuje dni ("1 dzień", "3 dni").
+<details>
+<summary><b>Wygląd i zakładka „Styl”</b></summary>
 
-### Wygląd
+WooCommerce → Ship Today Notice → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
+„przed” i „po” godzinie granicznej.
 
-Klasy stanu kontenera: `wc-ship-today-notice--before` (przed godziną graniczną i tryb "najbliższy termin"),
+| Opcja | Opis |
+|-------|------|
+| **Przed / po godzinie granicznej** | Tło, kolor ramki i kolor tekstu dla każdego stanu. Dzień bez wysyłki używa kolorów „po”. |
+| **Kolor odliczania** | Kolor `{countdown}`. |
+| **Grubość ramki, zaokrąglenie, odstęp wewnętrzny, rozmiar czcionki** | W px. Odstęp jest jeden na wszystkie boki. |
+| **Grubość czcionki, wyrównanie** | 400-800; do lewej / do środka / do prawej. |
+
+Puste pole = domyślny wygląd. „Przywróć domyślne” czyści formularz, a zapis następuje dopiero po kliknięciu „Zapisz zmiany”. Styl jest
+zapisany w opcji `wc_ship_today_notice_style` i trafia na stronę jako zmienne CSS na `:root` (inline przy `notice.css`),
+więc działa też ze stron w cache. Po zapisie cache jest czyszczony jak po zapisie ustawień.
+
+Klasy stanu kontenera: `wc-ship-today-notice--before` (przed godziną graniczną i tryb „najbliższy termin”),
 `--after` (po godzinie granicznej, dzień bez wysyłki), `--hidden`. Odliczanie: `.wc-ship-today-countdown`.
 
 Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-before-bg`, `-before-border`, `-before-color`,
 `-after-bg`, `-after-border`, `-after-color`, `-countdown-color`, `-border-width`, `-radius`, `-padding`, `-font-weight`,
 `-align`, `-justify`. Można je nadpisać własnym CSS, np. na klasie z atrybutu `class`.
 
-### Zakładka „Styl”
+</details>
 
-WooCommerce → Ship Today Notice → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
-"przed" i "po" godzinie granicznej.
+<details>
+<summary><b>Wybór terminu w checkoucie (klasyczny, blokowy, Iconic)</b></summary>
 
-| Opcja | Opis |
-|-------|------|
-| **Przed / po godzinie granicznej** | Tło, kolor ramki i kolor tekstu dla każdego stanu. Dzień bez wysyłki używa kolorów "po". |
-| **Kolor odliczania** | Kolor `{countdown}`. |
-| **Grubość ramki, zaokrąglenie, odstęp wewnętrzny, rozmiar czcionki** | W px. Odstęp jest jeden na wszystkie boki. |
-| **Grubość czcionki, wyrównanie** | 400-800; do lewej / do środka / do prawej. |
-
-Puste pole = domyślny wygląd. "Przywróć domyślne" czyści formularz, a zapis następuje dopiero po kliknięciu "Zapisz zmiany". Styl jest
-zapisany w opcji `wc_ship_today_notice_style` i trafia na stronę jako zmienne CSS na `:root` (inline przy `notice.css`),
-więc działa też ze stron w cache. Po zapisie cache jest czyszczony jak po zapisie ustawień.
-
-## Wybór terminu w checkoucie
-
-Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie → Moduł**. Działa w klasycznym i blokowym checkoucie
-(różnice w „Checkout blokowy”).
+Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie → Moduł**.
 
 | Ustawienie | Domyślnie | Opis |
 |---|---|---|
@@ -220,11 +262,11 @@ Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie
 | Kolor zaznaczenia | ciemnoszary | HEX albo zmienna CSS `--wc-stn-accent`. |
 | Iconic Delivery Slots | - | Patrz niżej. |
 
-> **Uwaga:** przy miejscu "tylko shortcode" trzeba wstawić `[ship_today_checkout]` do formularza checkoutu. Bez tego
+> **Uwaga:** przy miejscu „tylko shortcode” trzeba wstawić `[ship_today_checkout]` do formularza checkoutu. Bez tego
 > (albo z shortcode poza formularzem) pole się nie pokaże, a zamówienia będą składane bez daty wysyłki. Panel pokazuje
 > przy tym ustawieniu ostrzeżenie.
 
-Działanie:
+**Klasyczny checkout**
 
 - Kafelki z najbliższymi terminami. Gdy godzina graniczna minie na otwartej stronie, kafelek znika, dochodzi kolejny,
   a zaznaczenie przechodzi na najbliższy z komunikatem. Zmiana kafelka odświeża podsumowanie (`update_checkout`).
@@ -237,15 +279,15 @@ Działanie:
   `woocommerce_local_pickup_methods`), data nie jest wymagana. Kafelki zostają: wybrany termin zapisze się w zamówieniu,
   brak wyboru też przejdzie.
 - Zapis w zamówieniu przez CRUD (`woocommerce_checkout_create_order`) - działa z HPOS i starą tabelą postów.
-- Wiersze "Data wysyłki" i "Planowana dostawa" na stronie podziękowania, w mailach (klient i admin) i w Moje konto
+- Wiersze „Data wysyłki” i „Planowana dostawa” na stronie podziękowania, w mailach (klient i admin) i w Moje konto
   (`woocommerce_get_order_item_totals`).
-- Panel zamówienia: daty i pole "Zmień datę wysyłki" (dostawa przeliczana automatycznie, notatka w zamówieniu z nazwą użytkownika).
+- Panel zamówienia: daty i pole „Zmień datę wysyłki” (dostawa przeliczana automatycznie, notatka w zamówieniu z nazwą użytkownika).
   Puste pole usuwa daty. Błędna data (np. 31.02) nie jest zapisywana, panel pokazuje komunikat. Klient nie dostaje powiadomienia o zmianie.
-- Lista zamówień (HPOS i stara): kolumna "Wysyłka" za datą zamówienia, sortowanie i filtr "Wysyłka: dd.mm.rrrr"
+- Lista zamówień (HPOS i stara): kolumna „Wysyłka” za datą zamówienia, sortowanie i filtr „Wysyłka: dd.mm.rrrr”
   (dni wysyłki od 14 dni wstecz do 31 dni w przód). Sortowanie pokazuje tylko zamówienia z datą z tego modułu.
-  Zamówienia z Iconic mają datę z dopiskiem "Iconic" (tylko odczyt, bez migracji).
+  Zamówienia z Iconic mają datę z dopiskiem „Iconic” (tylko odczyt, bez migracji).
 
-### Checkout blokowy
+**Checkout blokowy**
 
 Wymaga WooCommerce 10.1+: reguły warunkowe pól są od 9.9, ukrywanie pola w potwierdzeniu i mailach od 10.1.
 Na starszej wersji pole się nie rejestruje.
@@ -265,9 +307,9 @@ W checkoucie blokowym nie ma kafelków. Wtyczka rejestruje pole `wc-stn/ship-dat
 - Przełącznik Iconic działa tylko w klasycznym checkoucie.
 - Na stronie z blokiem checkoutu nie są ładowane `checkout.css` i `checkout.js` (kafelki klasycznego checkoutu).
 
-### Okres przejściowy z Iconic Delivery Slots
+**Okres przejściowy z Iconic Delivery Slots**
 
-Gdy Iconic jest aktywny, w ustawieniach pojawia się "Wyłącz Iconic Delivery Slots w koszyku i checkoucie". Przy włączonym
+Gdy Iconic jest aktywny, w ustawieniach pojawia się „Wyłącz Iconic Delivery Slots w koszyku i checkoucie”. Przy włączonym
 module wtyczka wtedy:
 
 - zwraca `false` w `iconic_wds_delivery_slots_allowed`,
@@ -278,7 +320,7 @@ module wtyczka wtedy:
 Iconic zostaje aktywny w panelu (stare zamówienia, jego kolumna i strona Deliveries), ale nowe zamówienia już do niego nie
 trafiają. Sprawdzone na Iconic 2.13.0. Wycofanie: odznacz przełącznik i przywróć `[iconic-wds-fields]` w checkoucie.
 
-## Meta zamówień
+**Meta zamówień**
 
 | Klucz | Wartość |
 |---|---|
@@ -288,11 +330,32 @@ trafiają. Sprawdzone na Iconic 2.13.0. Wycofanie: odznacz przełącznik i przyw
 
 Odczytywane (Iconic, tylko do wyświetlania): `jckwds_date` (panel zamówienia), `jckwds_date_ymd` (lista zamówień).
 
-## API dla programistów
+</details>
 
-### Funkcje PHP
+<details>
+<summary><b>Święta</b></summary>
 
-Daty jako `Y-m-d` w strefie czasowej sklepu.
+Źródło: [OpenHolidays API](https://www.openholidaysapi.org/), bieżący i następny rok, dla kraju i języka z ustawień
+(`[A-Z]{2}`; błędny kod nie jest zapisywany, zostaje poprzedni z komunikatem).
+
+- **Kiedy pobierane:** zaraz po aktywacji (pojedyncze zdarzenie WP-Cron), co ok. 4 miesiące, od razu po zapisie ustawień ze zmienionym
+  krajem, językiem albo regionem, przyciskiem „Fetch holidays now”. Gdy pobranie z crona się nie uda (sieć, API), ponowna próba za 6 h.
+- **Pusta albo błędna odpowiedź** (brak sieci, błąd HTTP, pusta lista, nie-JSON) nie kasuje zapisanych świąt danego roku.
+- **Święta regionalne** (`nationwide: false` w API, np. Boże Ciało w części landów DE) są pomijane. Pole **Region** (kod ISO 3166-2,
+  np. `DE-BY`) dokłada święta tego regionu i regionów nadrzędnych (region `DE-BY-AU` dostaje święta `DE-BY` i `DE-BY-AU`, region
+  `DE-BY` nie dostaje świąt samego Augsburga). Kody: `https://openholidaysapi.org/Subdivisions?countryIsoCode=DE`. Region z innego
+  kraju jest czyszczony z komunikatem. Dla PL API nie zwraca świąt regionalnych, więc nic się nie zmienia.
+- **Święta wielodniowe** (`startDate`..`endDate`, np. Nowy Rok 1-2.01 w SI, RO, RS) są zapisywane jako kolejne dni.
+- Pojedyncze święta można ignorować (wysyłka możliwa), do tego ręczna lista dat wykluczonych.
+
+Do API idzie tylko kod kraju, kod języka i zakres dat - bez danych klientów (szczegóły w sekcji „External services” w `readme.txt`).
+
+</details>
+
+<details>
+<summary><b>API dla programistów: funkcje, filtry, akcje, JS</b></summary>
+
+**Funkcje PHP** (daty jako `Y-m-d` w strefie czasowej sklepu)
 
 | Funkcja | Zwraca |
 |---|---|
@@ -301,17 +364,17 @@ Daty jako `Y-m-d` w strefie czasowej sklepu.
 | `wc_stn_is_blocked_date( $ymd )` | czy data to nieignorowane święto albo data wykluczona (bez względu na dzień tygodnia); `false` dla błędnej daty |
 | `wc_stn_is_shipping_day( $ymd )` | czy to dzień wysyłki (dzień tygodnia z ustawień, nie święto, nie data wykluczona); `false` dla błędnej daty |
 
-### Filtry
+**Filtry**
 
 | Filtr | Argumenty | Do czego |
 |---|---|---|
-| `wc_ship_today_notice_now` | `DateTimeImmutable $now` | Podmiana "teraz" (używa go tryb testowy). |
+| `wc_ship_today_notice_now` | `DateTimeImmutable $now` | Podmiana „teraz” (używa go tryb testowy). |
 | `wc_ship_today_notice_is_shipping_day` | `bool $is`, `string $ymd` | Własne dni wysyłki / blokady. |
 | `wc_ship_today_notice_cutoff_time` | `string $time` (`H:i`), `int $weekday` (1 = pn), `string $ship_ymd` | Inna godzina graniczna dla konkretnego dnia. |
 | `wc_ship_today_notice_slots` | `array $slots`, `int $count`, `DateTimeImmutable $now` | Zmiana listy terminów (widget, checkout, walidacja). |
 | `wc_ship_today_notice_text` | `string $text`, `string $state` (`next`, `before`, `after`, `not_shipping`), `string $mode` | Tekst widgetu przed wstawieniem tokenów. |
 
-### Akcje
+**Akcje**
 
 | Akcja | Kiedy |
 |---|---|
@@ -321,7 +384,7 @@ Zdarzenia WP-Cron: `wc_ship_today_notice_cron_sync_holidays` (święta, co ok. 4
 i przy ponownej próbie) i `wc_ship_today_notice_cron_purge_cache` (pojedyncze zdarzenie na najbliższą godzinę graniczną, planowane
 tylko przy aktywnym LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_purge_cache`; bez nich zdejmowane).
 
-### JS
+**JS**
 
 ```js
 window.WcShipTodayNotice.init(root); // inicjuje widgety w treści doładowanej AJAX-em (popupy, PJAX); root domyślnie document
@@ -329,36 +392,30 @@ window.WcShipTodayNotice.init(root); // inicjuje widgety w treści doładowanej 
 
 Widget czyta konfigurację z atrybutu `data-stn`. Każdy element jest inicjowany tylko raz.
 
-## Tryb testowy
+**Tryb testowy**: użytkownik z `manage_woocommerce` może dodać do adresu dowolnej strony `?stn_now=2026-12-20T19:59`. „Teraz”
+zmienia się wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jest interpretowana w strefie czasowej sklepu.
 
-Użytkownik z `manage_woocommerce` może dodać do adresu dowolnej strony `?stn_now=2026-12-20T19:59`. "Teraz" zmienia się
-wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jest interpretowana w strefie czasowej sklepu.
+</details>
 
-## Testy
-
-```bash
-scripts/lint.sh                                     # php -l + node --check, bez WordPressa
-wp eval-file wp-content/plugins/wc-ship-today-notice/tests/cli-schedule-test.php
-```
-
-`cli-schedule-test.php` to tabela przypadków silnika (godziny graniczne, święta, przełom roku, zmiana czasu, teksty).
-Wymaga WordPressa i pobranych świąt PL na lata 2026-2027. Nie zmienia zapisanych ustawień.
-
-## Tłumaczenia i WPML
+<details>
+<summary><b>Tłumaczenia i WPML</b></summary>
 
 - Text domain: `wc-ship-today-notice`. Pliki `.pot`, `pl_PL` i `de_DE` w `languages/`. Plik z `wp-content/languages/plugins/`
   ma pierwszeństwo.
 - Tłumaczone są wszystkie teksty wtyczki: panel, domyślne teksty widgetu, dni tygodnia w formach zależnych od miejsca
-  w zdaniu (`_x()` z kontekstem: nazwa, "do ...", "w/we ...", skrót), "dziś"/"jutro", kafelki, komunikaty walidacji,
+  w zdaniu (`_x()` z kontekstem: nazwa, „do ...”, „w/we ...”, skrót), „dziś”/„jutro”, kafelki, komunikaty walidacji,
   wiersze w mailach, panelu i na liście zamówień. Teksty dla JS (`notice.js`, `checkout.js`) przychodzą z PHP po tłumaczeniu.
-- Uproszczenie: odliczanie dostaje z `_n()` formę dla 1 i dla 2 dni ("1 dzień", "N dni"); języki z inną formą dla 5+
+- Uproszczenie: odliczanie dostaje z `_n()` formę dla 1 i dla 2 dni („1 dzień”, „N dni”); języki z inną formą dla 5+
   dni pokażą formę dla 2.
-- Nazwa pola w komunikacie "Wybierz termin dostawy." jest po polsku zamieniana na małe litery; tłumaczenie tekstu `yes`
-  z kontekstem "Lowercase the field label..." na `no` to wyłącza (de_DE: "Bitte Liefertermin auswählen.").
+- Nazwa pola w komunikacie „Wybierz termin dostawy.” jest po polsku zamieniana na małe litery; tłumaczenie tekstu `yes`
+  z kontekstem „Lowercase the field label...” na `no` to wyłącza (de_DE: „Bitte Liefertermin auswählen.”).
 - WPML: teksty widgetu (`text_next_slot`, `text_before_cutoff`, `text_after_cutoff`, `text_not_shipping_day`) są rejestrowane
   jako stringi w domenie `wc-ship-today-notice` przy zapisie ustawień.
 
-## Dane w bazie
+</details>
+
+<details>
+<summary><b>Dane w bazie i deinstalacja</b></summary>
 
 - Opcja `wc_ship_today_notice_options` - wszystkie ustawienia (tablica).
 - Opcja `wc_ship_today_notice_style` - ustawienia zakładki „Styl” (tablica, puste wartości = domyślne).
@@ -368,7 +425,25 @@ Wymaga WordPressa i pobranych świąt PL na lata 2026-2027. Nie zmienia zapisany
 Dezaktywacja usuwa wszystkie zdarzenia cron wtyczki (`wp_clear_scheduled_hook`). Usunięcie wtyczki (`uninstall.php`) kasuje trzy opcje,
 tabelę świąt i zdarzenia cron (także na każdej stronie multisite). Meta zamówień (`_wc_stn_*`) zostają w zamówieniach.
 
-## Struktura plików
+</details>
+
+## Rozwój
+
+```bash
+scripts/lint.sh            # php -l + node --check, bez WordPressa
+npm install                # pierwszy raz: @wordpress/env (wymaga Dockera i Node 20+)
+npm run env:start          # http://localhost:8894, admin / password
+npm run env:seed           # produkt, klasyczny checkout, wysyłka PL, płatność przy odbiorze, święta PL
+npm run test:schedule      # tabela przypadków silnika (tests/cli-schedule-test.php)
+scripts/build-zip.sh       # build/wc-ship-today-notice.zip bez plików deweloperskich (.distignore)
+npm run env:destroy        # usunięcie środowiska
+```
+
+`tests/cli-schedule-test.php` to tabela przypadków silnika: godziny graniczne, święta, regiony, przełom roku, zmiana czasu,
+teksty, API. Wymaga pobranych świąt PL na lata 2026-2027 (`env:seed`). Nie zmienia zapisanych ustawień.
+
+<details>
+<summary><b>Struktura plików</b></summary>
 
 ```
 wc-ship-today-notice/
@@ -377,8 +452,9 @@ wc-ship-today-notice/
 ├── readme.txt                      # Readme w formacie WordPress.org (po angielsku)
 ├── index.php
 ├── includes/
-│   ├── class-wc-stn-schedule.php   # Silnik terminów (dni wysyłki, godzina graniczna, dostawa, tokeny)
-│   ├── class-wc-stn-checkout.php   # Wybór terminu w checkoucie, zamówienia, lista zamówień, przełącznik Iconic
+│   ├── class-wc-stn-schedule.php   # Silnik terminów (dni wysyłki, godzina graniczna, dostawa, tokeny, odmiana dni)
+│   ├── class-wc-stn-checkout.php   # Klasyczny checkout, zamówienia, lista zamówień, przełącznik Iconic
+│   ├── class-wc-stn-checkout-blocks.php  # Checkout blokowy (Additional Checkout Fields, Store API)
 │   └── functions.php               # Publiczne API wc_stn_*
 ├── assets/
 │   ├── css/notice.css              # Widget
@@ -386,64 +462,65 @@ wc-ship-today-notice/
 │   ├── js/notice.js                # Widget: stany, odliczanie, przełączanie terminów
 │   ├── js/checkout.js              # Kafelki: wybór, upływ godziny granicznej
 │   └── js/style-preview.js         # Podgląd na żywo w zakładce "Styl"
-├── languages/
-│   ├── wc-ship-today-notice.pot
-│   ├── wc-ship-today-notice-pl_PL.po / .mo
-│   └── wc-ship-today-notice-de_DE.po / .mo
+├── languages/                      # .pot, pl_PL i de_DE (.po + .mo)
 ├── tests/cli-schedule-test.php     # Tabela przypadków silnika (wp eval-file)
-├── scripts/lint.sh                 # Lint PHP i JS
-├── scripts/build-zip.sh            # Paczka build/wc-ship-today-notice.zip (bez plików z .distignore)
-├── .distignore                     # Co nie trafia do paczki (testy, skrypty, README.md, wp-env)
-└── README.md
+├── scripts/                        # lint.sh, build-zip.sh, env/ (seed i start wp-env)
+├── .wordpress-org/                 # Zrzuty ekranu do WordPress.org (poza paczką)
+├── .wp-env.json, package.json      # Lokalne środowisko (poza paczką)
+└── .distignore                     # Co nie trafia do paczki
 ```
 
-`.wordpress-org/` to zrzuty ekranu (`screenshot-N.png`, opisy w sekcji Screenshots w `readme.txt`) i docelowo ikona i banner
-do katalogu `assets/` w SVN WordPress.org. Nie wchodzi do paczki.
+
+</details>
 
 ## Changelog
 
 ### Niewydane
-- Święta: pomijane święta regionalne, opcjonalny region (ISO 3166-2, np. `DE-BY`), święta wielodniowe zapisywane jako kolejne dni,
-  pusta/błędna odpowiedź API nie kasuje zapisanych świąt, pobieranie zaraz po aktywacji i po zmianie kraju/języka/regionu,
-  ponowna próba po błędzie crona.
-- Walidacja kodów kraju i języka (`[A-Z]{2}`; błędny = poprzedni + komunikat).
-- Cron czyszczenia cache tylko przy LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_purge_cache`.
-- Zapis ustawień nie nadpisuje już `cutoff_time` wartością 14:00.
-- Wszystkie teksty frontu i panelu do tłumaczenia (angielskie źródło, `_x()` dla form dni, `_n()` dla liczby mnogiej),
-  pełne tłumaczenia pl_PL (teksty jak dotąd) i de_DE. Stałe `WC_STN_Schedule::DAY_*` zostają dla zgodności,
-  wtyczka używa `WC_STN_Schedule::day_label()`.
-- Domyślne teksty "po godzinie granicznej" i "dzień bez wysyłki" to teraz "Wyślemy {ship_when}." (wcześniej "Wyślemy jutro."
-  i "Wyślemy w najbliższy dzień roboczy." - błędne np. w piątek po godzinie granicznej). Zapisane teksty sklepu bez zmian.
-- Poprawka: podwójny odstęp przed odliczaniem ("Zostało:  2 dni"). Pojedynczy termin też jest w `.wc-ship-today-notice__item`.
-- Zakładka "Styl": placeholder pola odstępu "10" zamiast uciętego "10 / 14".
-- Wybór terminu w checkoucie blokowym, WooCommerce 10.1+ (pole Additional Checkout Fields, walidacja w Store API, te same meta zamówienia);
-  deklaracja zgodności z checkoutem blokowym.
-- Przygotowanie do WordPress.org: `readme.txt`, nagłówek wtyczki (licencja, wymagania WP/PHP/WooCommerce,
-  `Requires Plugins`), `uninstall.php`, `.distignore` i `scripts/build-zip.sh`.
-- Minimalna wersja WordPressa: 6.8 (tłumaczenia ładuje WordPress, bez `load_plugin_textdomain`).
-- Zapytania do tabeli świąt przez `$wpdb->prepare()` z `%i`, poprawki escapingu w panelu.
-- Zakładka "Styl": kolory przed/po godzinie granicznej, kolor odliczania, ramka, zaokrąglenie, odstęp, czcionka
-  i wyrównanie, z podglądem na żywo i "Przywróć domyślne".
-- Nowe zmienne CSS w `notice.css` (domyślny wygląd bez zmian).
-- Poprawka: włączony moduł checkoutu bez wyrenderowanego pola (brak shortcode albo shortcode poza formularzem) blokował
-  wszystkie zamówienia z wysyłką. Teraz data jest wymagana tylko, gdy pole było w formularzu. W panelu jest ostrzeżenie
-  przy miejscu "tylko shortcode".
+
+**Nowe**
+- Wybór terminu w **checkoucie blokowym** (WooCommerce 10.1+): pole Additional Checkout Fields, walidacja w Store API, te same meta zamówienia.
+- Zakładka **„Styl”**: kolory przed/po godzinie granicznej, kolor odliczania, ramka, zaokrąglenie, odstęp, czcionka
+  i wyrównanie, z podglądem na żywo i „Przywróć domyślne”. Nowe zmienne CSS w `notice.css` (domyślny wygląd bez zmian).
+- **Tłumaczenia**: wszystkie teksty frontu i panelu do tłumaczenia (angielskie źródło, `_x()` dla form dni, `_n()` dla liczby mnogiej),
+  pełne pl_PL (teksty jak dotąd) i nowe de_DE. Stałe `WC_STN_Schedule::DAY_*` zostają dla zgodności, wtyczka używa `day_label()`.
+- **Święta regionalne**: pomijane, opcjonalny region (ISO 3166-2, np. `DE-BY`). Święta wielodniowe zapisywane jako kolejne dni.
+- Deklaracje zgodności z HPOS i z checkoutem blokowym.
+- Przygotowanie do WordPress.org: `readme.txt`, nagłówek wtyczki (licencja, wymagania, `Requires Plugins`), `uninstall.php`,
+  `.distignore`, `scripts/build-zip.sh`, zrzuty ekranu.
+
+**Zmiany**
+- Domyślne teksty „po godzinie granicznej” i „dzień bez wysyłki” to teraz „Wyślemy {ship_when}.” (wcześniej „Wyślemy jutro.”
+  i „Wyślemy w najbliższy dzień roboczy.” - błędne np. w piątek po godzinie granicznej). Zapisane teksty sklepu bez zmian.
+- Święta pobierane zaraz po aktywacji i po zmianie kraju/języka/regionu, ponowna próba po błędzie crona.
 - Odbiór osobisty (`local_pickup`, `pickup_location`) nie wymaga daty.
 - Kierownik sklepu (`manage_woocommerce`) może zapisywać ustawienia i styl (wcześniej `options.php` wymagał `manage_options`).
-- Deklaracja zgodności z HPOS.
-- Tłumaczenia nie ładują się przed `init` (notice `_load_textdomain_just_in_time` w WP 6.7+): moduł checkoutu startuje na `init`.
-- Pierwszy zapis ustawień (`add_option`) rejestruje stringi WPML i czyści cache, tak jak kolejne zapisy.
-- Dezaktywacja usuwa wszystkie zaplanowane zdarzenia cron wtyczki, a nie tylko najbliższe.
-- Edycja daty wysyłki w zamówieniu odrzuca nieistniejące daty (np. 2026-02-31) z komunikatem.
-- `wc_stn_is_shipping_day()` i `wc_stn_is_blocked_date()` zwracają `false` dla błędnej daty zamiast rzucać wyjątek.
+- Cron czyszczenia cache tylko przy LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_purge_cache`.
+- Minimalna wersja WordPressa: 6.8 (tłumaczenia ładuje WordPress, bez `load_plugin_textdomain`).
+- Pojedynczy termin widgetu też jest w `.wc-ship-today-notice__item`.
 
-### 2.1.0
-- Moduł "Wybór terminu w checkoucie": kafelki, walidacja przy składaniu zamówienia, zapis w zamówieniu, maile, panel
+**Poprawki**
+- Włączony moduł checkoutu bez wyrenderowanego pola (brak shortcode albo shortcode poza formularzem) blokował
+  wszystkie zamówienia z wysyłką. Teraz data jest wymagana tylko, gdy pole było w formularzu; w panelu jest ostrzeżenie.
+- Pusta albo błędna odpowiedź API świąt nie kasuje już zapisanych świąt.
+- Tłumaczenia nie ładują się przed `init` (notice `_load_textdomain_just_in_time` w WP 6.7+).
+- Pierwszy zapis ustawień (`add_option`) rejestruje stringi WPML i czyści cache.
+- Dezaktywacja usuwa wszystkie zaplanowane zdarzenia cron wtyczki.
+- Edycja daty wysyłki w zamówieniu odrzuca nieistniejące daty (np. 2026-02-31).
+- `wc_stn_is_shipping_day()` i `wc_stn_is_blocked_date()` zwracają `false` dla błędnej daty zamiast rzucać wyjątek.
+- Walidacja kodów kraju i języka (`[A-Z]{2}`), zapis ustawień nie nadpisuje już `cutoff_time`.
+- Podwójny odstęp przed odliczaniem („Zostało:  2 dni”), ucięty placeholder w zakładce „Styl”.
+- Zapytania do tabeli świąt przez `$wpdb->prepare()`, poprawki escapingu w panelu.
+
+<details>
+<summary><b>Starsze wersje</b></summary>
+
+**2.1.0**
+- Moduł „Wybór terminu w checkoucie”: kafelki, walidacja przy składaniu zamówienia, zapis w zamówieniu, maile, panel
   zamówienia z edycją daty, kolumna z sortowaniem i filtrem na liście zamówień (HPOS i stara tabela).
 - Przełącznik wyłączający Iconic Delivery Slots w koszyku i checkoucie (okres przejściowy).
 
-### 2.0.0
-- Tryb "najbliższy termin" i godzina graniczna przed dniem wysyłki.
+**2.0.0**
+- Tryb „najbliższy termin” i godzina graniczna przed dniem wysyłki.
 - Data dostawy (dni doręczeń po wysyłce, dni bez doręczeń, święta).
 - Tokeny z datami i polską odmianą dni, atrybuty shortcode `count`, `text`, `mode`, `class`.
 - Odliczanie z dniami i automatyczne przełączanie terminu po godzinie granicznej.
@@ -454,20 +531,23 @@ do katalogu `assets/` w SVN WordPress.org. Nie wchodzi do paczki.
 - Funkcje `wc_stn_*`, filtry, tabela testów silnika.
 - Czyszczenie cache LiteSpeed o godzinie granicznej i po zapisie ustawień.
 
-### 1.1.0
+**1.1.0**
 - Godziny graniczne dla każdego dnia tygodnia, daty wykluczone jako textarea.
 - Lista pobranych świąt z możliwością ignorowania.
 - Checkboxy dla tekstów po godzinie granicznej i w dni bez wysyłki, ustawienia widoczności widgetu.
 - Tłumaczenie pl_PL.
 
-### 1.0.0
+**1.0.0**
 - Pierwsza wersja: odliczanie, OpenHolidays API, panel w WooCommerce, WPML.
 
-## TODO
+</details>
 
+## Plany
+
+- [ ] Przełączniki funkcji opcjonalnych (m.in. daty w zamówieniach przy wyłączonym module).
 - [ ] Kafelki zamiast selecta w checkoucie blokowym (wymaga własnego bloku JS).
-- [ ] Tłumaczenie tekstów frontu i reszty panelu.
 - [ ] Różne godziny graniczne dla stref wysyłki WooCommerce.
+- [ ] Publikacja w katalogu WordPress.org.
 
 ## Autorzy
 
@@ -475,4 +555,4 @@ do katalogu `assets/` w SVN WordPress.org. Nie wchodzi do paczki.
 
 ## Licencja
 
-GPL-2.0-or-later.
+[GPL-2.0-or-later](https://www.gnu.org/licenses/gpl-2.0.html)
