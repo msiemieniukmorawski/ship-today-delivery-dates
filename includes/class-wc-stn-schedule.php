@@ -19,7 +19,10 @@ final class WC_STN_Schedule
     /** Ile dni do przodu szukamy terminów. */
     const HORIZON_DAYS = 60;
 
-    /** Nazwy dni (ISO-8601: 1 = poniedziałek ... 7 = niedziela). */
+    /**
+     * Polskie nazwy dni (ISO-8601: 1 = poniedziałek ... 7 = niedziela). Zostają dla zgodności wstecznej,
+     * wtyczka używa przetłumaczonych form z day_label().
+     */
     const DAY_NOMINATIVE = [1 => 'poniedziałek', 2 => 'wtorek', 3 => 'środa', 4 => 'czwartek', 5 => 'piątek', 6 => 'sobota', 7 => 'niedziela'];
     const DAY_GENITIVE   = [1 => 'poniedziałku', 2 => 'wtorku', 3 => 'środy', 4 => 'czwartku', 5 => 'piątku', 6 => 'soboty', 7 => 'niedzieli'];
     const DAY_ON         = [1 => 'w poniedziałek', 2 => 'we wtorek', 3 => 'w środę', 4 => 'w czwartek', 5 => 'w piątek', 6 => 'w sobotę', 7 => 'w niedzielę'];
@@ -41,6 +44,78 @@ final class WC_STN_Schedule
     {
         $this->options = $options;
         $this->tz      = $tz ?: wp_timezone();
+    }
+
+    /**
+     * Nazwa dnia w formie zależnej od miejsca w zdaniu (ISO-8601: 1 = poniedziałek).
+     * Każda forma to osobny tekst do tłumaczenia, bo polska odmiana (i przyimek "w"/"we") zależy od dnia.
+     *
+     * @param string $form 'name' (poniedziałek), 'until' (do -> poniedziałku), 'on' (w poniedziałek), 'short' (pn).
+     */
+    public static function day_label(int $weekday, string $form): string
+    {
+        switch ($form) {
+            case 'until':
+                $days = [
+                    1 => _x('Monday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
+                    2 => _x('Tuesday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
+                    3 => _x('Wednesday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
+                    4 => _x('Thursday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
+                    5 => _x('Friday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
+                    6 => _x('Saturday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
+                    7 => _x('Sunday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
+                ];
+                break;
+            case 'on':
+                $days = [
+                    1 => _x('on Monday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
+                    2 => _x('on Tuesday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
+                    3 => _x('on Wednesday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
+                    4 => _x('on Thursday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
+                    5 => _x('on Friday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
+                    6 => _x('on Saturday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
+                    7 => _x('on Sunday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
+                ];
+                break;
+            case 'short':
+                $days = [
+                    1 => _x('Mon', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
+                    2 => _x('Tue', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
+                    3 => _x('Wed', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
+                    4 => _x('Thu', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
+                    5 => _x('Fri', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
+                    6 => _x('Sat', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
+                    7 => _x('Sun', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
+                ];
+                break;
+            default:
+                $days = [
+                    1 => _x('Monday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
+                    2 => _x('Tuesday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
+                    3 => _x('Wednesday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
+                    4 => _x('Thursday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
+                    5 => _x('Friday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
+                    6 => _x('Saturday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
+                    7 => _x('Sunday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
+                ];
+        }
+
+        return $days[$weekday] ?? '';
+    }
+
+    /**
+     * Słowa do określeń względnych, wspólne dla render_text() i notice.js (frontend_config()).
+     */
+    public static function words(): array
+    {
+        return [
+            'today'    => _x('today', 'relative day, e.g. "we will ship today"', 'wc-ship-today-notice'),
+            'tomorrow' => _x('tomorrow', 'relative day, e.g. "we will ship tomorrow"', 'wc-ship-today-notice'),
+            /* translators: {cutoff_when} for today/tomorrow. %1$s: "today" or "tomorrow", %2$s: time, e.g. "today until 14:00" */
+            'relative' => __('%1$s until %2$s', 'wc-ship-today-notice'),
+            /* translators: {cutoff_when} for later days. %1$s: weekday (until form), %2$s: time, e.g. "until Sunday 20:00" */
+            'until'    => __('until %1$s %2$s', 'wc-ship-today-notice'),
+        ];
     }
 
     public function timezone(): DateTimeZone
@@ -232,13 +307,13 @@ final class WC_STN_Schedule
             'cutoff'        => $cutoff->getTimestamp(),
             'cutoff_ymd'    => $cutoff->format('Y-m-d'),
             'cutoff_time'   => $cutoff->format('H:i'),
-            'cutoff_day'    => self::DAY_GENITIVE[(int) $cutoff->format('N')],
+            'cutoff_day'    => self::day_label((int) $cutoff->format('N'), 'until'),
             'cutoff_date'   => $cutoff->format('d.m'),
             'ship_ymd'      => $ship->format('Y-m-d'),
-            'ship_day'      => self::DAY_ON[(int) $ship->format('N')],
+            'ship_day'      => self::day_label((int) $ship->format('N'), 'on'),
             'ship_date'     => $ship->format('d.m'),
             'delivery_ymd'  => $delivery ? $delivery->format('Y-m-d') : '',
-            'delivery_day'  => $delivery ? self::DAY_ON[(int) $delivery->format('N')] : '',
+            'delivery_day'  => $delivery ? self::day_label((int) $delivery->format('N'), 'on') : '',
             'delivery_date' => $delivery ? $delivery->format('d.m') : '',
         ];
     }
@@ -252,16 +327,18 @@ final class WC_STN_Schedule
         $today    = $now->format('Y-m-d');
         $tomorrow = $now->modify('+1 day')->format('Y-m-d');
 
-        $when = function ($ymd, $default) use ($today, $tomorrow) {
+        $words    = self::words();
+
+        $when = function ($ymd, $default) use ($today, $tomorrow, $words) {
             if ($ymd === $today) {
-                return 'dziś';
+                return $words['today'];
             }
-            return $ymd === $tomorrow ? 'jutro' : $default;
+            return $ymd === $tomorrow ? $words['tomorrow'] : $default;
         };
 
         $cutoff_when = $labels['cutoff_ymd'] === $today || $labels['cutoff_ymd'] === $tomorrow
-            ? $when($labels['cutoff_ymd'], '') . ' do ' . $labels['cutoff_time']
-            : 'do ' . $labels['cutoff_day'] . ' ' . $labels['cutoff_time'];
+            ? sprintf($words['relative'], $when($labels['cutoff_ymd'], ''), $labels['cutoff_time'])
+            : sprintf($words['until'], $labels['cutoff_day'], $labels['cutoff_time']);
 
         $replace = [
             '{cutoff_when}'   => $cutoff_when,

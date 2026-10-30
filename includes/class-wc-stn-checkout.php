@@ -112,7 +112,7 @@ final class WC_STN_Checkout
         $marker = '<input type="hidden" name="' . esc_attr(self::RENDERED) . '" value="1" />';
 
         if (!$all) {
-            return '<p class="wc-stn-checkout__empty">Brak dostępnych terminów dostawy. Skontaktuj się z nami.</p>' . $marker;
+            return '<p class="wc-stn-checkout__empty">' . esc_html__('No delivery dates available. Please contact us.', 'wc-ship-today-notice') . '</p>' . $marker;
         }
 
         $selected = $this->posted_ship_date();
@@ -132,13 +132,14 @@ final class WC_STN_Checkout
             'count'     => $count,
             'tiles'     => $tiles,
             'nowOffset' => $this->plugin->now_offset() * 1000,
-            'closed'    => 'Termin %1$s właśnie się zamknął, zaznaczyliśmy %2$s.',
+            /* translators: checkout notice when the selected date closes on an open page. %1$s: closed date, %2$s: newly selected date */
+            'closed'    => __('The %1$s date has just closed, we selected %2$s.', 'wc-ship-today-notice'),
         ];
 
         $style = '' !== $o['checkout_accent'] ? ' style="--wc-stn-accent:' . esc_attr($o['checkout_accent']) . '"' : '';
 
         $html  = '<fieldset class="wc-stn-checkout" id="wc-stn-checkout" data-stn-checkout="' . esc_attr(wp_json_encode($config)) . '"' . $style . '>';
-        $html .= '<legend class="wc-stn-checkout__legend">' . esc_html($o['checkout_label']) . ' <abbr class="required" title="wymagane">*</abbr></legend>';
+        $html .= '<legend class="wc-stn-checkout__legend">' . esc_html($o['checkout_label']) . ' <abbr class="required" title="' . esc_attr__('required', 'wc-ship-today-notice') . '">*</abbr></legend>';
         $html .= '<div class="wc-stn-checkout__tiles">';
         foreach (array_slice($tiles, 0, $count) as $tile) {
             $html .= $this->tile_html($tile, $tile['value'] === $selected);
@@ -156,23 +157,26 @@ final class WC_STN_Checkout
         $o        = $this->plugin->get_options();
         $ship     = $slot['ship'];
         $delivery = $slot['delivery'];
-        $short    = function (DateTimeImmutable $d) {
-            return WC_STN_Schedule::DAY_SHORT[(int) $d->format('N')] . ' ' . $d->format('d.m');
+        $name     = function (DateTimeImmutable $d) {
+            return WC_STN_Schedule::day_label((int) $d->format('N'), 'name') . ' ' . $d->format('d.m');
         };
 
         if ($delivery && 'delivery' === $o['checkout_primary']) {
-            $main = $short($delivery);
-            $sub  = 'wysyłka ' . $short($ship);
+            $main = $this->date_short($delivery);
+            $sub  = $this->ship_short($ship);
         } else {
-            $main = $short($ship);
-            $sub  = $delivery ? 'dostawa ' . $short($delivery) : 'wysyłka';
+            $main = $this->date_short($ship);
+            $sub  = $delivery ? $this->delivery_short($delivery) : _x('ship', 'checkout tile without a delivery date', 'wc-ship-today-notice');
         }
 
-        $aria = 'Wysyłka ' . WC_STN_Schedule::DAY_NOMINATIVE[(int) $ship->format('N')] . ' ' . $ship->format('d.m');
+        /* translators: checkout tile for screen readers. %s: weekday and date, e.g. "Monday 09.11" */
+        $aria = sprintf(__('Ship %s', 'wc-ship-today-notice'), $name($ship));
         if ($delivery) {
-            $aria .= ', dostawa ' . WC_STN_Schedule::DAY_NOMINATIVE[(int) $delivery->format('N')] . ' ' . $delivery->format('d.m');
+            /* translators: checkout tile for screen readers, after the ship date. %s: weekday and date */
+            $aria .= ', ' . sprintf(__('delivery %s', 'wc-ship-today-notice'), $name($delivery));
         }
-        $aria .= ', zamówienia do ' . WC_STN_Schedule::DAY_GENITIVE[(int) $slot['cutoff']->format('N')] . ' ' . $slot['cutoff']->format('H:i');
+        /* translators: checkout tile for screen readers. %1$s: weekday (until form), %2$s: time, e.g. "orders until Sunday 20:00" */
+        $aria .= ', ' . sprintf(__('orders until %1$s %2$s', 'wc-ship-today-notice'), WC_STN_Schedule::day_label((int) $slot['cutoff']->format('N'), 'until'), $slot['cutoff']->format('H:i'));
 
         return [
             'value'  => $ship->format('Y-m-d'),
@@ -261,9 +265,10 @@ final class WC_STN_Checkout
             return;
         }
 
-        $text = 'Wysyłka ' . $this->date_short($slot['ship']);
+        /* translators: order review row. %s: short weekday and date, e.g. "Mon 09.11" */
+        $text = esc_html(sprintf(_x('Ship %s', 'order review row', 'wc-ship-today-notice'), $this->date_short($slot['ship'])));
         if ($slot['delivery']) {
-            $text .= '<br>dostawa ' . $this->date_short($slot['delivery']);
+            $text .= '<br>' . esc_html($this->delivery_short($slot['delivery']));
         }
 
         printf(
@@ -300,8 +305,12 @@ final class WC_STN_Checkout
         $ymd   = $this->posted_ship_date();
 
         if ('' === $ymd) {
-            $lower = function_exists('mb_strtolower') ? mb_strtolower($label) : strtolower($label);
-            $errors->add(self::FIELD, sprintf('Wybierz <strong>%s</strong>.', esc_html($lower)));
+            // Po polsku nazwa pola małą literą ("Wybierz termin dostawy."); tłumaczenie "no" zostawia ją bez zmian (np. niemieckie rzeczowniki)
+            $lower = 'yes' === _x('yes', 'Lowercase the field label inside "Choose %s."? Translate as "no" to keep it as entered.', 'wc-ship-today-notice')
+                ? (function_exists('mb_strtolower') ? mb_strtolower($label) : strtolower($label))
+                : $label;
+            /* translators: checkout error. %s: field label, e.g. "delivery date" */
+            $errors->add(self::FIELD, sprintf(esc_html__('Choose %s.', 'wc-ship-today-notice'), '<strong>' . esc_html($lower) . '</strong>'));
             return;
         }
 
@@ -310,8 +319,10 @@ final class WC_STN_Checkout
             $date     = $schedule->date($ymd);
             $closed   = $schedule->is_shipping_day($date) && $schedule->cutoff_for($date) <= $schedule->now();
             $message  = $closed
-                ? 'Przyjmowanie zamówień na wysyłkę %s już się zakończyło. Wybierz inny termin.'
-                : 'Termin z wysyłką %s jest niedostępny. Wybierz inny termin.';
+                /* translators: %s: shipping date, e.g. "pn 26.10" */
+                ? __('Orders for shipping on %s are no longer accepted. Please choose another date.', 'wc-ship-today-notice')
+                /* translators: %s: shipping date, e.g. "pn 26.10" */
+                : __('Shipping on %s is not available. Please choose another date.', 'wc-ship-today-notice');
             $errors->add(self::FIELD, sprintf($message, esc_html($this->date_short($date))));
         }
     }
@@ -348,11 +359,11 @@ final class WC_STN_Checkout
         }
 
         $schedule = $this->plugin->schedule();
-        $add      = ['wc_stn_ship' => ['label' => 'Data wysyłki:', 'value' => $this->date_long($schedule->date($ship))]];
+        $add      = ['wc_stn_ship' => ['label' => __('Ship date:', 'wc-ship-today-notice'), 'value' => $this->date_long($schedule->date($ship))]];
 
         $delivery = $order->get_meta(self::META_DELIVERY);
         if ($delivery) {
-            $add['wc_stn_delivery'] = ['label' => 'Planowana dostawa:', 'value' => $this->date_long($schedule->date($delivery))];
+            $add['wc_stn_delivery'] = ['label' => __('Planned delivery:', 'wc-ship-today-notice'), 'value' => $this->date_long($schedule->date($delivery))];
         }
 
         $result = [];
@@ -384,21 +395,22 @@ final class WC_STN_Checkout
         $iconic   = $order->get_meta('jckwds_date');
 
         echo '<div class="wc-stn-admin-box" style="clear:both;padding-top:8px">';
-        echo '<h3>Termin wysyłki</h3>';
+        echo '<h3>' . esc_html__('Shipping date', 'wc-ship-today-notice') . '</h3>';
 
         if ($ship) {
-            echo '<p><strong>Wysyłka:</strong> ' . esc_html($this->date_long($schedule->date($ship)));
+            echo '<p><strong>' . esc_html__('Ship:', 'wc-ship-today-notice') . '</strong> ' . esc_html($this->date_long($schedule->date($ship)));
             if ($delivery) {
-                echo '<br><strong>Dostawa:</strong> ' . esc_html($this->date_long($schedule->date($delivery)));
+                echo '<br><strong>' . esc_html__('Delivery:', 'wc-ship-today-notice') . '</strong> ' . esc_html($this->date_long($schedule->date($delivery)));
             }
             echo '</p>';
         } elseif ($iconic) {
-            echo '<p><strong>Data wysyłki (Iconic):</strong> ' . esc_html($iconic) . '</p>';
+            echo '<p><strong>' . esc_html__('Ship date (Iconic):', 'wc-ship-today-notice') . '</strong> ' . esc_html($iconic) . '</p>';
         }
 
         if ($order->is_editable() || current_user_can('edit_shop_orders')) {
             printf(
-                '<p><label for="wc_stn_admin_ship_date">Zmień datę wysyłki:</label><br><input type="date" id="wc_stn_admin_ship_date" name="wc_stn_admin_ship_date" value="%s" /></p>',
+                '<p><label for="wc_stn_admin_ship_date">%s</label><br><input type="date" id="wc_stn_admin_ship_date" name="wc_stn_admin_ship_date" value="%s" /></p>',
+                esc_html__('Change ship date:', 'wc-ship-today-notice'),
                 esc_attr($ship)
             );
             wp_nonce_field('wc_stn_admin_ship_date', 'wc_stn_admin_nonce');
@@ -443,14 +455,16 @@ final class WC_STN_Checkout
             $order->delete_meta_data(self::META_SHIP);
             $order->delete_meta_data(self::META_DELIVERY);
             $order->delete_meta_data(self::META_CUTOFF);
-            $order->add_order_note(sprintf('Usunięto datę wysyłki %s (%s).', $old, $user));
+            /* translators: order note. %1$s: removed ship date (Y-m-d), %2$s: user name */
+            $order->add_order_note(sprintf(__('Ship date %1$s removed (%2$s).', 'wc-ship-today-notice'), $old, $user));
         } else {
             $schedule = $this->plugin->schedule();
             $delivery = $schedule->delivery_for($schedule->date($new));
             $order->update_meta_data(self::META_SHIP, $new);
             $order->update_meta_data(self::META_DELIVERY, $delivery ? $delivery->format('Y-m-d') : '');
             $order->delete_meta_data(self::META_CUTOFF);
-            $order->add_order_note(sprintf('Zmieniono datę wysyłki z %s na %s (%s).', $old ?: 'brak', $new, $user));
+            /* translators: order note. %1$s: previous ship date (Y-m-d) or "none", %2$s: new ship date, %3$s: user name */
+            $order->add_order_note(sprintf(__('Ship date changed from %1$s to %2$s (%3$s).', 'wc-ship-today-notice'), $old ?: _x('none', 'no previous ship date', 'wc-ship-today-notice'), $new, $user));
         }
 
         $order->save();
@@ -466,11 +480,11 @@ final class WC_STN_Checkout
         foreach ($columns as $key => $label) {
             $result[$key] = $label;
             if ('order_date' === $key) {
-                $result[self::COLUMN] = 'Wysyłka';
+                $result[self::COLUMN] = _x('Shipping', 'column with the ship date', 'wc-ship-today-notice');
             }
         }
         if (!isset($result[self::COLUMN])) {
-            $result[self::COLUMN] = 'Wysyłka';
+            $result[self::COLUMN] = _x('Shipping', 'column with the ship date', 'wc-ship-today-notice');
         }
 
         return $result;
@@ -494,7 +508,7 @@ final class WC_STN_Checkout
             echo esc_html($this->date_short($schedule->date($ship)));
             $delivery = $order->get_meta(self::META_DELIVERY);
             if ($delivery) {
-                echo '<br><small>dostawa ' . esc_html($this->date_short($schedule->date($delivery))) . '</small>';
+                echo '<br><small>' . esc_html($this->delivery_short($schedule->date($delivery))) . '</small>';
             }
             return;
         }
@@ -562,13 +576,14 @@ final class WC_STN_Checkout
         $current  = isset($_GET[self::FILTER_PARAM]) ? sanitize_text_field(wp_unslash($_GET[self::FILTER_PARAM])) : ''; // phpcs:ignore WordPress.Security.NonceVerification
         $from     = $schedule->now()->modify('-14 days');
 
-        echo '<select name="' . esc_attr(self::FILTER_PARAM) . '"><option value="">Wysyłka: wszystkie</option>';
+        echo '<select name="' . esc_attr(self::FILTER_PARAM) . '"><option value="">' . esc_html__('Shipping: all', 'wc-ship-today-notice') . '</option>';
         foreach ($schedule->shipping_dates($from, 45) as $ymd) {
             printf(
-                '<option value="%s"%s>Wysyłka: %s</option>',
+                '<option value="%s"%s>%s</option>',
                 esc_attr($ymd),
                 selected($current, $ymd, false),
-                esc_html($this->date_short($schedule->date($ymd)) . '.' . substr($ymd, 0, 4))
+                /* translators: orders list filter. %s: short weekday and date, e.g. "Mon 09.11.2026" */
+                esc_html(sprintf(__('Shipping: %s', 'wc-ship-today-notice'), $this->date_short($schedule->date($ymd)) . '.' . substr($ymd, 0, 4)))
             );
         }
         echo '</select>';
@@ -638,11 +653,25 @@ final class WC_STN_Checkout
 
     private function date_short(DateTimeImmutable $d)
     {
-        return WC_STN_Schedule::DAY_SHORT[(int) $d->format('N')] . ' ' . $d->format('d.m');
+        return WC_STN_Schedule::day_label((int) $d->format('N'), 'short') . ' ' . $d->format('d.m');
     }
 
     private function date_long(DateTimeImmutable $d)
     {
-        return WC_STN_Schedule::DAY_NOMINATIVE[(int) $d->format('N')] . ', ' . $d->format('d.m.Y');
+        return WC_STN_Schedule::day_label((int) $d->format('N'), 'name') . ', ' . $d->format('d.m.Y');
+    }
+
+    /** "wysyłka pn 09.11" (kafelek). */
+    private function ship_short(DateTimeImmutable $d)
+    {
+        /* translators: checkout tile, second line. %s: short weekday and date, e.g. "Mon 09.11" */
+        return sprintf(_x('ship %s', 'checkout tile', 'wc-ship-today-notice'), $this->date_short($d));
+    }
+
+    /** "dostawa wt 10.11" (kafelek, podsumowanie zamówienia, lista zamówień). */
+    private function delivery_short(DateTimeImmutable $d)
+    {
+        /* translators: checkout tile, order review and orders list. %s: short weekday and date, e.g. "Tue 10.11" */
+        return sprintf(_x('delivery %s', 'short date line', 'wc-ship-today-notice'), $this->date_short($d));
     }
 }

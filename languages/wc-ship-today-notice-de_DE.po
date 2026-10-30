@@ -3,16 +3,17 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Powiadomienie o wysyłce dziś 1.2.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-ship-today-notice\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-ship-today-"
+"notice\n"
+"POT-Creation-Date: 2026-10-30T18:09:55+00:00\n"
+"PO-Revision-Date: 2026-07-26\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
 "Language: de_DE\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-26T19:37:18+00:00\n"
-"PO-Revision-Date: 2026-07-26\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wc-ship-today-notice\n"
 
@@ -23,428 +24,1087 @@ msgstr "Benachrichtigung über heutigen Versand"
 
 #. Description of the plugin
 #: wc-ship-today-notice.php
-msgid "Countdown to the order cutoff time with the next ship and delivery dates (shortcode [ship_today_notice]), plus an optional ship date choice at checkout."
-msgstr "Countdown bis zum Bestellschluss mit dem nächsten Versand- und Liefertermin (Shortcode [ship_today_notice]) sowie optionale Auswahl des Versandtermins im Checkout."
+msgid ""
+"Countdown to the order cutoff time with the next ship and delivery dates "
+"(shortcode [ship_today_notice]), plus an optional ship date choice at "
+"checkout."
+msgstr ""
+"Countdown bis zum Bestellschluss mit dem nächsten Versand- und Liefertermin "
+"(Shortcode [ship_today_notice]) sowie optionale Auswahl des Versandtermins "
+"im Checkout."
 
 #. Author of the plugin
 #: wc-ship-today-notice.php
 msgid "MS-M.pl"
 msgstr "MS-M.pl"
 
-#: wc-ship-today-notice.php:94
-msgid "Every four months"
-msgstr "Alle vier Monate"
+#. Author URI of the plugin
+#: wc-ship-today-notice.php
+msgid "https://ms-m.pl"
+msgstr "https://ms-m.pl"
 
-#: wc-ship-today-notice.php:128
-#: wc-ship-today-notice.php:129
-msgid "Ship Today Notice"
-msgstr "Ship Today Notice"
-
-#: wc-ship-today-notice.php:143
-msgid "Shortcode"
-msgstr "Shortcode"
-
-#: wc-ship-today-notice.php:151
-msgid "Main settings"
-msgstr "Haupteinstellungen"
-
-#: wc-ship-today-notice.php:156
-msgid "Delivery weekdays & cutoff times"
-msgstr "Versandtage & Bestellfristen"
-
-#: wc-ship-today-notice.php:157
-msgid "Excluded dates"
-msgstr "Ausgeschlossene Termine"
-
-#: wc-ship-today-notice.php:162
-msgid "Widget visibility"
-msgstr "Widget-Sichtbarkeit"
-
-#: wc-ship-today-notice.php:167
-msgid "Display widget"
-msgstr "Widget anzeigen"
-
-#: wc-ship-today-notice.php:172
-msgid "Countdown format"
-msgstr "Countdown-Format"
-
-#: wc-ship-today-notice.php:177
-msgid "Time labels"
-msgstr "Zeitbeschriftungen"
-
-#: wc-ship-today-notice.php:182
-msgid "Public holidays API"
-msgstr "Feiertags-API"
-
-#: wc-ship-today-notice.php:187
-msgid "Country ISO code"
-msgstr "ISO-Ländercode"
-
-#: wc-ship-today-notice.php:188
-msgid "Language ISO code"
-msgstr "ISO-Sprachcode"
-
-#: wc-ship-today-notice.php:189
-msgid "Fetched holidays"
-msgstr "Abgerufene Feiertage"
-
-#: wc-ship-today-notice.php:194
-msgid "Frontend texts"
-msgstr "Frontend-Texte"
-
-#: wc-ship-today-notice.php:198
-msgid "Text before cutoff"
-msgstr "Text vor der Bestellfrist"
-
-#: wc-ship-today-notice.php:199
-msgid "Text after cutoff"
-msgstr "Text nach der Bestellfrist"
-
-#: wc-ship-today-notice.php:200
-msgid "Text when not a shipping day"
-msgstr "Text an Nicht-Versandtagen"
-
-#: wc-ship-today-notice.php:273
-msgid "Holidays updated."
-msgstr "Feiertage aktualisiert."
-
-#: wc-ship-today-notice.php:273
-msgid "Failed to update holidays."
-msgstr "Aktualisierung der Feiertage fehlgeschlagen."
-
-#: wc-ship-today-notice.php:293
-msgid "Fetch holidays"
-msgstr "Feiertage abrufen"
-
-#: wc-ship-today-notice.php:294
-msgid "Click the button below to manually fetch public holidays from the API. Holidays are also fetched automatically every 4 months."
-msgstr "Klicke auf die Schaltfläche unten, um Feiertage manuell aus der API abzurufen. Feiertage werden außerdem automatisch alle 4 Monate abgerufen."
-
-#: wc-ship-today-notice.php:298
-msgid "Fetch holidays now"
-msgstr "Feiertage jetzt abrufen"
-
-#: wc-ship-today-notice.php:324
-msgid "Order within: {countdown} — we will ship today!"
-msgstr "Bestelle innerhalb von: {countdown} — wir versenden noch heute!"
-
-#: wc-ship-today-notice.php:325
-msgid "We will ship tomorrow."
-msgstr "Wir versenden morgen."
-
-#: wc-ship-today-notice.php:326
-msgid "We will ship on the next business day."
-msgstr "Wir versenden am nächsten Werktag."
-
-#: wc-ship-today-notice.php:355
-msgid "Use this shortcode to display the widget:"
-msgstr "Verwende diesen Shortcode, um das Widget anzuzeigen:"
-
-#: wc-ship-today-notice.php:358
-msgid "Place it on product pages, cart, sidebar, or anywhere you want to show the shipping countdown."
-msgstr "Platziere ihn auf Produktseiten, im Warenkorb, in der Sidebar oder überall dort, wo der Versand-Countdown angezeigt werden soll."
-
-#. translators: %s: link to OpenHolidays API
-#: wc-ship-today-notice.php:374
+#. translators: %s: shipping date, e.g. "pn 26.10"
+#: includes/class-wc-stn-checkout-blocks.php:141
+#: includes/class-wc-stn-checkout.php:323
 #, php-format
-msgid "Public holidays are fetched from %s. Configure your country and language below."
-msgstr "Feiertage werden von %s abgerufen. Konfiguriere unten dein Land und deine Sprache."
+msgid ""
+"Orders for shipping on %s are no longer accepted. Please choose another date."
+msgstr ""
+"Bestellungen für den Versand am %s werden nicht mehr angenommen. Bitte "
+"wählen Sie einen anderen Termin."
 
-#: wc-ship-today-notice.php:386
-msgid "Monday"
-msgstr "Montag"
+#. translators: %s: shipping date, e.g. "pn 26.10"
+#: includes/class-wc-stn-checkout-blocks.php:143
+#: includes/class-wc-stn-checkout.php:325
+#, php-format
+msgid "Shipping on %s is not available. Please choose another date."
+msgstr ""
+"Der Versand am %s ist nicht verfügbar. Bitte wählen Sie einen anderen Termin."
 
-#: wc-ship-today-notice.php:387
-msgid "Tuesday"
-msgstr "Dienstag"
+#: includes/class-wc-stn-checkout.php:115
+msgid "No delivery dates available. Please contact us."
+msgstr "Keine Liefertermine verfügbar. Bitte kontaktiere uns."
 
-#: wc-ship-today-notice.php:388
-msgid "Wednesday"
-msgstr "Mittwoch"
+#. translators: checkout notice when the selected date closes on an open page. %1$s: closed date, %2$s: newly selected date
+#: includes/class-wc-stn-checkout.php:136
+#, php-format
+msgid "The %1$s date has just closed, we selected %2$s."
+msgstr "Der Termin %1$s ist gerade abgelaufen, wir haben %2$s ausgewählt."
 
-#: wc-ship-today-notice.php:389
-msgid "Thursday"
-msgstr "Donnerstag"
+#: includes/class-wc-stn-checkout.php:142
+msgid "required"
+msgstr "erforderlich"
 
-#: wc-ship-today-notice.php:390
-msgid "Friday"
-msgstr "Freitag"
-
-#: wc-ship-today-notice.php:391
-msgid "Saturday"
-msgstr "Samstag"
-
-#: wc-ship-today-notice.php:392
-msgid "Sunday"
-msgstr "Sonntag"
-
-#: wc-ship-today-notice.php:399
-msgid "Day"
-msgstr "Tag"
-
-#: wc-ship-today-notice.php:400
-msgid "Shipping"
+#: includes/class-wc-stn-checkout.php:169
+msgctxt "checkout tile without a delivery date"
+msgid "ship"
 msgstr "Versand"
 
-#: wc-ship-today-notice.php:401
-msgid "Cutoff time"
-msgstr "Bestellfrist"
+#. translators: checkout tile for screen readers. %s: weekday and date, e.g. "Monday 09.11"
+#: includes/class-wc-stn-checkout.php:173
+#, php-format
+msgid "Ship %s"
+msgstr "Versand %s"
 
-#: wc-ship-today-notice.php:424
-msgid "Set different cutoff times for each day. Orders placed after the cutoff time will be shipped the next business day."
-msgstr "Lege für jeden Tag unterschiedliche Bestellfristen fest. Bestellungen nach der Bestellfrist werden am nächsten Werktag versendet."
+#. translators: checkout tile for screen readers, after the ship date. %s: weekday and date
+#: includes/class-wc-stn-checkout.php:176
+#, php-format
+msgid "delivery %s"
+msgstr "Lieferung %s"
 
-#: wc-ship-today-notice.php:435
-msgid "Enter dates in dd-mm-yyyy format, one per line or comma-separated. These dates are excluded even if they are weekdays."
-msgstr "Gib Termine im Format tt-mm-jjjj ein, einen pro Zeile oder kommagetrennt. Diese Termine werden auch dann ausgeschlossen, wenn sie Werktage sind."
+#. translators: checkout tile for screen readers. %1$s: weekday (until form), %2$s: time, e.g. "orders until Sunday 20:00"
+#: includes/class-wc-stn-checkout.php:179
+#, php-format
+msgid "orders until %1$s %2$s"
+msgstr "Bestellungen bis %1$s %2$s"
 
-#: wc-ship-today-notice.php:447
-msgid "Two-letter ISO 3166-1 country code. Examples: PL (Poland), DE (Germany), CZ (Czech Republic), FR (France), GB (United Kingdom)."
-msgstr "Zweibuchstabiger ISO-3166-1-Ländercode. Beispiele: PL (Polen), DE (Deutschland), CZ (Tschechien), FR (Frankreich), GB (Vereinigtes Königreich)."
+#. translators: order review row. %s: short weekday and date, e.g. "Mon 09.11"
+#: includes/class-wc-stn-checkout.php:269
+#, php-format
+msgctxt "order review row"
+msgid "Ship %s"
+msgstr "Versand %s"
 
-#: wc-ship-today-notice.php:448
-msgid "See supported countries"
-msgstr "Unterstützte Länder ansehen"
+#: includes/class-wc-stn-checkout.php:309
+msgctxt ""
+"Lowercase the field label inside \"Choose %s.\"? Translate as \"no\" to keep "
+"it as entered."
+msgid "yes"
+msgstr "no"
 
-#: wc-ship-today-notice.php:460
-msgid "Two-letter ISO 639-1 language code for holiday names. Examples: PL (Polish), DE (German), EN (English), FR (French)."
-msgstr "Zweibuchstabiger ISO-639-1-Sprachcode für Feiertagsnamen. Beispiele: PL (Polnisch), DE (Deutsch), EN (Englisch), FR (Französisch)."
+#. translators: checkout error. %s: field label, e.g. "delivery date"
+#: includes/class-wc-stn-checkout.php:313
+#, php-format
+msgid "Choose %s."
+msgstr "Bitte %s auswählen."
 
-#: wc-ship-today-notice.php:483
-msgid "No holidays found. Click \"Fetch holidays now\" at the bottom of this page."
-msgstr "Keine Feiertage gefunden. Klicke auf \"Feiertage jetzt abrufen\" unten auf dieser Seite."
+#: includes/class-wc-stn-checkout.php:362
+msgid "Ship date:"
+msgstr "Versanddatum:"
 
-#: wc-ship-today-notice.php:492
-msgid "Block"
-msgstr "Blockieren"
+#: includes/class-wc-stn-checkout.php:366
+msgid "Planned delivery:"
+msgstr "Geplante Lieferung:"
 
-#: wc-ship-today-notice.php:493
-msgid "Date"
-msgstr "Datum"
+#: includes/class-wc-stn-checkout.php:398
+msgid "Shipping date"
+msgstr "Versandtermin"
 
-#: wc-ship-today-notice.php:494
-msgid "Holiday name"
-msgstr "Name des Feiertags"
+#: includes/class-wc-stn-checkout.php:401
+msgid "Ship:"
+msgstr "Versand:"
 
-#: wc-ship-today-notice.php:510
-msgid "Check to IGNORE this holiday (shipping will be available)"
-msgstr "Ankreuzen, um diesen Feiertag zu IGNORIEREN (Versand ist dann möglich)"
+#: includes/class-wc-stn-checkout.php:403
+msgid "Delivery:"
+msgstr "Lieferung:"
 
-#: wc-ship-today-notice.php:518
-msgid "Check holidays to IGNORE them (shipping will be available on these days). Unchecked holidays block shipping."
-msgstr "Kreuze Feiertage an, um sie zu IGNORIEREN (an diesen Tagen ist Versand möglich). Nicht angekreuzte Feiertage blockieren den Versand."
+#: includes/class-wc-stn-checkout.php:407
+msgid "Ship date (Iconic):"
+msgstr "Versanddatum (Iconic):"
 
-#: wc-ship-today-notice.php:534
-msgid "Disabled (widget completely hidden)"
-msgstr "Deaktiviert (Widget vollständig ausgeblendet)"
+#: includes/class-wc-stn-checkout.php:413
+msgid "Change ship date:"
+msgstr "Versanddatum ändern:"
 
-#: wc-ship-today-notice.php:539
-msgid "Always visible"
-msgstr "Immer sichtbar"
-
-#: wc-ship-today-notice.php:544
-msgid "Only before cutoff time (hide after cutoff)"
-msgstr "Nur vor der Bestellfrist (nach der Frist ausblenden)"
-
-#: wc-ship-today-notice.php:549
-msgid "Only"
-msgstr "Nur"
-
-#: wc-ship-today-notice.php:551
-msgid "hour(s) before cutoff"
-msgstr "Stunde(n) vor der Bestellfrist"
-
-#: wc-ship-today-notice.php:554
-msgid "Control when the widget is displayed to customers."
-msgstr "Steuere, wann das Widget den Kunden angezeigt wird."
-
-#: wc-ship-today-notice.php:572
-msgid "Hours label:"
-msgstr "Beschriftung für Stunden:"
-
-#: wc-ship-today-notice.php:580
-msgid "Minutes label:"
-msgstr "Beschriftung für Minuten:"
-
-#: wc-ship-today-notice.php:588
-msgid "Seconds label:"
-msgstr "Beschriftung für Sekunden:"
-
-#: wc-ship-today-notice.php:598
-msgid "Show seconds in countdown"
-msgstr "Sekunden im Countdown anzeigen"
-
-#: wc-ship-today-notice.php:604
-msgid "Examples: \"1h 30min 10s\" or \"01:30\" (without seconds). Leave label empty to hide it completely."
-msgstr "Beispiele: \"1h 30min 10s\" oder \"01:30\" (ohne Sekunden). Lass die Beschriftung leer, um sie vollständig auszublenden."
-
-#: wc-ship-today-notice.php:616
-msgid "Available token: {countdown}"
-msgstr "Verfügbarer Platzhalter: {countdown}"
-
-#: wc-ship-today-notice.php:627
-msgid "Show this message after cutoff time"
-msgstr "Diese Nachricht nach der Bestellfrist anzeigen"
-
-#: wc-ship-today-notice.php:630
-msgid "If disabled, the widget will be hidden after cutoff time."
-msgstr "Wenn deaktiviert, wird das Widget nach der Bestellfrist ausgeblendet."
-
-#: wc-ship-today-notice.php:641
-msgid "Show this message on non-shipping days"
-msgstr "Diese Nachricht an Nicht-Versandtagen anzeigen"
-
-#: wc-ship-today-notice.php:644
-msgid "If disabled, the widget will be hidden on weekends, holidays, and excluded dates."
-msgstr "Wenn deaktiviert, wird das Widget an Wochenenden, Feiertagen und ausgeschlossenen Terminen ausgeblendet."
-
-#: wc-ship-today-notice.php:955
-msgid "Loading..."
-msgstr "Wird geladen..."
-
-#: wc-ship-today-notice.php
-msgid "Settings"
-msgstr "Einstellungen"
-
-#: wc-ship-today-notice.php
-msgid "Style"
-msgstr "Stil"
-
-#: wc-ship-today-notice.php
-msgid "Empty field = default look. Changes are shown in the preview right away; click \"Save Changes\" to apply them on the site."
-msgstr "Leeres Feld = Standardaussehen. Änderungen erscheinen sofort in der Vorschau; klicke auf „Änderungen speichern“, um sie auf der Website zu übernehmen."
-
-#: wc-ship-today-notice.php
-msgid "Colors"
-msgstr "Farben"
-
-#: wc-ship-today-notice.php
-msgid "Before cutoff"
-msgstr "Vor Annahmeschluss"
-
-#: wc-ship-today-notice.php
-msgid "After cutoff"
-msgstr "Nach Annahmeschluss"
-
-#: wc-ship-today-notice.php
-msgid "Background"
-msgstr "Hintergrund"
-
-#: wc-ship-today-notice.php
-msgid "Border color"
-msgstr "Rahmenfarbe"
-
-#: wc-ship-today-notice.php
-msgid "Text color"
-msgstr "Textfarbe"
-
-#: wc-ship-today-notice.php
-msgid "Also used on non-shipping days."
-msgstr "Wird auch an Tagen ohne Versand verwendet."
-
-#: wc-ship-today-notice.php
-msgid "Countdown color"
-msgstr "Farbe des Countdowns"
-
-#: wc-ship-today-notice.php
-msgid "Layout and text"
-msgstr "Layout und Text"
-
-#: wc-ship-today-notice.php
-msgid "Border width"
-msgstr "Rahmenbreite"
-
-#: wc-ship-today-notice.php
-msgid "Border radius"
-msgstr "Eckenradius"
-
-#: wc-ship-today-notice.php
-msgid "Padding"
-msgstr "Innenabstand"
-
-#: wc-ship-today-notice.php
-msgid "Same on all sides. Default: 10px top and bottom, 14px left and right."
-msgstr "Auf allen Seiten gleich. Standard: 10px oben und unten, 14px links und rechts."
-
-#: wc-ship-today-notice.php
-msgid "Font size"
-msgstr "Schriftgröße"
-
-#: wc-ship-today-notice.php
-msgid "Font weight"
-msgstr "Schriftstärke"
-
-#: wc-ship-today-notice.php
-msgid "Default (600)"
-msgstr "Standard (600)"
-
-#: wc-ship-today-notice.php
-msgid "Alignment"
-msgstr "Ausrichtung"
-
-#: wc-ship-today-notice.php
-msgid "Default"
-msgstr "Standard"
-
-#: wc-ship-today-notice.php
-msgid "Left"
-msgstr "Links"
-
-#: wc-ship-today-notice.php
-msgid "Center"
-msgstr "Zentriert"
-
-#: wc-ship-today-notice.php
-msgid "Right"
-msgstr "Rechts"
-
-#: wc-ship-today-notice.php
-msgid "Restore defaults"
-msgstr "Standard wiederherstellen"
-
-#: wc-ship-today-notice.php
-msgid "Preview"
-msgstr "Vorschau"
-
-#: wc-ship-today-notice.php
-msgid "The [ship_today_checkout] shortcode must be placed inside the checkout form. If it is missing or outside the form, the date field is not shown and orders are placed without a ship date."
-msgstr "Der Shortcode [ship_today_checkout] muss innerhalb des Checkout-Formulars stehen. Fehlt er oder steht er außerhalb des Formulars, wird das Datumsfeld nicht angezeigt und Bestellungen werden ohne Versanddatum aufgegeben."
-
-#: includes/class-wc-stn-checkout.php
+#. translators: %s: date entered in the order edit screen
+#: includes/class-wc-stn-checkout.php:447
 #, php-format
 msgid "Invalid ship date \"%s\". The ship date was not changed."
 msgstr "Ungültiges Versanddatum „%s“. Das Versanddatum wurde nicht geändert."
 
-#. translators: %s: shipping date, e.g. "pn 26.10"
-#: includes/class-wc-stn-checkout-blocks.php
+#. translators: order note. %1$s: removed ship date (Y-m-d), %2$s: user name
+#: includes/class-wc-stn-checkout.php:459
 #, php-format
-msgid "Orders for shipping on %s are no longer accepted. Please choose another date."
-msgstr "Bestellungen für den Versand am %s werden nicht mehr angenommen. Bitte wählen Sie einen anderen Termin."
+msgid "Ship date %1$s removed (%2$s)."
+msgstr "Versanddatum %1$s entfernt (%2$s)."
 
-#. translators: %s: shipping date, e.g. "pn 26.10"
-#: includes/class-wc-stn-checkout-blocks.php
+#. translators: order note. %1$s: previous ship date (Y-m-d) or "none", %2$s: new ship date, %3$s: user name
+#: includes/class-wc-stn-checkout.php:467
 #, php-format
-msgid "Shipping on %s is not available. Please choose another date."
-msgstr "Der Versand am %s ist nicht verfügbar. Bitte wählen Sie einen anderen Termin."
+msgid "Ship date changed from %1$s to %2$s (%3$s)."
+msgstr "Versanddatum von %1$s auf %2$s geändert (%3$s)."
 
-#: wc-ship-today-notice.php
+#. translators: order note. %1$s: previous ship date (Y-m-d) or "none", %2$s: new ship date, %3$s: user name
+#: includes/class-wc-stn-checkout.php:467
+msgctxt "no previous ship date"
+msgid "none"
+msgstr "keins"
+
+#: includes/class-wc-stn-checkout.php:483
+#: includes/class-wc-stn-checkout.php:487 wc-ship-today-notice.php:1230
+msgctxt "column with the ship date"
+msgid "Shipping"
+msgstr "Versand"
+
+#: includes/class-wc-stn-checkout.php:579
+msgid "Shipping: all"
+msgstr "Versand: alle"
+
+#. translators: orders list filter. %s: short weekday and date, e.g. "Mon 09.11.2026"
+#: includes/class-wc-stn-checkout.php:586
+#, php-format
+msgid "Shipping: %s"
+msgstr "Versand: %s"
+
+#. translators: checkout tile, second line. %s: short weekday and date, e.g. "Mon 09.11"
+#: includes/class-wc-stn-checkout.php:668
+#, php-format
+msgctxt "checkout tile"
+msgid "ship %s"
+msgstr "Versand %s"
+
+#. translators: checkout tile, order review and orders list. %s: short weekday and date, e.g. "Tue 10.11"
+#: includes/class-wc-stn-checkout.php:675
+#, php-format
+msgctxt "short date line"
+msgid "delivery %s"
+msgstr "Lieferung %s"
+
+#: includes/class-wc-stn-schedule.php:60
+msgctxt ""
+"weekday after \"until\", e.g. \"until Monday 20:00\" (Polish: genitive)"
+msgid "Monday"
+msgstr "Montag"
+
+#: includes/class-wc-stn-schedule.php:61
+msgctxt ""
+"weekday after \"until\", e.g. \"until Monday 20:00\" (Polish: genitive)"
+msgid "Tuesday"
+msgstr "Dienstag"
+
+#: includes/class-wc-stn-schedule.php:62
+msgctxt ""
+"weekday after \"until\", e.g. \"until Monday 20:00\" (Polish: genitive)"
+msgid "Wednesday"
+msgstr "Mittwoch"
+
+#: includes/class-wc-stn-schedule.php:63
+msgctxt ""
+"weekday after \"until\", e.g. \"until Monday 20:00\" (Polish: genitive)"
+msgid "Thursday"
+msgstr "Donnerstag"
+
+#: includes/class-wc-stn-schedule.php:64
+msgctxt ""
+"weekday after \"until\", e.g. \"until Monday 20:00\" (Polish: genitive)"
+msgid "Friday"
+msgstr "Freitag"
+
+#: includes/class-wc-stn-schedule.php:65
+msgctxt ""
+"weekday after \"until\", e.g. \"until Monday 20:00\" (Polish: genitive)"
+msgid "Saturday"
+msgstr "Samstag"
+
+#: includes/class-wc-stn-schedule.php:66
+msgctxt ""
+"weekday after \"until\", e.g. \"until Monday 20:00\" (Polish: genitive)"
+msgid "Sunday"
+msgstr "Sonntag"
+
+#: includes/class-wc-stn-schedule.php:71
+msgctxt "weekday with preposition, e.g. \"we will ship on Monday\""
+msgid "on Monday"
+msgstr "am Montag"
+
+#: includes/class-wc-stn-schedule.php:72
+msgctxt "weekday with preposition, e.g. \"we will ship on Monday\""
+msgid "on Tuesday"
+msgstr "am Dienstag"
+
+#: includes/class-wc-stn-schedule.php:73
+msgctxt "weekday with preposition, e.g. \"we will ship on Monday\""
+msgid "on Wednesday"
+msgstr "am Mittwoch"
+
+#: includes/class-wc-stn-schedule.php:74
+msgctxt "weekday with preposition, e.g. \"we will ship on Monday\""
+msgid "on Thursday"
+msgstr "am Donnerstag"
+
+#: includes/class-wc-stn-schedule.php:75
+msgctxt "weekday with preposition, e.g. \"we will ship on Monday\""
+msgid "on Friday"
+msgstr "am Freitag"
+
+#: includes/class-wc-stn-schedule.php:76
+msgctxt "weekday with preposition, e.g. \"we will ship on Monday\""
+msgid "on Saturday"
+msgstr "am Samstag"
+
+#: includes/class-wc-stn-schedule.php:77
+msgctxt "weekday with preposition, e.g. \"we will ship on Monday\""
+msgid "on Sunday"
+msgstr "am Sonntag"
+
+#: includes/class-wc-stn-schedule.php:82
+msgctxt "short weekday name, e.g. on checkout tiles \"Mon 09.11\""
+msgid "Mon"
+msgstr "Mo"
+
+#: includes/class-wc-stn-schedule.php:83
+msgctxt "short weekday name, e.g. on checkout tiles \"Mon 09.11\""
+msgid "Tue"
+msgstr "Di"
+
+#: includes/class-wc-stn-schedule.php:84
+msgctxt "short weekday name, e.g. on checkout tiles \"Mon 09.11\""
+msgid "Wed"
+msgstr "Mi"
+
+#: includes/class-wc-stn-schedule.php:85
+msgctxt "short weekday name, e.g. on checkout tiles \"Mon 09.11\""
+msgid "Thu"
+msgstr "Do"
+
+#: includes/class-wc-stn-schedule.php:86
+msgctxt "short weekday name, e.g. on checkout tiles \"Mon 09.11\""
+msgid "Fri"
+msgstr "Fr"
+
+#: includes/class-wc-stn-schedule.php:87
+msgctxt "short weekday name, e.g. on checkout tiles \"Mon 09.11\""
+msgid "Sat"
+msgstr "Sa"
+
+#: includes/class-wc-stn-schedule.php:88
+msgctxt "short weekday name, e.g. on checkout tiles \"Mon 09.11\""
+msgid "Sun"
+msgstr "So"
+
+#: includes/class-wc-stn-schedule.php:93
+msgctxt ""
+"weekday name inside a sentence, e.g. \"Ship date: Monday, "
+"09.11.2026\" (Polish: lowercase nominative)"
+msgid "Monday"
+msgstr "Montag"
+
+#: includes/class-wc-stn-schedule.php:94
+msgctxt ""
+"weekday name inside a sentence, e.g. \"Ship date: Monday, "
+"09.11.2026\" (Polish: lowercase nominative)"
+msgid "Tuesday"
+msgstr "Dienstag"
+
+#: includes/class-wc-stn-schedule.php:95
+msgctxt ""
+"weekday name inside a sentence, e.g. \"Ship date: Monday, "
+"09.11.2026\" (Polish: lowercase nominative)"
+msgid "Wednesday"
+msgstr "Mittwoch"
+
+#: includes/class-wc-stn-schedule.php:96
+msgctxt ""
+"weekday name inside a sentence, e.g. \"Ship date: Monday, "
+"09.11.2026\" (Polish: lowercase nominative)"
+msgid "Thursday"
+msgstr "Donnerstag"
+
+#: includes/class-wc-stn-schedule.php:97
+msgctxt ""
+"weekday name inside a sentence, e.g. \"Ship date: Monday, "
+"09.11.2026\" (Polish: lowercase nominative)"
+msgid "Friday"
+msgstr "Freitag"
+
+#: includes/class-wc-stn-schedule.php:98
+msgctxt ""
+"weekday name inside a sentence, e.g. \"Ship date: Monday, "
+"09.11.2026\" (Polish: lowercase nominative)"
+msgid "Saturday"
+msgstr "Samstag"
+
+#: includes/class-wc-stn-schedule.php:99
+msgctxt ""
+"weekday name inside a sentence, e.g. \"Ship date: Monday, "
+"09.11.2026\" (Polish: lowercase nominative)"
+msgid "Sunday"
+msgstr "Sonntag"
+
+#: includes/class-wc-stn-schedule.php:112
+msgctxt "relative day, e.g. \"we will ship today\""
+msgid "today"
+msgstr "heute"
+
+#: includes/class-wc-stn-schedule.php:113
+msgctxt "relative day, e.g. \"we will ship tomorrow\""
+msgid "tomorrow"
+msgstr "morgen"
+
+#. translators: {cutoff_when} for today/tomorrow. %1$s: "today" or "tomorrow", %2$s: time, e.g. "today until 14:00"
+#: includes/class-wc-stn-schedule.php:115
+#, php-format
+msgid "%1$s until %2$s"
+msgstr "%1$s bis %2$s"
+
+#. translators: {cutoff_when} for later days. %1$s: weekday (until form), %2$s: time, e.g. "until Sunday 20:00"
+#: includes/class-wc-stn-schedule.php:117
+#, php-format
+msgid "until %1$s %2$s"
+msgstr "bis %1$s %2$s"
+
+#: wc-ship-today-notice.php:196
+msgid "Every four months"
+msgstr "Alle vier Monate"
+
+#: wc-ship-today-notice.php:261 wc-ship-today-notice.php:567
+msgid "Failed to update holidays."
+msgstr "Aktualisierung der Feiertage fehlgeschlagen."
+
+#: wc-ship-today-notice.php:341 wc-ship-today-notice.php:342
+msgid "Ship Today Notice"
+msgstr "Ship Today Notice"
+
+#: wc-ship-today-notice.php:357
+msgid "Shortcode"
+msgstr "Shortcode"
+
+#: wc-ship-today-notice.php:365
+msgid "Main settings"
+msgstr "Haupteinstellungen"
+
+#: wc-ship-today-notice.php:370
+msgid "Message mode"
+msgstr "Hinweismodus"
+
+#: wc-ship-today-notice.php:371
+msgid "Delivery weekdays & cutoff times"
+msgstr "Versandtage & Bestellfristen"
+
+#: wc-ship-today-notice.php:372 wc-ship-today-notice.php:1183
+#: wc-ship-today-notice.php:1231
+msgid "Delivery"
+msgstr "Lieferung"
+
+#: wc-ship-today-notice.php:373
+msgid "Excluded dates"
+msgstr "Ausgeschlossene Termine"
+
+#: wc-ship-today-notice.php:374
+msgid "Upcoming dates"
+msgstr "Nächste Termine"
+
+#: wc-ship-today-notice.php:379
+msgid "Ship date choice at checkout"
+msgstr "Versandtermin im Checkout"
+
+#: wc-ship-today-notice.php:383
+msgid "Module"
+msgstr "Modul"
+
+#: wc-ship-today-notice.php:384
+msgid "Tiles"
+msgstr "Kacheln"
+
+#: wc-ship-today-notice.php:392
+msgid "Widget visibility"
+msgstr "Widget-Sichtbarkeit"
+
+#: wc-ship-today-notice.php:397
+msgid "Display widget"
+msgstr "Widget anzeigen"
+
+#: wc-ship-today-notice.php:402
+msgid "Countdown format"
+msgstr "Countdown-Format"
+
+#: wc-ship-today-notice.php:407
+msgid "Time labels"
+msgstr "Zeitbeschriftungen"
+
+#: wc-ship-today-notice.php:412
+msgid "Public holidays API"
+msgstr "Feiertags-API"
+
+#: wc-ship-today-notice.php:417 wc-ship-today-notice.php:476
+msgid "Country ISO code"
+msgstr "ISO-Ländercode"
+
+#: wc-ship-today-notice.php:418 wc-ship-today-notice.php:477
+msgid "Language ISO code"
+msgstr "ISO-Sprachcode"
+
+#: wc-ship-today-notice.php:419
 msgid "Region"
 msgstr "Region"
 
-#: wc-ship-today-notice.php
+#: wc-ship-today-notice.php:420
+msgid "Fetched holidays"
+msgstr "Abgerufene Feiertage"
+
+#: wc-ship-today-notice.php:425
+msgid "Frontend texts"
+msgstr "Frontend-Texte"
+
+#: wc-ship-today-notice.php:429
+msgid "Text in \"next date\" mode"
+msgstr "Text im Modus „Nächster Termin“"
+
+#: wc-ship-today-notice.php:430
+msgid "Text before cutoff"
+msgstr "Text vor der Bestellfrist"
+
+#: wc-ship-today-notice.php:431
+msgid "Text after cutoff"
+msgstr "Text nach der Bestellfrist"
+
+#: wc-ship-today-notice.php:432
+msgid "Text when not a shipping day"
+msgstr "Text an Nicht-Versandtagen"
+
+#. translators: 1: field label, 2: entered value, 3: previous value
+#: wc-ship-today-notice.php:489
 #, php-format
-msgid "%1$s: \"%2$s\" is not a two-letter code. The previous value %3$s was kept."
-msgstr "%1$s: „%2$s“ ist kein zweibuchstabiger Code. Der bisherige Wert %3$s wurde beibehalten."
+msgid ""
+"%1$s: \"%2$s\" is not a two-letter code. The previous value %3$s was kept."
+msgstr ""
+"%1$s: „%2$s“ ist kein zweibuchstabiger Code. Der bisherige Wert %3$s wurde "
+"beibehalten."
 
-#: wc-ship-today-notice.php
+#. translators: 1: entered value, 2: country code
+#: wc-ship-today-notice.php:506
 #, php-format
-msgid "Region \"%1$s\" is not a region code of %2$s (e.g. DE-BY). Only nationwide holidays are used."
-msgstr "Region „%1$s“ ist kein Regionscode von %2$s (z. B. DE-BY). Es werden nur bundesweite Feiertage verwendet."
+msgid ""
+"Region \"%1$s\" is not a region code of %2$s (e.g. DE-BY). Only nationwide "
+"holidays are used."
+msgstr ""
+"Region „%1$s“ ist kein Regionscode von %2$s (z. B. DE-BY). Es werden nur "
+"bundesweite Feiertage verwendet."
 
-#: wc-ship-today-notice.php
-msgid "Optional ISO 3166-2 region code, e.g. DE-BY. Empty: only nationwide holidays. With a region, its regional holidays also block shipping."
-msgstr "Optionaler Regionscode nach ISO 3166-2, z. B. DE-BY. Leer: nur bundesweite Feiertage. Mit Region blockieren auch deren regionale Feiertage den Versand."
+#: wc-ship-today-notice.php:540 wc-ship-today-notice.php:660
+msgid "Delivery date"
+msgstr "Liefertermin"
 
-#: wc-ship-today-notice.php
+#: wc-ship-today-notice.php:567
+msgid "Holidays updated."
+msgstr "Feiertage aktualisiert."
+
+#: wc-ship-today-notice.php:581
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: wc-ship-today-notice.php:582
+msgid "Style"
+msgstr "Stil"
+
+#: wc-ship-today-notice.php:599
+msgid "Fetch holidays"
+msgstr "Feiertage abrufen"
+
+#: wc-ship-today-notice.php:600
+msgid ""
+"Fetches holidays for the current and next year. Holidays are also fetched "
+"automatically every 4 months."
+msgstr "Ruft die Feiertage für das aktuelle und das nächste Jahr ab. Feiertage werden außerdem alle 4 Monate automatisch abgerufen."
+
+#: wc-ship-today-notice.php:604
+msgid "Fetch holidays now"
+msgstr "Feiertage jetzt abrufen"
+
+#: wc-ship-today-notice.php:640
+msgid "Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}"
+msgstr "Bestelle {cutoff_when}, wir versenden {ship_when}. Noch: {countdown}"
+
+#: wc-ship-today-notice.php:641 wc-ship-today-notice.php:819
+msgid "Order within: {countdown} — we will ship today!"
+msgstr "Bestelle innerhalb von: {countdown} — wir versenden noch heute!"
+
+#: wc-ship-today-notice.php:643 wc-ship-today-notice.php:644
+#: wc-ship-today-notice.php:915
+msgid "We will ship {ship_when}."
+msgstr "Wir versenden {ship_when}."
+
+#: wc-ship-today-notice.php:823
+msgid "Background"
+msgstr "Hintergrund"
+
+#: wc-ship-today-notice.php:824
+msgid "Border color"
+msgstr "Rahmenfarbe"
+
+#: wc-ship-today-notice.php:825
+msgid "Text color"
+msgstr "Textfarbe"
+
+#: wc-ship-today-notice.php:832
+msgid ""
+"Empty field = default look. Changes are shown in the preview right away; "
+"click \"Save Changes\" to apply them on the site."
+msgstr ""
+"Leeres Feld = Standardaussehen. Änderungen erscheinen sofort in der "
+"Vorschau; klicke auf „Änderungen speichern“, um sie auf der Website zu "
+"übernehmen."
+
+#: wc-ship-today-notice.php:834
+msgid "Colors"
+msgstr "Farben"
+
+#: wc-ship-today-notice.php:836 wc-ship-today-notice.php:912
+msgid "Before cutoff"
+msgstr "Vor Annahmeschluss"
+
+#: wc-ship-today-notice.php:836 wc-ship-today-notice.php:914
+msgid "After cutoff"
+msgstr "Nach Annahmeschluss"
+
+#: wc-ship-today-notice.php:847
+msgid "Also used on non-shipping days."
+msgstr "Wird auch an Tagen ohne Versand verwendet."
+
+#: wc-ship-today-notice.php:853
+msgid "Countdown color"
+msgstr "Farbe des Countdowns"
+
+#: wc-ship-today-notice.php:858
+msgid "Layout and text"
+msgstr "Layout und Text"
+
+#: wc-ship-today-notice.php:861
+msgid "Border width"
+msgstr "Rahmenbreite"
+
+#: wc-ship-today-notice.php:865
+msgid "Border radius"
+msgstr "Eckenradius"
+
+#: wc-ship-today-notice.php:869
+msgid "Padding"
+msgstr "Innenabstand"
+
+#: wc-ship-today-notice.php:872
+msgid "Same on all sides. Default: 10px top and bottom, 14px left and right."
+msgstr ""
+"Auf allen Seiten gleich. Standard: 10px oben und unten, 14px links und "
+"rechts."
+
+#: wc-ship-today-notice.php:876
+msgid "Font size"
+msgstr "Schriftgröße"
+
+#: wc-ship-today-notice.php:880
+msgid "Font weight"
+msgstr "Schriftstärke"
+
+#: wc-ship-today-notice.php:883
+msgid "Default (600)"
+msgstr "Standard (600)"
+
+#: wc-ship-today-notice.php:891
+msgid "Alignment"
+msgstr "Ausrichtung"
+
+#: wc-ship-today-notice.php:894
+msgid "Default"
+msgstr "Standard"
+
+#: wc-ship-today-notice.php:895
+msgid "Left"
+msgstr "Links"
+
+#: wc-ship-today-notice.php:896
+msgid "Center"
+msgstr "Zentriert"
+
+#: wc-ship-today-notice.php:897
+msgid "Right"
+msgstr "Rechts"
+
+#: wc-ship-today-notice.php:905
+msgid "Restore defaults"
+msgstr "Standard wiederherstellen"
+
+#: wc-ship-today-notice.php:910
+msgid "Preview"
+msgstr "Vorschau"
+
+#: wc-ship-today-notice.php:933
+msgid "Use this shortcode to display the widget:"
+msgstr "Verwende diesen Shortcode, um das Widget anzuzeigen:"
+
+#: wc-ship-today-notice.php:936
+msgid ""
+"Place it on product pages, cart, sidebar, or anywhere you want to show the "
+"shipping countdown."
+msgstr ""
+"Platziere ihn auf Produktseiten, im Warenkorb, in der Sidebar oder überall "
+"dort, wo der Versand-Countdown angezeigt werden soll."
+
+#. translators: %1$s-%5$s: shortcode attribute examples in <code>
+#: wc-ship-today-notice.php:942
+#, php-format
+msgid ""
+"Attributes: %1$s (list of next dates), %2$s (custom text), %3$s or %4$s, "
+"%5$s (custom CSS class)."
+msgstr "Attribute: %1$s (Liste der nächsten Termine), %2$s (eigener Text), %3$s oder %4$s, %5$s (eigene CSS-Klasse)."
+
+#: wc-ship-today-notice.php:944
+msgid "Order {cutoff_when}, we will deliver {delivery_when}."
+msgstr "Bestelle {cutoff_when}, wir liefern {delivery_when}."
+
+#: wc-ship-today-notice.php:947
+msgctxt "example CSS class name"
+msgid "my-class"
+msgstr "meine-klasse"
+
+#. translators: %s: link to OpenHolidays API
+#: wc-ship-today-notice.php:965
+#, php-format
+msgid ""
+"Public holidays are fetched from %s. Configure your country and language "
+"below."
+msgstr ""
+"Feiertage werden von %s abgerufen. Konfiguriere unten dein Land und deine "
+"Sprache."
+
+#: wc-ship-today-notice.php:990
+msgid "Tokens:"
+msgstr "Platzhalter:"
+
+#: wc-ship-today-notice.php:990
+msgid "countdown"
+msgstr "Countdown"
+
+#: wc-ship-today-notice.php:994
+msgid "requires the delivery setting"
+msgstr "erfordert die Liefereinstellung"
+
+#: wc-ship-today-notice.php:1003
+msgid ""
+"Tiles with the next dates at checkout. The ship and delivery date go to the "
+"order, emails, the thank-you page, the order screen (editable) and the "
+"\"Shipping\" column in the orders list."
+msgstr "Kacheln mit den nächsten Terminen im Checkout. Versand- und Lieferdatum erscheinen in der Bestellung, den E-Mails, auf der Danke-Seite, in der Bestellansicht (änderbar) und in der Spalte „Versand“ der Bestellliste."
+
+#. translators: %s: [ship_today_checkout] shortcode
+#: wc-ship-today-notice.php:1007
+#, php-format
+msgid ""
+"Insert it with the %s shortcode (must be inside the checkout form) or "
+"automatically."
+msgstr "Einfügen über den Shortcode %s (muss innerhalb des Checkout-Formulars stehen) oder automatisch."
+
+#: wc-ship-today-notice.php:1021
+msgid ""
+"Enable the ship date choice at checkout (required for products that need "
+"shipping)"
+msgstr "Versandtermin im Checkout auswählen lassen (Pflichtfeld bei Produkten mit Versand)"
+
+#: wc-ship-today-notice.php:1025
+msgid "Position:"
+msgstr "Position:"
+
+#: wc-ship-today-notice.php:1027
+msgid "shortcode [ship_today_checkout] only"
+msgstr "nur Shortcode [ship_today_checkout]"
+
+#: wc-ship-today-notice.php:1028
+msgid "automatically below the order notes"
+msgstr "automatisch unter den Bestellanmerkungen"
+
+#: wc-ship-today-notice.php:1029
+msgid "automatically above the order review"
+msgstr "automatisch über der Bestellübersicht"
+
+#: wc-ship-today-notice.php:1035
+msgid ""
+"The [ship_today_checkout] shortcode must be placed inside the checkout form. "
+"If it is missing or outside the form, the date field is not shown and orders "
+"are placed without a ship date."
+msgstr ""
+"Der Shortcode [ship_today_checkout] muss innerhalb des Checkout-Formulars "
+"stehen. Fehlt er oder steht er außerhalb des Formulars, wird das Datumsfeld "
+"nicht angezeigt und Bestellungen werden ohne Versanddatum aufgegeben."
+
+#: wc-ship-today-notice.php:1040
+msgid "Field label:"
+msgstr "Feldbezeichnung:"
+
+#: wc-ship-today-notice.php:1053
+msgid "Number of dates:"
+msgstr "Anzahl der Termine:"
+
+#: wc-ship-today-notice.php:1058
+msgid "select the nearest date"
+msgstr "nächsten Termin vorauswählen"
+
+#: wc-ship-today-notice.php:1062
+msgid "Large text on the tile:"
+msgstr "Große Schrift auf der Kachel:"
+
+#: wc-ship-today-notice.php:1063
+msgid "delivery date"
+msgstr "Lieferdatum"
+
+#: wc-ship-today-notice.php:1064
+msgid "ship date"
+msgstr "Versanddatum"
+
+#: wc-ship-today-notice.php:1068
+msgid "Selection color:"
+msgstr "Auswahlfarbe:"
+
+#: wc-ship-today-notice.php:1071
+msgid "(HEX, empty = dark gray)"
+msgstr "(HEX, leer = Dunkelgrau)"
+
+#: wc-ship-today-notice.php:1082
+msgid ""
+"Disable Iconic Delivery Slots in the cart and checkout (works only with the "
+"module enabled)"
+msgstr "Iconic Delivery Slots im Warenkorb und Checkout deaktivieren (nur bei aktiviertem Modul)"
+
+#: wc-ship-today-notice.php:1085
+msgid ""
+"For the transition period: Iconic stays active in the admin (old orders, its "
+"column and the Deliveries page), but it does not show the calendar, validate "
+"or save dates for new orders."
+msgstr "Für die Übergangszeit: Iconic bleibt im Admin aktiv (alte Bestellungen, seine Spalte und die Seite Deliveries), zeigt bei neuen Bestellungen aber keinen Kalender an und prüft und speichert keine Termine."
+
+#. translators: %s: [iconic-wds-fields] shortcode
+#: wc-ship-today-notice.php:1089
+#, php-format
+msgid ""
+"New orders will not appear in Iconic. To roll back: uncheck this and put the "
+"%s shortcode back in the checkout."
+msgstr "Neue Bestellungen erscheinen nicht in Iconic. Rückgängig machen: Haken entfernen und den Shortcode %s wieder in den Checkout einfügen."
+
+#: wc-ship-today-notice.php:1104
+msgid ""
+"Ship today: countdown to today's cutoff time, separate texts after it and on "
+"non-shipping days"
+msgstr "Versand heute: Countdown bis zur heutigen Bestellfrist, danach und an Tagen ohne Versand eigene Texte"
+
+#: wc-ship-today-notice.php:1109
+msgid ""
+"Next date: always a countdown to the nearest cutoff time and one text with "
+"dates (e.g. shipping twice a week)"
+msgstr "Nächster Termin: immer ein Countdown bis zur nächsten Bestellfrist und ein Text mit Daten (z. B. Versand zweimal pro Woche)"
+
+#: wc-ship-today-notice.php:1119
+msgid "Monday"
+msgstr "Montag"
+
+#: wc-ship-today-notice.php:1120
+msgid "Tuesday"
+msgstr "Dienstag"
+
+#: wc-ship-today-notice.php:1121
+msgid "Wednesday"
+msgstr "Mittwoch"
+
+#: wc-ship-today-notice.php:1122
+msgid "Thursday"
+msgstr "Donnerstag"
+
+#: wc-ship-today-notice.php:1123
+msgid "Friday"
+msgstr "Freitag"
+
+#: wc-ship-today-notice.php:1124
+msgid "Saturday"
+msgstr "Samstag"
+
+#: wc-ship-today-notice.php:1125
+msgid "Sunday"
+msgstr "Sonntag"
+
+#: wc-ship-today-notice.php:1127
+msgid "same day"
+msgstr "am selben Tag"
+
+#: wc-ship-today-notice.php:1127
+msgid "the day before"
+msgstr "am Vortag"
+
+#. translators: %d: number of days (2-6) the cutoff time falls before the ship day
+#: wc-ship-today-notice.php:1130
+#, php-format
+msgid "%d day earlier"
+msgid_plural "%d days earlier"
+msgstr[0] "%d Tag vorher"
+msgstr[1] "%d Tage vorher"
+
+#: wc-ship-today-notice.php:1138
+msgid "Day"
+msgstr "Tag"
+
+#: wc-ship-today-notice.php:1139
+msgid "Shipping"
+msgstr "Versand"
+
+#: wc-ship-today-notice.php:1140
+msgid "Cutoff time"
+msgstr "Bestellfrist"
+
+#: wc-ship-today-notice.php:1141
+msgid "Cutoff time falls"
+msgstr "Bestellfrist liegt"
+
+#: wc-ship-today-notice.php:1174
+msgid ""
+"The cutoff time belongs to the ship day. Example: shipping on Monday, 20:00, "
+"\"the day before\" = orders until Sunday 20:00 are shipped on Monday."
+msgstr "Die Bestellfrist gehört zum Versandtag. Beispiel: Versand am Montag, 20:00, „am Vortag“ = Bestellungen bis Sonntag 20:00 werden am Montag versendet."
+
+#: wc-ship-today-notice.php:1185
+msgid "delivery day(s) after shipping"
+msgstr "Zustelltag(e) nach dem Versand"
+
+#: wc-ship-today-notice.php:1187
+msgid "(0 = do not show the delivery date)"
+msgstr "(0 = kein Lieferdatum anzeigen)"
+
+#: wc-ship-today-notice.php:1190
+msgid "Days without deliveries:"
+msgstr "Tage ohne Zustellung:"
+
+#: wc-ship-today-notice.php:1198
+msgid "Public holidays are always skipped when counting the delivery date."
+msgstr "Gesetzliche Feiertage werden bei der Berechnung des Lieferdatums immer übersprungen."
+
+#: wc-ship-today-notice.php:1210
+msgid ""
+"Enter dates in dd-mm-yyyy format, one per line or comma-separated. These "
+"dates are excluded even if they are weekdays."
+msgstr ""
+"Gib Termine im Format tt-mm-jjjj ein, einen pro Zeile oder kommagetrennt. "
+"Diese Termine werden auch dann ausgeschlossen, wenn sie Werktage sind."
+
+#. translators: %d: number of days searched
+#: wc-ship-today-notice.php:1223
+#, php-format
+msgid "No dates in the next %d day. Check the shipping days."
+msgid_plural "No dates in the next %d days. Check the shipping days."
+msgstr[0] "Keine Termine im nächsten %d Tag. Prüfe die Versandtage."
+msgstr[1] "Keine Termine in den nächsten %d Tagen. Prüfe die Versandtage."
+
+#: wc-ship-today-notice.php:1229
+msgid "Orders until"
+msgstr "Bestellungen bis"
+
+#. translators: %s: example URL parameter ?stn_now=...
+#: wc-ship-today-notice.php:1248
+#, php-format
+msgid ""
+"Based on the saved settings and fetched holidays. To test another moment, "
+"add %s to the page address (shop managers only)."
+msgstr "Nach den gespeicherten Einstellungen und abgerufenen Feiertagen. Anderen Zeitpunkt testen: %s an die Seitenadresse anhängen (nur für Shop-Manager)."
+
+#: wc-ship-today-notice.php:1263
+msgid ""
+"Two-letter ISO 3166-1 country code. Examples: PL (Poland), DE (Germany), CZ "
+"(Czech Republic), FR (France), GB (United Kingdom)."
+msgstr ""
+"Zweibuchstabiger ISO-3166-1-Ländercode. Beispiele: PL (Polen), DE "
+"(Deutschland), CZ (Tschechien), FR (Frankreich), GB (Vereinigtes Königreich)."
+
+#: wc-ship-today-notice.php:1264
+msgid "See supported countries"
+msgstr "Unterstützte Länder ansehen"
+
+#: wc-ship-today-notice.php:1276
+msgid ""
+"Two-letter ISO 639-1 language code for holiday names. Examples: PL (Polish), "
+"DE (German), EN (English), FR (French)."
+msgstr ""
+"Zweibuchstabiger ISO-639-1-Sprachcode für Feiertagsnamen. Beispiele: PL "
+"(Polnisch), DE (Deutsch), EN (Englisch), FR (Französisch)."
+
+#: wc-ship-today-notice.php:1290
+msgid ""
+"Optional ISO 3166-2 region code, e.g. DE-BY. Empty: only nationwide "
+"holidays. With a region, its regional holidays also block shipping."
+msgstr ""
+"Optionaler Regionscode nach ISO 3166-2, z. B. DE-BY. Leer: nur bundesweite "
+"Feiertage. Mit Region blockieren auch deren regionale Feiertage den Versand."
+
+#: wc-ship-today-notice.php:1294
 msgid "Region codes for this country"
 msgstr "Regionscodes für dieses Land"
+
+#: wc-ship-today-notice.php:1320
+msgid ""
+"No holidays found. Click \"Fetch holidays now\" at the bottom of this page."
+msgstr ""
+"Keine Feiertage gefunden. Klicke auf \"Feiertage jetzt abrufen\" unten auf "
+"dieser Seite."
+
+#. translators: %d: year
+#: wc-ship-today-notice.php:1329
+#, php-format
+msgid ""
+"No holidays for %d. Click \"Fetch holidays now\" at the bottom of the page."
+msgstr "Keine Feiertage für %d. Klicke unten auf der Seite auf „Feiertage jetzt abrufen“."
+
+#: wc-ship-today-notice.php:1337
+msgid "Ignore"
+msgstr "Ignorieren"
+
+#: wc-ship-today-notice.php:1338
+msgid "Date"
+msgstr "Datum"
+
+#: wc-ship-today-notice.php:1339
+msgid "Holiday name"
+msgstr "Name des Feiertags"
+
+#: wc-ship-today-notice.php:1355
+msgid "Check to IGNORE this holiday (shipping will be available)"
+msgstr "Ankreuzen, um diesen Feiertag zu IGNORIEREN (Versand ist dann möglich)"
+
+#: wc-ship-today-notice.php:1363
+msgid ""
+"Check holidays to IGNORE them (shipping will be available on these days). "
+"Unchecked holidays block shipping."
+msgstr ""
+"Kreuze Feiertage an, um sie zu IGNORIEREN (an diesen Tagen ist Versand "
+"möglich). Nicht angekreuzte Feiertage blockieren den Versand."
+
+#: wc-ship-today-notice.php:1379
+msgid "Disabled (widget completely hidden)"
+msgstr "Deaktiviert (Widget vollständig ausgeblendet)"
+
+#: wc-ship-today-notice.php:1384
+msgid "Always visible"
+msgstr "Immer sichtbar"
+
+#: wc-ship-today-notice.php:1389
+msgid "Only before cutoff time (hide after cutoff)"
+msgstr "Nur vor der Bestellfrist (nach der Frist ausblenden)"
+
+#: wc-ship-today-notice.php:1394
+msgid "Only"
+msgstr "Nur"
+
+#: wc-ship-today-notice.php:1396
+msgid "hour(s) before cutoff"
+msgstr "Stunde(n) vor der Bestellfrist"
+
+#: wc-ship-today-notice.php:1399
+msgid "Control when the widget is displayed to customers."
+msgstr "Steuere, wann das Widget den Kunden angezeigt wird."
+
+#: wc-ship-today-notice.php:1399
+msgid ""
+"In \"next date\" mode, \"only before cutoff time\" works like \"always\"."
+msgstr "Im Modus „Nächster Termin“ wirkt „nur vor der Bestellfrist“ wie „immer“."
+
+#: wc-ship-today-notice.php:1417
+msgid "Hours label:"
+msgstr "Beschriftung für Stunden:"
+
+#: wc-ship-today-notice.php:1425
+msgid "Minutes label:"
+msgstr "Beschriftung für Minuten:"
+
+#: wc-ship-today-notice.php:1433
+msgid "Seconds label:"
+msgstr "Beschriftung für Sekunden:"
+
+#: wc-ship-today-notice.php:1443
+msgid "Show seconds in countdown"
+msgstr "Sekunden im Countdown anzeigen"
+
+#: wc-ship-today-notice.php:1449
+msgid ""
+"Examples: \"1h 30min 10s\" or \"01:30\" (without seconds). Leave label empty "
+"to hide it completely."
+msgstr ""
+"Beispiele: \"1h 30min 10s\" oder \"01:30\" (ohne Sekunden). Lass die "
+"Beschriftung leer, um sie vollständig auszublenden."
+
+#. translators: %1$s: "1 day", %2$s: "3 days"
+#: wc-ship-today-notice.php:1453
+#, php-format
+msgid "Above 24 hours the countdown also shows days (\"%1$s\", \"%2$s\")."
+msgstr "Ab 24 Stunden zeigt der Countdown auch Tage an („%1$s“, „%2$s“)."
+
+#. translators: %s: example text with tokens
+#: wc-ship-today-notice.php:1470
+#, php-format
+msgid "E.g. \"%s\""
+msgstr "Z. B. „%s“"
+
+#. translators: %s: example text with tokens
+#: wc-ship-today-notice.php:1470
+msgid ""
+"Order {cutoff_when}, we will deliver {delivery_when}. Time left: {countdown}"
+msgstr "Bestelle {cutoff_when}, wir liefern {delivery_when}. Noch: {countdown}"
+
+#: wc-ship-today-notice.php:1481 wc-ship-today-notice.php:1495
+#: wc-ship-today-notice.php:1509
+msgid "\"Ship today\" mode."
+msgstr "Modus „Versand heute“."
+
+#: wc-ship-today-notice.php:1481
+msgid "Available token: {countdown}"
+msgstr "Verfügbarer Platzhalter: {countdown}"
+
+#: wc-ship-today-notice.php:1492
+msgid "Show this message after cutoff time"
+msgstr "Diese Nachricht nach der Bestellfrist anzeigen"
+
+#: wc-ship-today-notice.php:1495
+msgid "If disabled, the widget will be hidden after cutoff time."
+msgstr "Wenn deaktiviert, wird das Widget nach der Bestellfrist ausgeblendet."
+
+#: wc-ship-today-notice.php:1506
+msgid "Show this message on non-shipping days"
+msgstr "Diese Nachricht an Nicht-Versandtagen anzeigen"
+
+#: wc-ship-today-notice.php:1509
+msgid ""
+"If disabled, the widget will be hidden on weekends, holidays, and excluded "
+"dates."
+msgstr ""
+"Wenn deaktiviert, wird das Widget an Wochenenden, Feiertagen und "
+"ausgeschlossenen Terminen ausgeblendet."
+
+#. translators: %d: number of days in the countdown, e.g. "3 days 05h 12min"
+#: wc-ship-today-notice.php:1877
+#, php-format
+msgid "%d day"
+msgid_plural "%d days"
+
+msgstr[0] "%d Tag"
+msgstr[1] "%d Tage"

@@ -133,7 +133,7 @@ final class WC_STN_Checkout_Blocks
 
         $schedule = $this->plugin->schedule();
         $date     = $schedule->date($ymd);
-        $label    = WC_STN_Schedule::DAY_SHORT[(int) $date->format('N')] . ' ' . $date->format('d.m');
+        $label    = WC_STN_Schedule::day_label((int) $date->format('N'), 'short') . ' ' . $date->format('d.m');
         $closed   = $schedule->is_shipping_day($date) && $schedule->cutoff_for($date) <= $schedule->now();
 
         $message = $closed

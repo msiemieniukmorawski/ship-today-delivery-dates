@@ -44,7 +44,8 @@
     var parts = [];
 
     if (d > 0) {
-      parts.push(d + ' ' + (d === 1 ? c.day : c.days));
+      // "%d dzień" / "%d dni" - formy z _n() w PHP
+      parts.push((d === 1 ? c.day : c.days).replace('%d', d));
     }
     if (d > 0 || h > 0 || c.h) {
       parts.push(c.h ? pad(h) + c.h : pad(h));
@@ -57,6 +58,11 @@
     return parts.join(' ');
   }
 
+  /** sprintf z %1$s, %2$s (formaty z WC_STN_Schedule::words()). */
+  function format(fmt, a, b) {
+    return fmt.replace('%1$s', a).replace('%2$s', b);
+  }
+
   function renderText(tpl, slot, today, tomorrow, w) {
     function when(dateYmd, fallback) {
       if (dateYmd === today) return w.today;
@@ -64,8 +70,8 @@
     }
 
     var cutoffWhen = (slot.cutoff_ymd === today || slot.cutoff_ymd === tomorrow)
-      ? when(slot.cutoff_ymd, '') + ' ' + w.until + ' ' + slot.cutoff_time
-      : w.until + ' ' + slot.cutoff_day + ' ' + slot.cutoff_time;
+      ? format(w.relative, when(slot.cutoff_ymd, ''), slot.cutoff_time)
+      : format(w.until, slot.cutoff_day, slot.cutoff_time);
 
     var map = {
       '{countdown}': '<span class="wc-ship-today-countdown"></span>',
@@ -151,9 +157,10 @@
       return s;
     }
 
-    var list = (cfg.count || 1) > 1;
+    // Każdy termin w osobnym elemencie (także pojedynczy): kontener jest flexem z gap, więc luźny tekst
+    // i odliczanie byłyby osobnymi elementami z podwójnym odstępem między nimi.
     el.innerHTML = s.items.map(function (item) {
-      return list ? '<div class="wc-ship-today-notice__item">' + item.html + '</div>' : item.html;
+      return '<div class="wc-ship-today-notice__item">' + item.html + '</div>';
     }).join('');
     el.style.display = '';
     el.classList.add(s.state === 'before' || s.state === 'next' ? 'wc-ship-today-notice--before' : 'wc-ship-today-notice--after');

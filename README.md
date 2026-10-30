@@ -9,7 +9,8 @@ Wtyczka WooCommerce, która pokazuje klientowi, do kiedy musi zamówić, żeby p
 odliczanie do godziny granicznej, dzień wysyłki i (opcjonalnie) planowany dzień dostawy. Opcjonalny moduł dodaje
 do klasycznego checkoutu wybór terminu wysyłki, który trafia do zamówienia, maili i panelu.
 
-Teksty na stronie sklepu (dni tygodnia, "dziś", "jutro", kafelki, maile) są po polsku.
+Wszystkie teksty wtyczki (dni tygodnia z odmianą, "dziś"/"jutro", kafelki, maile, panel) są do tłumaczenia.
+W paczce są tłumaczenia pl_PL i de_DE.
 
 ## Funkcje w skrócie
 
@@ -110,7 +111,7 @@ w meta, ale nie są wtedy pokazywane w mailach, panelu ani na liście.
 
 | Atrybut | Domyślnie | Opis |
 |---|---|---|
-| `count` | `1` | Ile kolejnych terminów pokazać (1-10). Przy `count > 1` kontener ma klasę `wc-ship-today-notice--list`, a każdy termin jest w `.wc-ship-today-notice__item`. |
+| `count` | `1` | Ile kolejnych terminów pokazać (1-10). Przy `count > 1` kontener ma klasę `wc-ship-today-notice--list`. Każdy termin (także pojedynczy) jest w `.wc-ship-today-notice__item`. |
 | `text` | z ustawień | Własny tekst z tokenami. Zastępuje wszystkie teksty z ustawień (przed / po godzinie granicznej / dzień bez wysyłki / najbliższy termin). HTML filtrowany przez `wp_kses_post`. |
 | `mode` | z ustawień | `today` albo `next_slot`. |
 | `class` | - | Dodatkowe klasy CSS kontenera (oddzielone spacją). |
@@ -156,14 +157,22 @@ Niezależnie od tego widget jest ukryty, gdy w najbliższych 42 dniach nie ma ż
 Tokeny `{delivery_*}` są puste, gdy dostawa = 0. "Dziś" i "jutro" liczy przeglądarka w strefie czasowej sklepu, więc są
 poprawne także na stronie z cache. Nieznane tokeny zostają w tekście bez zmian.
 
-Domyślne teksty:
+Odmiana dni zależy od języka sklepu (tłumaczenia `_x()` w `.po`): po polsku "do niedzieli 20:00", "we wtorek",
+po niemiecku "bis Sonntag 20:00", "am Dienstag".
 
-```
-Najbliższy termin:  Zamów {cutoff_when}, wyślemy {ship_when}. Zostało: {countdown}
-Before cutoff:      Order within: {countdown} — we will ship today!   (przetłumaczone przez .po)
-After cutoff:       We will ship tomorrow.
-Not shipping day:   We will ship on the next business day.
-```
+Domyślne teksty (źródło po angielsku, tłumaczenie z `.po`; tekst zapisany w ustawieniach ma pierwszeństwo):
+
+| Tekst | Źródło | pl_PL |
+|---|---|---|
+| Najbliższy termin | `Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}` | `Zamów {cutoff_when}, wyślemy {ship_when}. Zostało: {countdown}` |
+| Przed godziną graniczną | `Order within: {countdown} — we will ship today!` | `Zamów w ciągu: {countdown} — wyślemy dziś!` |
+| Po godzinie granicznej | `We will ship {ship_when}.` | `Wyślemy {ship_when}.` |
+| Dzień bez wysyłki | `We will ship {ship_when}.` | `Wyślemy {ship_when}.` |
+
+W tekstach "po godzinie granicznej" i "dzień bez wysyłki" warto używać `{ship_when}` zamiast stałego "jutro": w piątek
+po godzinie granicznej albo przed świętem następna wysyłka nie jest jutro, a `{ship_when}` da "w poniedziałek".
+Do wersji 2.1.0 domyślnie było "Wyślemy jutro." / "Wyślemy w najbliższy dzień roboczy." - sklepy, które zapisały
+ustawienia z tymi tekstami, mają je dalej i mogą je zmienić ręcznie.
 
 ### Odliczanie
 
@@ -339,8 +348,13 @@ Wymaga WordPressa i pobranych świąt PL na lata 2026-2027. Nie zmienia zapisany
 
 - Text domain: `wc-ship-today-notice`. Pliki `.pot`, `pl_PL` i `de_DE` w `languages/`. Plik z `wp-content/languages/plugins/`
   ma pierwszeństwo.
-- Tłumaczona jest część panelu i domyślne teksty widgetu. Część panelu i cały front (dni tygodnia, "dziś"/"jutro",
-  kafelki, komunikaty walidacji, wiersze w mailach) są zapisane w kodzie po polsku.
+- Tłumaczone są wszystkie teksty wtyczki: panel, domyślne teksty widgetu, dni tygodnia w formach zależnych od miejsca
+  w zdaniu (`_x()` z kontekstem: nazwa, "do ...", "w/we ...", skrót), "dziś"/"jutro", kafelki, komunikaty walidacji,
+  wiersze w mailach, panelu i na liście zamówień. Teksty dla JS (`notice.js`, `checkout.js`) przychodzą z PHP po tłumaczeniu.
+- Uproszczenie: odliczanie dostaje z `_n()` formę dla 1 i dla 2 dni ("1 dzień", "N dni"); języki z inną formą dla 5+
+  dni pokażą formę dla 2.
+- Nazwa pola w komunikacie "Wybierz termin dostawy." jest po polsku zamieniana na małe litery; tłumaczenie tekstu `yes`
+  z kontekstem "Lowercase the field label..." na `no` to wyłącza (de_DE: "Bitte Liefertermin auswählen.").
 - WPML: teksty widgetu (`text_next_slot`, `text_before_cutoff`, `text_after_cutoff`, `text_not_shipping_day`) są rejestrowane
   jako stringi w domenie `wc-ship-today-notice` przy zapisie ustawień.
 
@@ -395,6 +409,13 @@ do katalogu `assets/` w SVN WordPress.org. Nie wchodzi do paczki.
 - Walidacja kodów kraju i języka (`[A-Z]{2}`; błędny = poprzedni + komunikat).
 - Cron czyszczenia cache tylko przy LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_purge_cache`.
 - Zapis ustawień nie nadpisuje już `cutoff_time` wartością 14:00.
+- Wszystkie teksty frontu i panelu do tłumaczenia (angielskie źródło, `_x()` dla form dni, `_n()` dla liczby mnogiej),
+  pełne tłumaczenia pl_PL (teksty jak dotąd) i de_DE. Stałe `WC_STN_Schedule::DAY_*` zostają dla zgodności,
+  wtyczka używa `WC_STN_Schedule::day_label()`.
+- Domyślne teksty "po godzinie granicznej" i "dzień bez wysyłki" to teraz "Wyślemy {ship_when}." (wcześniej "Wyślemy jutro."
+  i "Wyślemy w najbliższy dzień roboczy." - błędne np. w piątek po godzinie granicznej). Zapisane teksty sklepu bez zmian.
+- Poprawka: podwójny odstęp przed odliczaniem ("Zostało:  2 dni"). Pojedynczy termin też jest w `.wc-ship-today-notice__item`.
+- Zakładka "Styl": placeholder pola odstępu "10" zamiast uciętego "10 / 14".
 - Wybór terminu w checkoucie blokowym, WooCommerce 10.1+ (pole Additional Checkout Fields, walidacja w Store API, te same meta zamówienia);
   deklaracja zgodności z checkoutem blokowym.
 - Przygotowanie do WordPress.org: `readme.txt`, nagłówek wtyczki (licencja, wymagania WP/PHP/WooCommerce,
