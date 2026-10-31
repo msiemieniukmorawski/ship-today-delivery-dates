@@ -986,8 +986,13 @@ final class WC_Ship_Today_Notice
     /** Treść zakładki, wewnątrz formularza #mainform WooCommerce: bez własnych <form> i przycisków submit. */
     public function render_settings_tab()
     {
-        $section = $this->current_section();
+        echo '<div class="wc-stn-settings">';
+        $this->render_section($this->current_section());
+        echo '</div>';
+    }
 
+    private function render_section($section)
+    {
         if ('style' === $section) {
             $this->render_style_tab();
             return;
@@ -1188,6 +1193,13 @@ final class WC_Ship_Today_Notice
         if ('woocommerce_page_wc-settings' !== $hook || !isset($_GET['tab']) || self::SETTINGS_TAB !== sanitize_title(wp_unslash($_GET['tab']))) { // phpcs:ignore WordPress.Security.NonceVerification
             return;
         }
+
+        wp_enqueue_style(
+            'wc-ship-today-notice-settings',
+            plugins_url('assets/css/settings.css', __FILE__),
+            [],
+            WC_STN_VERSION
+        );
 
         if ('checkout' === $this->current_section()) {
             wp_enqueue_script(
