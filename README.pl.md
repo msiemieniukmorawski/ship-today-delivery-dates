@@ -50,11 +50,13 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 <p align="center"><img src=".wordpress-org/pl/screenshot-5.png" alt="Sekcja Styl z podglądem na żywo" width="820"></p>
 
 <details>
-<summary>Ustawienia: dni wysyłki, automatyczne wyświetlanie i sekcja Checkout</summary>
+<summary>Ustawienia: dni wysyłki, automatyczne wyświetlanie, metody wysyłki i Checkout</summary>
 
 <p align="center"><img src=".wordpress-org/pl/screenshot-4.png" alt="Ustawienia dni wysyłki i najbliższe terminy" width="820"></p>
 
 <p align="center"><img src=".wordpress-org/pl/screenshot-7.png" alt="Automatyczne wyświetlanie widgetu: strona, miejsce i priorytet" width="820"></p>
+
+<p align="center"><img src=".wordpress-org/pl/screenshot-9.png" alt="Sekcja Metody wysyłki z własnymi godzinami i najbliższymi terminami" width="820"></p>
 
 <p align="center"><img src=".wordpress-org/pl/screenshot-8.png" alt="Sekcja Checkout z kafelkami, tekstami i datami w zamówieniach" width="820"></p>
 
@@ -568,6 +570,7 @@ wc-ship-today-notice/
 ├── assets/
 │   ├── css/notice.css              # Widget
 │   ├── css/checkout.css            # Kafelki w checkoucie
+│   ├── css/settings.css            # Panel: układ pól w zakładce ustawień WooCommerce
 │   ├── js/notice.js                # Widget: stany, odliczanie, przełączanie terminów
 │   ├── js/checkout.js              # Kafelki: wybór, upływ godziny granicznej
 │   ├── js/style-preview.js         # Podgląd na żywo w sekcji "Styl"

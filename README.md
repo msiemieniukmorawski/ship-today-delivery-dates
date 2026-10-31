@@ -50,11 +50,13 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
 <p align="center"><img src=".wordpress-org/screenshot-5.png" alt="Style section with a live preview" width="820"></p>
 
 <details>
-<summary>Settings: shipping days, automatic display and the Checkout section</summary>
+<summary>Settings: shipping days, automatic display, shipping methods and Checkout</summary>
 
 <p align="center"><img src=".wordpress-org/screenshot-4.png" alt="Shipping days settings and upcoming dates" width="820"></p>
 
 <p align="center"><img src=".wordpress-org/screenshot-7.png" alt="Automatic display of the widget: page, position and priority" width="820"></p>
+
+<p align="center"><img src=".wordpress-org/screenshot-9.png" alt="Shipping methods section with own cutoff times and upcoming dates" width="820"></p>
 
 <p align="center"><img src=".wordpress-org/screenshot-8.png" alt="Checkout section with tiles, texts and order dates" width="820"></p>
 
@@ -563,6 +565,7 @@ wc-ship-today-notice/
 ├── assets/
 │   ├── css/notice.css              # Widget
 │   ├── css/checkout.css            # Checkout tiles
+│   ├── css/settings.css            # Admin: field layout in the WooCommerce settings tab
 │   ├── js/notice.js                # Widget: states, countdown, switching dates
 │   ├── js/checkout.js              # Tiles: selection, cutoff passing
 │   ├── js/style-preview.js         # Live preview in the Style section

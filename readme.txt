@@ -119,6 +119,7 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 6. Ship date column and filter in the orders list.
 7. Automatic display of the widget: page, position and priority.
 8. The Checkout section: tiles, texts and dates in orders.
+9. The Shipping methods section: own cutoff times and upcoming dates for a method.
 
 == Changelog ==
 
