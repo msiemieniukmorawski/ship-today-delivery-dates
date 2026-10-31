@@ -4,7 +4,7 @@ Tags: woocommerce, shipping, countdown, delivery date, cutoff time
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -116,6 +116,9 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 
 == Changelog ==
 
+= 2.4.1 =
+* Changed: the plugin name is now WooCommerce Ship Today Notice (Polish admin: Ship Today Notice).
+
 = 2.4.0 =
 * New: cutoff times per shipping method. In the "Shipping methods" settings each method of every shipping zone can have its own shipping weekdays, cutoff times and delivery days, with a preview of the next slots. Without them the general schedule applies.
 * New: both checkouts show tiles, validate and save the date for the selected shipping method; changing the method recalculates the tiles.
@@ -168,6 +171,9 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 * First version: countdown, OpenHolidays API, settings in WooCommerce, WPML support.
 
 == Upgrade Notice ==
+
+= 2.4.1 =
+New plugin name: WooCommerce Ship Today Notice. No functional changes.
 
 = 2.4.0 =
 Cutoff times per shipping method and a ship date row in the block checkout order summary. Nothing changes until you set a schedule for a shipping method.

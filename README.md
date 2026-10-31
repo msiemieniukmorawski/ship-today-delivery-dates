@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/wersja-2.4.0-orange" alt="Wersja 2.4.0">
+  <img src="https://img.shields.io/badge/wersja-2.4.1-orange" alt="Wersja 2.4.1">
   <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
   <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
@@ -574,7 +574,7 @@ wc-ship-today-notice/
 
 ## Changelog
 
-### Niewydane
+### 2.4.1 (31.10.2026)
 
 - Nazwa wtyczki w nagłówku, `readme.txt` i panelu po polsku: „WooCommerce Ship Today Notice” / „Ship Today Notice” (wcześniej „Powiadomienie o wysyłce dziś”).
 
