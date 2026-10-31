@@ -698,9 +698,9 @@ Without schedules for shipping methods everything works as in 2.3.0.
 - [ ] Test mode `?stn_now=` in the checkout recalculation AJAX too (`update_order_review`).
 - [ ] WordPress.org plugin directory.
 
-## Authors
+## Author
 
-- [MS-M.pl](https://ms-m.pl)
+[MS-M.pl](https://ms-m.pl)
 
 ## License
 

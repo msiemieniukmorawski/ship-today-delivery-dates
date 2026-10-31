@@ -724,9 +724,9 @@ Bez ustawień dla metod wysyłki wszystko działa jak w 2.3.0.
 - [ ] Tryb testowy `?stn_now=` także w AJAX-ie przeliczania checkoutu (`update_order_review`), np. przesunięcie zapamiętane dla managera sklepu.
 - [ ] Publikacja w katalogu WordPress.org.
 
-## Autorzy
+## Autor
 
-- [MS-M.pl](https://ms-m.pl)
+[MS-M.pl](https://ms-m.pl)
 
 ## Licencja
 
