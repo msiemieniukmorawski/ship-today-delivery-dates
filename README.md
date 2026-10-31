@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.4.1-orange" alt="Version 2.4.1">
+  <img src="https://img.shields.io/badge/version-2.5.0-orange" alt="Version 2.5.0">
   <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
   <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
@@ -581,7 +581,7 @@ wc-ship-today-notice/
 
 ## Changelog
 
-### Unreleased
+### 2.5.0 (2026-10-31)
 
 - New **Checkout** tab next to Settings and Style with the whole "Ship date choice at checkout" section. With the module off only the
   module checkbox and the "dates of existing orders" option are shown; the other fields appear right after ticking the checkbox, without saving.
