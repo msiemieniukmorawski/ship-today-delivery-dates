@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src=".wordpress-org/screenshot-2.png" alt="Widget: najbliższe terminy z datą dostawy" width="760">
+  <img src=".wordpress-org/pl/screenshot-2.png" alt="Widget: najbliższe terminy z datą dostawy" width="760">
 </p>
 
 ## Po co
@@ -40,19 +40,19 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
     <th width="50%">Kolumna „Wysyłka” na liście zamówień</th>
   </tr>
   <tr>
-    <td valign="top"><img src=".wordpress-org/screenshot-3.png" alt="Kafelki terminów w checkoucie"></td>
-    <td valign="top"><img src=".wordpress-org/screenshot-6.png" alt="Lista zamówień z kolumną Wysyłka"></td>
+    <td valign="top"><img src=".wordpress-org/pl/screenshot-3.png" alt="Kafelki terminów w checkoucie"></td>
+    <td valign="top"><img src=".wordpress-org/pl/screenshot-6.png" alt="Lista zamówień z kolumną Wysyłka"></td>
   </tr>
 </table>
 
 **Zakładka „Styl”** - wygląd widgetu wyklikany w panelu, podgląd zmienia się na żywo:
 
-<p align="center"><img src=".wordpress-org/screenshot-5.png" alt="Zakładka Styl z podglądem na żywo" width="820"></p>
+<p align="center"><img src=".wordpress-org/pl/screenshot-5.png" alt="Zakładka Styl z podglądem na żywo" width="820"></p>
 
 <details>
 <summary>Ustawienia: dni wysyłki, godziny graniczne i podgląd najbliższych terminów</summary>
 
-<p align="center"><img src=".wordpress-org/screenshot-4.png" alt="Ustawienia dni wysyłki i najbliższe terminy" width="820"></p>
+<p align="center"><img src=".wordpress-org/pl/screenshot-4.png" alt="Ustawienia dni wysyłki i najbliższe terminy" width="820"></p>
 
 </details>
 
@@ -566,7 +566,7 @@ wc-ship-today-notice/
 ├── languages/                      # .pot, pl_PL i de_DE (.po + .mo)
 ├── tests/cli-schedule-test.php     # Tabela przypadków silnika (wp eval-file)
 ├── scripts/                        # lint.sh, build-zip.sh, env/ (seed i start wp-env)
-├── .wordpress-org/                 # Zrzuty ekranu do WordPress.org (poza paczką)
+├── .wordpress-org/                 # Zrzuty ekranu: angielskie, polskie w pl/ (poza paczką)
 ├── .wp-env.json, package.json      # Lokalne środowisko (poza paczką)
 └── .distignore                     # Co nie trafia do paczki
 ```

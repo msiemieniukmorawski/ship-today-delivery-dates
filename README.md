@@ -23,8 +23,6 @@
   <img src=".wordpress-org/screenshot-2.png" alt="Widget: next dates with the delivery date" width="760">
 </p>
 
-> The screenshots show a store running in Polish. All plugin texts are translatable, and the source language is English.
-
 ## Why
 
 A customer who doesn't know when the parcel will arrive puts off buying. This plugin tells them right where they decide:
@@ -562,7 +560,7 @@ wc-ship-today-notice/
 ├── languages/                      # .pot, pl_PL and de_DE (.po + .mo)
 ├── tests/cli-schedule-test.php     # Engine test table (wp eval-file)
 ├── scripts/                        # lint.sh, build-zip.sh, env/ (wp-env seed and start)
-├── .wordpress-org/                 # WordPress.org screenshots (not in the package)
+├── .wordpress-org/                 # Screenshots: English, Polish in pl/ (not in the package)
 ├── .wp-env.json, package.json      # Local environment (not in the package)
 └── .distignore                     # What stays out of the package
 ```
