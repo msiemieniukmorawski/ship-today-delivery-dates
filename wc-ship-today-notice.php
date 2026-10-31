@@ -3,7 +3,7 @@
 /**
  * Plugin Name: WooCommerce Ship Today Notice
  * Description: Countdown to the order cutoff time with the next ship and delivery dates (shortcode [ship_today_notice]), plus an optional ship date choice at checkout.
- * Version: 2.5.0
+ * Version: 2.6.0
  * Requires at least: 6.8
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WC_STN_VERSION', '2.5.0');
+define('WC_STN_VERSION', '2.6.0');
 define('WC_STN_FILE', __FILE__);
 
 require_once __DIR__ . '/includes/class-wc-stn-schedule.php';

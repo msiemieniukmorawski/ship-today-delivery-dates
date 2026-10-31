@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/wersja-2.5.0-orange" alt="Wersja 2.5.0">
+  <img src="https://img.shields.io/badge/wersja-2.6.0-orange" alt="Wersja 2.6.0">
   <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
   <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
@@ -587,7 +587,7 @@ wc-ship-today-notice/
 
 ## Changelog
 
-### Niewydane
+### 2.6.0 (31.10.2026)
 
 - Ustawienia wtyczki przeniesione do zakładki **Ship Today Notice** w WooCommerce → Ustawienia, tuż przed „Zaawansowane”, z sekcjami Ustawienia, Metody wysyłki, Checkout i Styl.
   Pozycji w bocznym menu WooCommerce już nie ma, stare adresy przekierowują w nowe miejsce. Na liście wtyczek doszedł link „Ustawienia”.
