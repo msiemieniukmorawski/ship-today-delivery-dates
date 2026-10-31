@@ -50,9 +50,13 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
 <p align="center"><img src=".wordpress-org/screenshot-5.png" alt="Style tab with a live preview" width="820"></p>
 
 <details>
-<summary>Settings: shipping days, cutoff times and the upcoming dates preview</summary>
+<summary>Settings: shipping days, automatic display and the Checkout tab</summary>
 
 <p align="center"><img src=".wordpress-org/screenshot-4.png" alt="Shipping days settings and upcoming dates" width="820"></p>
+
+<p align="center"><img src=".wordpress-org/screenshot-7.png" alt="Automatic display of the widget: page, position and priority" width="820"></p>
+
+<p align="center"><img src=".wordpress-org/screenshot-8.png" alt="Checkout tab with tiles, texts and order dates" width="820"></p>
 
 </details>
 

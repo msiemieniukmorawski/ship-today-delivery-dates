@@ -117,6 +117,8 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 4. Shipping weekdays, cutoff times and the next slots preview in the settings.
 5. The "Style" tab with the live preview.
 6. Ship date column and filter in the orders list.
+7. Automatic display of the widget: page, position and priority.
+8. The Checkout tab: tiles, texts and dates in orders.
 
 == Changelog ==
 

@@ -50,9 +50,13 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 <p align="center"><img src=".wordpress-org/pl/screenshot-5.png" alt="Zakładka Styl z podglądem na żywo" width="820"></p>
 
 <details>
-<summary>Ustawienia: dni wysyłki, godziny graniczne i podgląd najbliższych terminów</summary>
+<summary>Ustawienia: dni wysyłki, automatyczne wyświetlanie i zakładka Checkout</summary>
 
 <p align="center"><img src=".wordpress-org/pl/screenshot-4.png" alt="Ustawienia dni wysyłki i najbliższe terminy" width="820"></p>
+
+<p align="center"><img src=".wordpress-org/pl/screenshot-7.png" alt="Automatyczne wyświetlanie widgetu: strona, miejsce i priorytet" width="820"></p>
+
+<p align="center"><img src=".wordpress-org/pl/screenshot-8.png" alt="Zakładka Checkout z kafelkami, tekstami i datami w zamówieniach" width="820"></p>
 
 </details>
 
