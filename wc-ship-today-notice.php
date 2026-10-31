@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: WooCommerce Ship Today Notice
+ * Plugin Name: Ship Today & Delivery Dates for WooCommerce
  * Description: Countdown to the order cutoff time with the next ship and delivery dates (shortcode [ship_today_notice]), plus an optional ship date choice at checkout.
  * Version: 2.6.0
  * Requires at least: 6.8
@@ -602,7 +602,7 @@ final class WC_Ship_Today_Notice
     /** Zakładka tuż przed "Zaawansowane" (bez niej na końcu). */
     public function add_settings_tab($tabs)
     {
-        $label  = __('Ship Today Notice', 'wc-ship-today-notice');
+        $label  = __('Ship Today & Delivery Dates', 'wc-ship-today-notice');
         $result = [];
 
         foreach ($tabs as $key => $name) {

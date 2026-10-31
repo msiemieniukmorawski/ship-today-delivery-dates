@@ -4,7 +4,7 @@
 	"name": "wc-stn/ship-date",
 	"version": "1.0.0",
 	"title": "Ship date",
-	"description": "Ship date tiles from Ship Today Notice. Added below the shipping options once; you can move or remove it.",
+	"description": "Ship date tiles from Ship Today & Delivery Dates. Added below the shipping options once; you can move or remove it.",
 	"category": "woocommerce",
 	"icon": "calendar-alt",
 	"keywords": [

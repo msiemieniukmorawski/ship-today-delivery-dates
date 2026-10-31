@@ -1,4 +1,4 @@
-<h1 align="center">WooCommerce Ship Today Notice</h1>
+<h1 align="center">Ship Today & Delivery Dates for WooCommerce</h1>
 
 <p align="center"><a href="README.md">English</a> | <b>Polski</b></p>
 
@@ -94,7 +94,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 ## Szybki start
 
 1. Wgraj wtyczkę do `wp-content/plugins/wc-ship-today-notice/` i aktywuj ją (wymaga aktywnego WooCommerce).
-2. **WooCommerce → Ustawienia → Ship Today Notice**: zaznacz dni wysyłki i ustaw godziny graniczne.
+2. **WooCommerce → Ustawienia → Ship Today & Delivery Dates**: zaznacz dni wysyłki i ustaw godziny graniczne.
 3. Opcjonalnie ustaw **Dostawę** (ile dni doręczeń po wysyłce) i sprawdź tabelę **Najbliższe terminy**.
 4. Widget od razu pokazuje się na stronach produktów, pod przyciskiem „Dodaj do koszyka”. Zmienisz to w **Automatycznym wyświetlaniu** (strona produktu, koszyk, checkout), możesz też wstawić shortcode w dowolnym miejscu:
 
@@ -263,7 +263,7 @@ ustawienia z tymi tekstami, mają je dalej i mogą je zmienić ręcznie.
 <details>
 <summary><b>Wygląd i sekcja „Styl”</b></summary>
 
-WooCommerce → Ustawienia → Ship Today Notice → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
+WooCommerce → Ustawienia → Ship Today & Delivery Dates → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
 „przed” i „po” godzinie granicznej.
 
 | Opcja | Opis |
@@ -289,7 +289,7 @@ Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-b
 <details>
 <summary><b>Wybór terminu w checkoucie (klasyczny, blokowy)</b></summary>
 
-Włączenie: **WooCommerce → Ustawienia → Ship Today Notice → Checkout → Moduł**. Przy wyłączonym module sekcja pokazuje tylko ten checkbox i opcję
+Włączenie: **WooCommerce → Ustawienia → Ship Today & Delivery Dates → Checkout → Moduł**. Przy wyłączonym module sekcja pokazuje tylko ten checkbox i opcję
 pokazywania dat istniejących zamówień (z przełącznikami, od których zależy). Pozostałe pola pojawiają się od razu po zaznaczeniu checkboxa,
 bez zapisu, a ukryte zachowują wartości.
 
@@ -393,7 +393,7 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
 <details>
 <summary><b>Godziny graniczne dla metod wysyłki</b></summary>
 
-WooCommerce → Ustawienia → Ship Today Notice → sekcja **Metody wysyłki**: lista wszystkich metod ze stref wysyłki
+WooCommerce → Ustawienia → Ship Today & Delivery Dates → sekcja **Metody wysyłki**: lista wszystkich metod ze stref wysyłki
 WooCommerce (także „Pozostałe regiony” i metody z wtyczek, np. paczkomaty), każda jako instancja `metoda:instancja`
 (np. `flat_rate:3`), więc różne strefy/kraje mogą mieć różne godziny.
 
@@ -544,7 +544,7 @@ npm install                # pierwszy raz: @wordpress/env (wymaga Dockera i Node
 npm run env:start          # http://localhost:8894, admin / password
 npm run env:seed           # produkt, klasyczny checkout, wysyłka PL, płatność przy odbiorze, święta PL
 npm run test:schedule      # tabela przypadków silnika (tests/cli-schedule-test.php)
-scripts/build-zip.sh       # build/wc-ship-today-notice.zip bez plików deweloperskich (.distignore)
+scripts/build-zip.sh       # build/ship-today-delivery-dates.zip bez plików deweloperskich (.distignore)
 npm run env:destroy        # usunięcie środowiska
 ```
 
@@ -588,7 +588,17 @@ wc-ship-today-notice/
 
 </details>
 
+## Wsparcie
+
+- **Bezpłatnie:** błędy wtyczki i pytania o funkcje przez [GitHub Issues](https://github.com/msiemieniukmorawski/ship-today-delivery-dates/issues), bez gwarantowanego czasu odpowiedzi.
+- **Płatnie:** konfiguracja pod sklep, dopasowanie do motywu, integracje z przewoźnikami i zmiany na zamówienie: [ms-m.pl](https://ms-m.pl).
+
 ## Changelog
+
+### Niewydane
+
+- Nowa nazwa: **Ship Today & Delivery Dates for WooCommerce** (w panelu: Ship Today & Delivery Dates). Text domain, nazwy opcji, hooki i shortcode'y bez zmian.
+- Paczka to teraz `build/ship-today-delivery-dates.zip`.
 
 ### 2.6.0 (31.10.2026)
 

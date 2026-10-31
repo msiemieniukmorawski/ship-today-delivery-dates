@@ -3,7 +3,7 @@
  * Tabela przypadków dla silnika terminów.
  *
  * Uruchomienie: wp eval-file wp-content/plugins/wc-ship-today-notice/tests/cli-schedule-test.php
- * Wymaga pobranych świąt PL na lata 2026-2027 (WooCommerce → Ship Today Notice → Pobierz święta).
+ * Wymaga pobranych świąt PL na lata 2026-2027 (WooCommerce → Ustawienia → Ship Today & Delivery Dates → Pobierz święta).
  * Nie zmienia zapisanych ustawień: konfiguracje są podawane wprost do WC_STN_Schedule.
  */
 

@@ -1,5 +1,5 @@
 /**
- * WooCommerce Ship Today Notice: wybór terminu w checkoucie.
+ * Ship Today & Delivery Dates for WooCommerce: wybór terminu w checkoucie.
  *
  * - zaznaczenie kafelka odświeża podsumowanie zamówienia (update_checkout),
  * - gdy godzina graniczna terminu minie na otwartej stronie, kafelek znika, dochodzi kolejny termin,

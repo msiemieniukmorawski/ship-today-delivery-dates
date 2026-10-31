@@ -193,7 +193,7 @@ final class WC_STN_Checkout_Blocks
             'row'    => $data['rows'] ? reset($data['rows']) : ['', ''],
             'rowHint' => $data['reviewRow']
                 ? __('Shows the ship date selected in the "Ship date" block.', 'wc-ship-today-notice')
-                : __('Hidden: the order summary row is turned off in WooCommerce → Settings → Ship Today Notice → Checkout.', 'wc-ship-today-notice'),
+                : __('Hidden: the order summary row is turned off in WooCommerce → Settings → Ship Today & Delivery Dates → Checkout.', 'wc-ship-today-notice'),
         ];
     }
 
@@ -416,7 +416,7 @@ final class WC_STN_Checkout_Blocks
         $dismiss = wp_nonce_url(add_query_arg('wc_stn_dismiss_block_notice', 1), 'wc_stn_dismiss_block_notice');
         printf(
             '<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s</p><p><a class="button" href="%3$s">%4$s</a> <a href="%5$s">%6$s</a></p></div>',
-            esc_html__('Ship Today Notice:', 'wc-ship-today-notice'),
+            esc_html__('Ship Today & Delivery Dates:', 'wc-ship-today-notice'),
             esc_html__('the block checkout has no "Ship date" block, so customers cannot choose a ship date (orders are placed without it). Add the block inside the checkout form in the checkout page editor.', 'wc-ship-today-notice'),
             esc_url((string) get_edit_post_link($page_id)),
             esc_html__('Edit the checkout page', 'wc-ship-today-notice'),

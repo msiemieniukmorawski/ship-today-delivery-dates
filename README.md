@@ -1,4 +1,4 @@
-<h1 align="center">WooCommerce Ship Today Notice</h1>
+<h1 align="center">Ship Today & Delivery Dates for WooCommerce</h1>
 
 <p align="center"><b>English</b> | <a href="README.pl.md">Polski</a></p>
 
@@ -94,7 +94,7 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
 ## Quick start
 
 1. Upload the plugin to `wp-content/plugins/wc-ship-today-notice/` and activate it (WooCommerce must be active).
-2. Go to **WooCommerce → Settings → Ship Today Notice**, select the shipping days and set the cutoff times.
+2. Go to **WooCommerce → Settings → Ship Today & Delivery Dates**, select the shipping days and set the cutoff times.
 3. Optionally set **Delivery** (delivery days after shipping) and check the **Upcoming dates** table.
 4. The widget already shows on product pages, below the add to cart button. Change it in **Automatic display** (product page, cart, checkout), or add the shortcode anywhere:
 
@@ -261,7 +261,7 @@ are updated automatically when upgrading to 2.2.0.
 <details>
 <summary><b>Look and the Style section</b></summary>
 
-WooCommerce → Settings → Ship Today Notice → **Style**: the look of `[ship_today_notice]` without writing CSS, with a live preview of the
+WooCommerce → Settings → Ship Today & Delivery Dates → **Style**: the look of `[ship_today_notice]` without writing CSS, with a live preview of the
 states before and after the cutoff.
 
 | Option | Description |
@@ -287,7 +287,7 @@ CSS variables: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `
 <details>
 <summary><b>Ship date choice at checkout (classic, block)</b></summary>
 
-Enable it in **WooCommerce → Settings → Ship Today Notice → Checkout → Module**. While the module is off the section shows only this checkbox and the
+Enable it in **WooCommerce → Settings → Ship Today & Delivery Dates → Checkout → Module**. While the module is off the section shows only this checkbox and the
 option to keep showing dates of existing orders (with the options it depends on). The other fields appear as soon as you tick the checkbox,
 without saving; hidden fields keep their values.
 
@@ -389,7 +389,7 @@ an inner block of the checkout form, parent `woocommerce/checkout-fields-block`)
 <details>
 <summary><b>Cutoff times per shipping method</b></summary>
 
-WooCommerce → Settings → Ship Today Notice → **Shipping methods** section: a list of all methods from your WooCommerce shipping
+WooCommerce → Settings → Ship Today & Delivery Dates → **Shipping methods** section: a list of all methods from your WooCommerce shipping
 zones (including "Rest of the world" and methods from plugins, such as parcel lockers), each as a `method:instance` instance
 (e.g. `flat_rate:3`), so different zones and countries can have different times.
 
@@ -539,7 +539,7 @@ npm install                # first time: @wordpress/env (requires Docker and Nod
 npm run env:start          # http://localhost:8894, admin / password
 npm run env:seed           # product, classic checkout, PL shipping, cash on delivery, PL holidays
 npm run test:schedule      # engine test table (tests/cli-schedule-test.php)
-scripts/build-zip.sh       # build/wc-ship-today-notice.zip from committed files, without .distignore entries
+scripts/build-zip.sh       # build/ship-today-delivery-dates.zip from committed files, without .distignore entries
 npm run env:destroy        # remove the environment
 ```
 
@@ -582,7 +582,17 @@ wc-ship-today-notice/
 
 </details>
 
+## Support
+
+- **Free:** bugs and questions about features through [GitHub Issues](https://github.com/msiemieniukmorawski/ship-today-delivery-dates/issues), with no guaranteed response time.
+- **Paid:** configuration for your store, matching your theme, carrier integrations and custom changes: [ms-m.pl](https://ms-m.pl).
+
 ## Changelog
+
+### Unreleased
+
+- New name: **Ship Today & Delivery Dates for WooCommerce** (in the admin: Ship Today & Delivery Dates). Text domain, option names, hooks and shortcodes are unchanged.
+- The package is now `build/ship-today-delivery-dates.zip`.
 
 ### 2.6.0 (2026-10-31)
 

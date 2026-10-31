@@ -1,5 +1,5 @@
 /**
- * WooCommerce Ship Today Notice - zakładka "Styl"
+ * Ship Today & Delivery Dates for WooCommerce - zakładka "Styl"
  * Podgląd na żywo: pola ustawiają zmienne CSS z notice.css na kontenerze podglądu (bez zapisu).
  */
 (function ($) {

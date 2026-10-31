@@ -1,5 +1,5 @@
 /**
- * WooCommerce Ship Today Notice - widget [ship_today_notice]
+ * Ship Today & Delivery Dates for WooCommerce - widget [ship_today_notice]
  *
  * Bez AJAX: harmonogram terminów przychodzi w atrybucie data-stn (absolutne znaczniki czasu),
  * więc widget działa poprawnie także na stronie trzymanej w cache przez wiele dni.
