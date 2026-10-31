@@ -94,7 +94,7 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
 ## Quick start
 
 1. Upload the plugin to `wp-content/plugins/wc-ship-today-notice/` and activate it (WooCommerce must be active).
-2. Go to **WooCommerce → Settings → Ship Today & Delivery Dates**, select the shipping days and set the cutoff times.
+2. Go to **WooCommerce → Settings → Delivery dates**, select the shipping days and set the cutoff times.
 3. Optionally set **Delivery** (delivery days after shipping) and check the **Upcoming dates** table.
 4. The widget already shows on product pages, below the add to cart button. Change it in **Automatic display** (product page, cart, checkout), or add the shortcode anywhere:
 
@@ -261,7 +261,7 @@ are updated automatically when upgrading to 2.2.0.
 <details>
 <summary><b>Look and the Style section</b></summary>
 
-WooCommerce → Settings → Ship Today & Delivery Dates → **Style**: the look of `[ship_today_notice]` without writing CSS, with a live preview of the
+WooCommerce → Settings → Delivery dates → **Style**: the look of `[ship_today_notice]` without writing CSS, with a live preview of the
 states before and after the cutoff.
 
 | Option | Description |
@@ -287,7 +287,7 @@ CSS variables: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `
 <details>
 <summary><b>Ship date choice at checkout (classic, block)</b></summary>
 
-Enable it in **WooCommerce → Settings → Ship Today & Delivery Dates → Checkout → Module**. While the module is off the section shows only this checkbox and the
+Enable it in **WooCommerce → Settings → Delivery dates → Checkout → Module**. While the module is off the section shows only this checkbox and the
 option to keep showing dates of existing orders (with the options it depends on). The other fields appear as soon as you tick the checkbox,
 without saving; hidden fields keep their values.
 
@@ -389,7 +389,7 @@ an inner block of the checkout form, parent `woocommerce/checkout-fields-block`)
 <details>
 <summary><b>Cutoff times per shipping method</b></summary>
 
-WooCommerce → Settings → Ship Today & Delivery Dates → **Shipping methods** section: a list of all methods from your WooCommerce shipping
+WooCommerce → Settings → Delivery dates → **Shipping methods** section: a list of all methods from your WooCommerce shipping
 zones (including "Rest of the world" and methods from plugins, such as parcel lockers), each as a `method:instance` instance
 (e.g. `flat_rate:3`), so different zones and countries can have different times.
 
@@ -592,6 +592,8 @@ wc-ship-today-notice/
 ### Unreleased
 
 - Default texts and admin labels no longer use em or en dashes. The default text before the cutoff is now "Order within {countdown} and we will ship today!".
+- The tab in WooCommerce → Settings is now called **Delivery dates** (the address is unchanged). The full plugin name stays in the plugin list.
+- Removed the unused `WC_STN_Schedule::DAY_*` constants and the automatic replacement of default texts from before 2.2.0: a shop updating from such a version keeps "We will ship tomorrow." until it edits the text.
 
 ### 2.6.1 (2026-10-31)
 

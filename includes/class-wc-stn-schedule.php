@@ -21,14 +21,6 @@ final class WC_STN_Schedule
     /** How many days ahead to look for slots. */
     const HORIZON_DAYS = 60;
 
-    /**
-     * Polish day names (ISO-8601: 1 = Monday). Kept for backward compatibility, the plugin uses day_label().
-     */
-    const DAY_NOMINATIVE = [1 => 'poniedziałek', 2 => 'wtorek', 3 => 'środa', 4 => 'czwartek', 5 => 'piątek', 6 => 'sobota', 7 => 'niedziela'];
-    const DAY_GENITIVE   = [1 => 'poniedziałku', 2 => 'wtorku', 3 => 'środy', 4 => 'czwartku', 5 => 'piątku', 6 => 'soboty', 7 => 'niedzieli'];
-    const DAY_ON         = [1 => 'w poniedziałek', 2 => 'we wtorek', 3 => 'w środę', 4 => 'w czwartek', 5 => 'w piątek', 6 => 'w sobotę', 7 => 'w niedzielę'];
-    const DAY_SHORT      = [1 => 'pn', 2 => 'wt', 3 => 'śr', 4 => 'czw', 5 => 'pt', 6 => 'sob', 7 => 'nd'];
-
     /** @var array */
     private $options;
 

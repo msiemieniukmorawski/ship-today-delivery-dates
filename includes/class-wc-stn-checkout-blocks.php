@@ -193,7 +193,7 @@ final class WC_STN_Checkout_Blocks
             'row'    => $data['rows'] ? reset($data['rows']) : ['', ''],
             'rowHint' => $data['reviewRow']
                 ? __('Shows the ship date selected in the "Ship date" block.', 'wc-ship-today-notice')
-                : __('Hidden: the order summary row is turned off in WooCommerce → Settings → Ship Today & Delivery Dates → Checkout.', 'wc-ship-today-notice'),
+                : __('Hidden: the order summary row is turned off in WooCommerce → Settings → Delivery dates → Checkout.', 'wc-ship-today-notice'),
         ];
     }
 

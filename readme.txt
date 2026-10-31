@@ -45,7 +45,7 @@ All plugin texts are translatable (English source): the admin, weekday names and
 
 1. Upload the plugin folder to `/wp-content/plugins/` or install the ZIP via Plugins → Add New → Upload Plugin. WooCommerce must be active.
 2. Activate the plugin. It creates a table for public holidays and downloads them on the next WP-Cron run.
-3. Go to WooCommerce → Settings → Ship Today & Delivery Dates. Set the shipping weekdays and cutoff times.
+3. Go to WooCommerce → Settings → Delivery dates. Set the shipping weekdays and cutoff times.
 4. Click "Fetch holidays now" at the bottom of the settings page to download holidays right away.
 5. Optionally set the delivery days, then save and check the "Next slots" preview.
 6. The widget already shows on product pages. Change it in "Automatic display" (product page, cart, checkout), or add `[ship_today_notice]` anywhere (e.g. the header or a popup).
@@ -55,7 +55,7 @@ All plugin texts are translatable (English source): the admin, weekday names and
 
 = I installed the plugin but see no message. =
 
-A new shop shows the widget on product pages, below the add to cart button. Shops updating from an earlier version keep it off until they turn it on: use WooCommerce → Settings → Ship Today & Delivery Dates → "Automatic display" for the product page, cart or checkout, or add the `[ship_today_notice]` shortcode.
+A new shop shows the widget on product pages, below the add to cart button. Shops updating from an earlier version keep it off until they turn it on: use WooCommerce → Settings → Delivery dates → "Automatic display" for the product page, cart or checkout, or add the `[ship_today_notice]` shortcode.
 
 = Does it work with the block-based checkout? =
 
@@ -63,15 +63,15 @@ Yes, with WooCommerce 10.1 or newer. In both checkouts the customer picks a date
 
 = The block checkout does not show the ship date tiles. =
 
-Check WooCommerce → Settings → Ship Today & Delivery Dates → Checkout: it tells you whether the "Ship date" block is on the checkout page. If the checkout is part of a block theme template (Site Editor) or you removed the block, add the "Ship date" block inside the checkout form in the editor. The block is shown only when the cart needs shipping and local pickup is not selected.
+Check WooCommerce → Settings → Delivery dates → Checkout: it tells you whether the "Ship date" block is on the checkout page. If the checkout is part of a block theme template (Site Editor) or you removed the block, add the "Ship date" block inside the checkout form in the editor. The block is shown only when the cart needs shipping and local pickup is not selected.
 
 = Can I change the texts on the date tiles and in the checkout messages? =
 
-Yes, in WooCommerce → Settings → Ship Today & Delivery Dates → Checkout → "Texts": the large text and the second line of the tiles (with tokens such as `{delivery_short}`, `{ship_short}`, `{ship_when}`, `{cutoff_when}`; an empty second line hides it), the labels of the ship and delivery date rows in emails, and the four checkout messages (`{field}`, `{slot}`, `{next_slot}`). Empty fields use the default, translated texts.
+Yes, in WooCommerce → Settings → Delivery dates → Checkout → "Texts": the large text and the second line of the tiles (with tokens such as `{delivery_short}`, `{ship_short}`, `{ship_when}`, `{cutoff_when}`; an empty second line hides it), the labels of the ship and delivery date rows in emails, and the four checkout messages (`{field}`, `{slot}`, `{next_slot}`). Empty fields use the default, translated texts.
 
 = Can shipping methods have different cutoff times? =
 
-Yes. In WooCommerce → Settings → Ship Today & Delivery Dates → "Shipping methods" every method of your WooCommerce shipping zones (including methods from other plugins, e.g. parcel lockers) can get its own shipping days, cutoff times and delivery days, e.g. parcel lockers until 15:00 and courier until 13:00. Both checkouts then show the dates of the selected method and recalculate them when the customer changes the method. Methods without own times use the main table. For the notice widget use `[ship_today_notice method="flat_rate:3"]`.
+Yes. In WooCommerce → Settings → Delivery dates → "Shipping methods" every method of your WooCommerce shipping zones (including methods from other plugins, e.g. parcel lockers) can get its own shipping days, cutoff times and delivery days, e.g. parcel lockers until 15:00 and courier until 13:00. Both checkouts then show the dates of the selected method and recalculate them when the customer changes the method. Methods without own times use the main table. For the notice widget use `[ship_today_notice method="flat_rate:3"]`.
 
 = The checkout module is enabled, but I don't see the date field. =
 

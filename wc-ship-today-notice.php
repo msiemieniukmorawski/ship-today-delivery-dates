@@ -345,15 +345,6 @@ final class WC_Ship_Today_Notice
 
         $saved = get_option(self::OPTION_KEY, []);
 
-        // Old defaults said "tomorrow", which is wrong e.g. on Friday after the cutoff.
-        if (is_array($saved) && version_compare($installed, '2.2.0', '<')) {
-            $texts = $this->migrate_default_texts($saved);
-            if ($texts !== $saved) {
-                update_option(self::OPTION_KEY, $texts);
-                $saved = $texts;
-            }
-        }
-
         if (is_array($saved) && !empty($saved['excluded_holidays']) && empty($saved['excluded_holiday_dates'])) {
             global $wpdb;
             $table = $wpdb->prefix . self::TABLE_NAME;
@@ -371,30 +362,6 @@ final class WC_Ship_Today_Notice
         }
 
         update_option(self::VERSION_KEY, WC_STN_VERSION);
-    }
-
-    /**
-     * Old default texts (English source and pl/de translations) => new defaults with {ship_when} in the same language.
-     * Only exact matches are replaced, texts edited by the shop stay.
-     */
-    public function migrate_default_texts(array $saved)
-    {
-        $map = [
-            'We will ship tomorrow.'                 => 'We will ship {ship_when}.',
-            'We will ship on the next business day.' => 'We will ship {ship_when}.',
-            'Wyślemy jutro.'                         => 'Wyślemy {ship_when}.',
-            'Wyślemy w najbliższy dzień roboczy.'    => 'Wyślemy {ship_when}.',
-            'Wir versenden morgen.'                  => 'Wir versenden {ship_when}.',
-            'Wir versenden am nächsten Werktag.'     => 'Wir versenden {ship_when}.',
-        ];
-
-        foreach (['text_after_cutoff', 'text_not_shipping_day'] as $key) {
-            if (isset($saved[$key]) && is_string($saved[$key]) && isset($map[trim($saved[$key])])) {
-                $saved[$key] = $map[trim($saved[$key])];
-            }
-        }
-
-        return $saved;
     }
 
     public function add_cron_schedules($schedules)
@@ -597,7 +564,7 @@ final class WC_Ship_Today_Notice
     /** Goes before Advanced, or last if there is no such tab. */
     public function add_settings_tab($tabs)
     {
-        $label  = __('Ship Today & Delivery Dates', 'wc-ship-today-notice');
+        $label  = __('Delivery dates', 'wc-ship-today-notice');
         $result = [];
 
         foreach ($tabs as $key => $name) {

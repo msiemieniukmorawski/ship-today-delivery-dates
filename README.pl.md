@@ -94,7 +94,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 ## Szybki start
 
 1. Wgraj wtyczkę do `wp-content/plugins/wc-ship-today-notice/` i aktywuj ją (wymaga aktywnego WooCommerce).
-2. **WooCommerce → Ustawienia → Ship Today & Delivery Dates**: zaznacz dni wysyłki i ustaw godziny graniczne.
+2. **WooCommerce → Ustawienia → Terminy dostawy**: zaznacz dni wysyłki i ustaw godziny graniczne.
 3. Opcjonalnie ustaw **Dostawę** (ile dni doręczeń po wysyłce) i sprawdź tabelę **Najbliższe terminy**.
 4. Widget od razu pokazuje się na stronach produktów, pod przyciskiem „Dodaj do koszyka”. Zmienisz to w **Automatycznym wyświetlaniu** (strona produktu, koszyk, checkout), możesz też wstawić shortcode w dowolnym miejscu:
 
@@ -263,7 +263,7 @@ ustawienia z tymi tekstami, mają je dalej i mogą je zmienić ręcznie.
 <details>
 <summary><b>Wygląd i sekcja „Styl”</b></summary>
 
-WooCommerce → Ustawienia → Ship Today & Delivery Dates → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
+WooCommerce → Ustawienia → Terminy dostawy → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
 „przed” i „po” godzinie granicznej.
 
 | Opcja | Opis |
@@ -289,7 +289,7 @@ Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-b
 <details>
 <summary><b>Wybór terminu w checkoucie (klasyczny, blokowy)</b></summary>
 
-Włączenie: **WooCommerce → Ustawienia → Ship Today & Delivery Dates → Checkout → Moduł**. Przy wyłączonym module sekcja pokazuje tylko ten checkbox i opcję
+Włączenie: **WooCommerce → Ustawienia → Terminy dostawy → Checkout → Moduł**. Przy wyłączonym module sekcja pokazuje tylko ten checkbox i opcję
 pokazywania dat istniejących zamówień (z przełącznikami, od których zależy). Pozostałe pola pojawiają się od razu po zaznaczeniu checkboxa,
 bez zapisu, a ukryte zachowują wartości.
 
@@ -393,7 +393,7 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
 <details>
 <summary><b>Godziny graniczne dla metod wysyłki</b></summary>
 
-WooCommerce → Ustawienia → Ship Today & Delivery Dates → sekcja **Metody wysyłki**: lista wszystkich metod ze stref wysyłki
+WooCommerce → Ustawienia → Terminy dostawy → sekcja **Metody wysyłki**: lista wszystkich metod ze stref wysyłki
 WooCommerce (także „Pozostałe regiony” i metody z wtyczek, np. paczkomaty), każda jako instancja `metoda:instancja`
 (np. `flat_rate:3`), więc różne strefy/kraje mogą mieć różne godziny.
 
@@ -598,6 +598,8 @@ wc-ship-today-notice/
 ### Niewydane
 
 - Domyślne teksty i etykiety panelu nie mają już półpauz ani pauz. Domyślny tekst przed godziną graniczną to teraz „Zamów w ciągu {countdown}, a wyślemy dziś!”.
+- Zakładka w WooCommerce → Ustawienia nazywa się teraz **Terminy dostawy** (adres bez zmian). Pełna nazwa wtyczki zostaje na liście wtyczek.
+- Usunięte nieużywane stałe `WC_STN_Schedule::DAY_*` i automatyczna zamiana domyślnych tekstów sprzed 2.2.0: sklep aktualizowany z takiej wersji zachowuje „Wyślemy jutro.”, dopóki nie zmieni tekstu.
 
 ### 2.6.1 (31.10.2026)
 
