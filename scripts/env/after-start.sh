@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# wp-env afterStart (kontener cli, cwd /var/www/html). Idempotentny: odpala się przy każdym env:start.
-# WooCommerce z listy "plugins" aktywuje sam wp-env; wtyczka jest podpięta przez "mappings", więc aktywujemy ją tu.
+# wp-env afterStart (cli container, cwd /var/www/html). Idempotent, runs on every env:start.
+# wp-env activates WooCommerce from "plugins". The plugin comes from "mappings", so it is activated here.
 set -euo pipefail
 
-# Część opcji WooCommerce obsługuje własnymi filtrami i update_option zwraca false - to nie powód, by przerwać start.
+# WooCommerce filters some options and update_option returns false. That must not stop the start.
 opt() {
-    wp option update "$@" >/dev/null || echo "Uwaga: nie ustawiono opcji $1"
+    wp option update "$@" >/dev/null || echo "Warning: option $1 not set"
 }
 
 opt timezone_string Europe/Warsaw
@@ -14,7 +14,7 @@ wp language core install pl_PL --activate >/dev/null
 wp plugin activate wc-ship-today-notice
 wp theme activate storefront
 
-# WooCommerce bez kreatora i podpowiedzi.
+# WooCommerce without the setup wizard and suggestions.
 opt woocommerce_onboarding_profile '{"skipped":true}' --format=json
 opt woocommerce_task_list_hidden yes
 opt woocommerce_extended_task_list_hidden yes
@@ -25,4 +25,4 @@ opt woocommerce_default_country PL
 opt woocommerce_currency PLN
 wp transient delete _wc_activation_redirect >/dev/null || true
 
-echo "wc-ship-today-notice: http://localhost:8894/wp-admin/admin.php?page=wc-ship-today-notice (admin / password)"
+echo "wc-ship-today-notice: http://localhost:8894/wp-admin/admin.php?page=wc-settings&tab=ship_today_notice (admin / password)"

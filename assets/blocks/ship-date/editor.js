@@ -1,6 +1,6 @@
 /**
- * Blok "wc-stn/ship-date" w edytorze (checkout blokowy): podgląd kafelków z aktualnych ustawień.
- * Bez kroku build: wp.element.createElement zamiast JSX. Metadane bloku z block.json (rejestracja w PHP).
+ * Editor side of the checkout blocks: previews from the current settings.
+ * No build step, so wp.element.createElement instead of JSX. Block metadata comes from block.json (registered in PHP).
  */
 (function (wp) {
   'use strict';
@@ -27,7 +27,7 @@
     );
   }
 
-  /** Wiersz podsumowania: przykładowy termin (pierwszy z aktualnych) w wyglądzie wiersza sum WooCommerce. */
+  /** Summary row: the first current slot, styled like a WooCommerce totals row. */
   function RowPreview() {
     var props = useBlockProps({ className: 'wc-block-components-totals-wrapper' });
 
@@ -49,7 +49,7 @@
 
   wp.blocks.registerBlockType('wc-stn/ship-date', {
     edit: Preview,
-    // Front renderuje komponent z frontend.js w miejscu tego znacznika (inner block checkoutu)
+    // frontend.js renders the component in place of this marker
     save: function () {
       return el('div', wp.blockEditor.useBlockProps.save({ 'data-block-name': 'wc-stn/ship-date' }));
     }

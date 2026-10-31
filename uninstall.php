@@ -1,9 +1,9 @@
 <?php
 /**
- * Usuwanie wtyczki (Wtyczki → Usuń): opcje, tabela świąt, zdarzenia cron.
+ * Plugin removal: options, holidays table, cron events.
  *
- * Meta zamówień (_wc_stn_ship_date, _wc_stn_delivery_date, _wc_stn_cutoff) zostają: to dane zamówień, nie ustawienia.
- * Plik główny wtyczki nie jest tu wczytany, więc nazwy są wpisane wprost (jak stałe w WC_Ship_Today_Notice).
+ * Order meta stays: it is order data, not settings.
+ * The main plugin file is not loaded here, so the names are written out.
  */
 
 if (!defined('WP_UNINSTALL_PLUGIN')) {
@@ -22,7 +22,7 @@ function wc_stn_uninstall_site()
         wp_clear_scheduled_hook($hook);
     }
 
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- usunięcie własnej tabeli przy deinstalacji.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- dropping own table on uninstall.
     $wpdb->query($wpdb->prepare('DROP TABLE IF EXISTS %i', $wpdb->prefix . 'wc_ship_today_notice_holidays'));
 }
 

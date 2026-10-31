@@ -1,6 +1,5 @@
 /**
- * Ship Today & Delivery Dates for WooCommerce - widget [ship_today_notice]
- * (wersja wtyczki: WC_STN_VERSION, tu bez numeru, żeby się nie rozjeżdżał)
+ * Ship Today & Delivery Dates for WooCommerce: [ship_today_notice] widget
  */
 
 .wc-ship-today-notice {
@@ -14,7 +13,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: var(--wc-ship-today-notice-justify, normal);
-  /* Bez zmiennej text-align jest dziedziczony, jak dotąd. */
+  /* Without the variable text-align is inherited. */
   text-align: var(--wc-ship-today-notice-align);
   gap: 6px;
   font-size: var(--wc-ship-today-notice-font-size, 13px);
@@ -47,11 +46,11 @@
   display: inline-flex;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  /* Bez zmiennej kolor jest dziedziczony, jak dotąd. */
+  /* Without the variable the color is inherited. */
   color: var(--wc-ship-today-notice-countdown-color);
 }
 
-/* Lista terminów: [ship_today_notice count="2"] */
+/* Slot list: [ship_today_notice count="2"] */
 .wc-ship-today-notice--list {
   flex-direction: column;
   align-items: var(--wc-ship-today-notice-justify, flex-start);

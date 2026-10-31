@@ -1,7 +1,7 @@
 {
     "name": "wc-ship-today-notice-env",
     "private": true,
-    "description": "Lokalne srodowisko wp-env dla wc-ship-today-notice (http://localhost:8894)",
+    "description": "Local wp-env environment for wc-ship-today-notice (http://localhost:8894)",
     "scripts": {
         "env:start": "flock /tmp/roomly-docker.lock wp-env start",
         "env:stop": "wp-env stop",

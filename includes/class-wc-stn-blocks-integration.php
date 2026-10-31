@@ -1,8 +1,8 @@
 <?php
 /**
- * Integracja z checkoutem blokowym: skrypt bloku "wc-stn/ship-date" i jego dane (wcSettings "wc-stn-ship-date_data").
+ * Block checkout integration: script of the "wc-stn/ship-date" block and its data (wcSettings "wc-stn-ship-date_data").
  *
- * Ładowane dopiero w woocommerce_blocks_checkout_block_registration, bo interfejs istnieje tylko z WooCommerce Blocks.
+ * Loaded in woocommerce_blocks_checkout_block_registration because the interface exists only with WooCommerce Blocks.
  */
 
 use Automattic\WooCommerce\Blocks\Integrations\IntegrationInterface;
@@ -28,7 +28,7 @@ final class WC_STN_Blocks_Integration implements IntegrationInterface
 
     public function initialize()
     {
-        // Kafelki mają wygląd z checkout.css (te same klasy co w klasycznym checkoucie)
+        // Tiles use the same classes as the classic checkout
         wp_enqueue_style('wc-stn-checkout');
     }
 

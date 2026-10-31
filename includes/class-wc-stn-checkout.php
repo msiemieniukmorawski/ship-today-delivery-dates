@@ -1,13 +1,12 @@
 <?php
 /**
- * Moduł "Wybór terminu w checkoucie".
+ * "Ship date choice at checkout" module.
  *
- * Kafelki z najbliższymi terminami z silnika, walidacja w chwili złożenia zamówienia,
- * zapis w zamówieniu (HPOS), wyświetlanie w podsumowaniu, mailach, panelu zamówienia i na liście zamówień.
+ * Tiles with the next slots, validation when the order is placed, storage in the order (HPOS), and display in the order review,
+ * emails, order admin and the orders list.
  *
- * Hooki rejestruje tylko, gdy moduł jest włączony w ustawieniach. Wyjątek: wyświetlanie dat z istniejących zamówień
- * (maile, panel tylko do odczytu, lista) przy przełączniku checkout_dates_when_disabled. Każdą część wyświetlania
- * można wyłączyć osobnym przełącznikiem (WC_Ship_Today_Notice::TOGGLES).
+ * Hooks are registered only with the module on. Exception: showing dates of existing orders (emails, read-only admin, list)
+ * with the checkout_dates_when_disabled toggle. Each part of the display has its own toggle, see WC_Ship_Today_Notice::TOGGLES.
  */
 
 if (!defined('ABSPATH')) {
@@ -27,7 +26,7 @@ final class WC_STN_Checkout
     /** @var WC_Ship_Today_Notice */
     private $plugin;
 
-    /** @var bool Pole zmiany daty w panelu zamówienia (moduł włączony + przełącznik). */
+    /** @var bool Date change field in the order admin (module on and toggle on). */
     private $admin_edit = false;
 
     public function __construct(WC_Ship_Today_Notice $plugin)
@@ -46,7 +45,6 @@ final class WC_STN_Checkout
             return;
         }
 
-        // Checkout
         if ('after_order_notes' === $o['checkout_position']) {
             add_action('woocommerce_after_order_notes', [$this, 'print_field']);
         } elseif ('before_order_review' === $o['checkout_position']) {
@@ -58,10 +56,9 @@ final class WC_STN_Checkout
         }
         add_action('woocommerce_after_checkout_validation', [$this, 'validate'], 10, 2);
         add_action('woocommerce_checkout_create_order', [$this, 'save_to_order'], 10, 2);
-        // Harmonogramy metod: po zmianie metody update_checkout odsyła terminy dla nowej metody (JS przelicza kafelki)
+        // update_checkout sends the slots of the newly selected method, JS rebuilds the tiles
         add_filter('woocommerce_update_order_review_fragments', [$this, 'checkout_fragments']);
 
-        // Panel zamówienia: zmiana daty
         if (!empty($o['checkout_admin_edit'])) {
             $this->admin_edit = true;
             add_action('woocommerce_process_shop_order_meta', [$this, 'admin_order_save'], 20, 2);
@@ -69,23 +66,21 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Wyświetlanie dat zapisanych w zamówieniach: thank you, maile, Moje konto, panel zamówienia, lista zamówień.
+     * Display of dates stored in orders: thank-you page, emails, My Account, order admin, orders list.
      */
     private function register_display_hooks(array $o)
     {
-        // Po złożeniu zamówienia: thank you, maile, Moje konto
         if (!empty($o['checkout_order_rows'])) {
             add_filter('woocommerce_get_order_item_totals', [$this, 'order_item_totals'], 20, 2);
         }
 
-        // Panel zamówienia
         add_action('woocommerce_admin_order_data_after_shipping_address', [$this, 'admin_order_box']);
 
         if (empty($o['checkout_list_column'])) {
             return;
         }
 
-        // Lista zamówień: HPOS i stara tabela postów
+        // Orders list: HPOS and the legacy posts table
         add_filter('manage_woocommerce_page_wc-orders_columns', [$this, 'list_columns'], 20);
         add_action('manage_woocommerce_page_wc-orders_custom_column', [$this, 'list_column_content'], 20, 2);
         add_filter('manage_woocommerce_page_wc-orders_sortable_columns', [$this, 'list_sortable_columns']);
@@ -99,7 +94,7 @@ final class WC_STN_Checkout
     }
 
     /* ---------------------------------------------------------
-     * Checkout: pole
+     * Checkout field
      * --------------------------------------------------------- */
 
     public function shortcode()
@@ -117,7 +112,7 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Kafelki z najbliższymi terminami + dane dla JS (dokładanie kolejnych terminów, gdy godzina graniczna minie).
+     * Tiles with the next slots and data for JS, which adds the next slots when a cutoff passes.
      */
     private function render_field()
     {
@@ -127,11 +122,11 @@ final class WC_STN_Checkout
         $now      = $schedule->now();
         $all      = $schedule->slots(40, $now, WC_Ship_Today_Notice::FRONTEND_DAYS);
         $count    = max(1, (int) $o['checkout_count']);
-        // Tylko gdy któraś metoda ma własne godziny: element z danymi dla JS (odświeżany przy update_checkout).
-        // Bez harmonogramów metod HTML pola jest taki jak wcześniej.
+        // Data element for JS (refreshed by update_checkout), only when some method has its own hours.
+        // Without method schedules the field HTML stays the same.
         $per_method = (bool) $this->plugin->methods_with_schedule();
 
-        // Znacznik: walidacja wymaga daty tylko, gdy pole było w formularzu (shortcode bywa niewstawiony albo poza formularzem)
+        // Validation requires a date only if the field was in the form (the shortcode can be missing or outside the form)
         $marker = '<input type="hidden" name="' . esc_attr(self::RENDERED) . '" value="1" />';
 
         if (!$all && !$per_method) {
@@ -178,8 +173,8 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Terminy dla metody jako JSON w polu (#wc-stn-checkout-data). Fragment update_checkout podmienia ten element,
-     * checkout.js porównuje metodę i przelicza kafelki, zachowując zaznaczenie, jeśli termin istnieje dla nowej metody.
+     * Slots for a method as JSON in #wc-stn-checkout-data. The update_checkout fragment replaces this element,
+     * checkout.js compares the method and rebuilds the tiles, keeping the selection if the date exists for the new method.
      */
     private function data_element($method, array $tiles, $count)
     {
@@ -214,8 +209,8 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Metoda wysyłki wybrana w koszyku/checkoucie (pierwsza paczka): "method_id:instance_id" albo null.
-     * ID metody bierzemy ze stawki w paczce (ID stawki z wtyczek nie zawsze ma postać "metoda:instancja").
+     * Shipping method selected in the cart or checkout (first package): "method_id:instance_id" or null.
+     * Taken from the package rate, because rate IDs from plugins are not always "method:instance".
      */
     public function current_method()
     {
@@ -239,7 +234,7 @@ final class WC_STN_Checkout
         return WC_Ship_Today_Notice::valid_method_key($rate_id) ? $rate_id : null;
     }
 
-    /** Metoda wysyłki zamówienia (pierwsza pozycja wysyłki) albo null. */
+    /** Shipping method of an order (first shipping item) or null. */
     private function order_method(WC_Order $order)
     {
         foreach ($order->get_shipping_methods() as $item) {
@@ -250,8 +245,8 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Domyślne teksty kafelka jako szablony z tokenami (z tłumaczeń), wg "Duży napis na kafelku" i tego, czy termin ma dostawę.
-     * Te same szablony pokazuje panel (podpowiedź / wartość drugiej linii), więc wyrenderowane dają dokładnie dotychczasowy kafelek.
+     * Default tile texts as token templates (from translations), by "large text" setting and whether the slot has a delivery date.
+     * The panel shows the same templates, so rendered they match the default tile exactly.
      */
     public static function default_tile_texts($primary, $has_delivery)
     {
@@ -279,15 +274,15 @@ final class WC_STN_Checkout
             return WC_STN_Schedule::day_label((int) $d->format('N'), 'name') . ' ' . $d->format('d.m');
         };
 
-        // Teksty kafelka: własne z ustawień (tokeny jak w widgecie + {ship_short}/{delivery_short}) albo domyślne.
-        // "Dziś/jutro" w {*_when} liczy PHP przy renderze (strona checkoutu nie jest cache'owana).
+        // Custom tile texts (tokens as in the widget plus {ship_short}, {delivery_short}) or defaults.
+        // "today/tomorrow" in {*_when} is computed by PHP at render time: the checkout page is not cached.
         $labels   = $schedule->slot_labels($slot) + [
             'ship_short'     => $this->date_short($ship),
             'delivery_short' => $delivery ? $this->date_short($delivery) : '',
         ];
         $defaults = self::default_tile_texts($o['checkout_primary'], (bool) $delivery);
         $main_tpl = '' !== (string) $o['checkout_tile_main'] ? $this->plugin->t('checkout_tile_main', $o['checkout_tile_main']) : $defaults['main'];
-        // Druga linia: null = domyślna, '' = ukryta
+        // Second line: null = default, '' = hidden
         $sub_tpl  = null === $o['checkout_tile_sub'] ? $defaults['sub'] : (string) $o['checkout_tile_sub'];
         if ('' !== $sub_tpl && null !== $o['checkout_tile_sub']) {
             $sub_tpl = $this->plugin->t('checkout_tile_sub', $sub_tpl);
@@ -311,7 +306,7 @@ final class WC_STN_Checkout
             'main'   => $main,
             'sub'    => $sub,
             'aria'   => $aria,
-            // Termin w komunikatach ({slot}, {next_slot}): domyślny duży napis, niezależnie od własnych tekstów kafelka
+            // Slot in messages ({slot}, {next_slot}): the default large text, regardless of custom tile texts
             'label'  => $schedule->render_text($defaults['main'], $labels),
         ];
     }
@@ -332,7 +327,7 @@ final class WC_STN_Checkout
 
     public function enqueue_assets()
     {
-        // Checkout blokowy ma własne pole (WC_STN_Checkout_Blocks), kafelki nie są tam potrzebne.
+        // The block checkout has its own field
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || has_block('woocommerce/checkout')) {
             return;
         }
@@ -342,11 +337,11 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Data z formularza: przy składaniu zamówienia z $_POST, przy odświeżaniu podsumowania z post_data.
+     * Date from the form: $_POST when placing the order, post_data when refreshing the review.
      */
     private function posted_ship_date()
     {
-        // phpcs:disable WordPress.Security.NonceVerification -- WooCommerce weryfikuje nonce checkoutu.
+        // phpcs:disable WordPress.Security.NonceVerification -- WooCommerce verifies the checkout nonce.
         $value = '';
 
         if (isset($_POST[self::FIELD])) {
@@ -363,11 +358,11 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Termin (z silnika) dla daty wysyłki, o ile jego godzina graniczna jeszcze nie minęła.
+     * Slot for a ship date, as long as its cutoff has not passed.
      */
     public function find_slot($ship_ymd, ?DateTimeImmutable $now = null, $method = null)
     {
-        // Domyślnie metoda wybrana w checkoucie (walidacja, zapis, wiersz w podsumowaniu)
+        // By default the method selected at checkout (validation, saving, review row)
         $method = null === $method ? $this->current_method() : $method;
 
         foreach ($this->plugin->schedule($method)->slots(40, $now) as $slot) {
@@ -380,7 +375,7 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Wiersz w tabeli podsumowania zamówienia (odświeżany razem z nią przez update_checkout).
+     * Row in the order review table, refreshed with it by update_checkout.
      */
     public function review_row()
     {
@@ -408,7 +403,7 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Treść wiersza z terminem w podsumowaniu zamówienia: [wysyłka, dostawa albo '']. Wspólne dla klasycznego i blokowego checkoutu.
+     * Order summary row lines: [ship, delivery or '']. Shared by the classic and block checkout.
      */
     public function review_lines(array $slot)
     {
@@ -420,7 +415,7 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Czy wszystkie wybrane metody wysyłki to odbiór osobisty (wtedy data nie jest wymagana).
+     * Whether all selected shipping methods are local pickup (no date needed then).
      */
     public function only_local_pickup()
     {
@@ -436,7 +431,7 @@ final class WC_STN_Checkout
 
     public function validate($data, $errors)
     {
-        // phpcs:ignore WordPress.Security.NonceVerification -- WooCommerce weryfikuje nonce checkoutu.
+        // phpcs:ignore WordPress.Security.NonceVerification -- WooCommerce verifies the checkout nonce.
         if (empty($_POST[self::RENDERED]) || !WC()->cart || !WC()->cart->needs_shipping() || $this->only_local_pickup()) {
             return;
         }
@@ -454,18 +449,18 @@ final class WC_STN_Checkout
     }
 
     /**
-     * "Wybierz termin dostawy." - wspólne dla klasycznego i blokowego checkoutu.
+     * "Choose delivery date." message, shared by the classic and block checkout.
      */
     public function choose_message($html = false)
     {
         $o     = $this->plugin->get_options();
         $label = $o['checkout_label'];
-        // Po polsku nazwa pola małą literą ("Wybierz termin dostawy."); tłumaczenie "no" zostawia ją bez zmian (np. niemieckie rzeczowniki)
+        // Polish lowercases the field label. Translating this as "no" keeps it as entered (e.g. German nouns).
         $lower = 'yes' === _x('yes', 'Lowercase the field label inside "Choose %s."? Translate as "no" to keep it as entered.', 'wc-ship-today-notice')
             ? (function_exists('mb_strtolower') ? mb_strtolower($label) : strtolower($label))
             : $label;
 
-        // Własny komunikat z ustawień: {field} = nazwa pola (jak w domyślnym, pogrubiona w HTML)
+        // Custom message from settings: {field} = field label (bold in HTML, like the default)
         if ('' !== (string) $o['checkout_msg_choose']) {
             $text = $this->plugin->t('checkout_msg_choose', $o['checkout_msg_choose']);
             return $html
@@ -483,7 +478,7 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Domyślne komunikaty checkoutu z tokenami zamiast %s (podpowiedzi w panelu, wartość, gdy pole w ustawieniach jest puste).
+     * Default checkout messages with tokens instead of %s (panel placeholders, value for an empty setting).
      */
     public static function default_messages()
     {
@@ -500,7 +495,7 @@ final class WC_STN_Checkout
         ];
     }
 
-    /** Tekst z ustawień albo domyślny (z tokenami). */
+    /** Text from settings or the default, with tokens. */
     public function message($key)
     {
         $o = $this->plugin->get_options();
@@ -509,7 +504,7 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Komunikat w JS, gdy wybrany termin zamknie się na otwartej stronie: tokeny {slot} i {next_slot} wstawia JS (tile.label).
+     * JS message when the selected slot closes on an open page. JS fills {slot} and {next_slot} from tile.label.
      */
     public function switched_message()
     {
@@ -517,7 +512,7 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Komunikat dla daty wysyłki, której nie ma wśród aktualnych terminów (godzina graniczna minęła albo dzień bez wysyłki).
+     * Message for a ship date outside the current slots (cutoff passed or not a ship day).
      */
     public function unavailable_message($ymd)
     {
@@ -542,11 +537,11 @@ final class WC_STN_Checkout
     }
 
     /* ---------------------------------------------------------
-     * Po złożeniu zamówienia
+     * After the order is placed
      * --------------------------------------------------------- */
 
     /**
-     * Thank you page, maile (klient i admin), Moje konto.
+     * Thank-you page, emails (customer and admin), My Account.
      */
     public function order_item_totals($rows, $order)
     {
@@ -561,7 +556,7 @@ final class WC_STN_Checkout
 
         $o        = $this->plugin->get_options();
         $schedule = $this->plugin->schedule();
-        // Etykiety z ustawień, puste = domyślne (przetłumaczone)
+        // Labels from settings, empty = translated default
         $label    = function ($key, $default) use ($o) {
             return '' !== (string) $o[$key] ? $this->plugin->t($key, $o[$key]) : $default;
         };
@@ -600,7 +595,7 @@ final class WC_STN_Checkout
         $delivery = $order->get_meta(self::META_DELIVERY);
         $edit     = $this->admin_edit && ($order->is_editable() || current_user_can('edit_shop_orders'));
 
-        // Bez dat i bez pola zmiany (tylko odczyt) nie ma czego pokazać
+        // No dates and no change field (read-only): nothing to show
         if (!$ship && !$edit) {
             return;
         }
@@ -667,7 +662,7 @@ final class WC_STN_Checkout
             /* translators: order note. %1$s: removed ship date (Y-m-d), %2$s: user name */
             $order->add_order_note(sprintf(__('Ship date %1$s removed (%2$s).', 'wc-ship-today-notice'), $old, $user));
         } else {
-            // Dostawa wg metody wysyłki zamówienia (własna liczba dni dostawy metody)
+            // Delivery by the order's shipping method (a method can have its own delivery days)
             $schedule = $this->plugin->schedule($this->order_method($order));
             $delivery = $schedule->delivery_for($schedule->date($new));
             $order->update_meta_data(self::META_SHIP, $new);
@@ -681,7 +676,7 @@ final class WC_STN_Checkout
     }
 
     /* ---------------------------------------------------------
-     * Lista zamówień
+     * Orders list
      * --------------------------------------------------------- */
 
     public function list_columns($columns)
@@ -732,11 +727,11 @@ final class WC_STN_Checkout
     }
 
     /**
-     * HPOS: sortowanie po dacie wysyłki (nazwana klauzula meta_query) i filtr po dniu.
+     * HPOS: sorting by ship date (named meta_query clause) and filter by day.
      */
     public function list_query_args($args)
     {
-        // phpcs:disable WordPress.Security.NonceVerification -- parametry listy w panelu, tylko odczyt.
+        // phpcs:disable WordPress.Security.NonceVerification -- admin list params, read-only.
         $orderby = isset($_GET['orderby']) ? sanitize_key(wp_unslash($_GET['orderby'])) : '';
         $filter  = isset($_GET[self::FILTER_PARAM]) ? sanitize_text_field(wp_unslash($_GET[self::FILTER_PARAM])) : '';
         // phpcs:enable
@@ -795,7 +790,7 @@ final class WC_STN_Checkout
     }
 
     /**
-     * Stara tabela postów (sklepy bez HPOS).
+     * Legacy posts table (shops without HPOS).
      */
     public function legacy_list_request($vars)
     {
@@ -817,7 +812,7 @@ final class WC_STN_Checkout
     }
 
     /* ---------------------------------------------------------
-     * Formatowanie dat
+     * Date formatting
      * --------------------------------------------------------- */
 
     private function date_short(DateTimeImmutable $d)
@@ -830,7 +825,7 @@ final class WC_STN_Checkout
         return WC_STN_Schedule::day_label((int) $d->format('N'), 'name') . ', ' . $d->format('d.m.Y');
     }
 
-    /** "dostawa wt 10.11" (kafelek, podsumowanie zamówienia, lista zamówień). */
+    /** Delivery line: tile, order review, orders list. */
     private function delivery_short(DateTimeImmutable $d)
     {
         /* translators: checkout tile, order review and orders list. %s: short weekday and date, e.g. "Tue 10.11" */

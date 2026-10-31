@@ -1,4 +1,4 @@
-# Pliki pomijane w paczce wtyczki (scripts/build-zip.sh, wp dist-archive)
+# Files left out of the plugin package (scripts/build-zip.sh, wp dist-archive)
 /.git
 /.gitignore
 /.gitattributes

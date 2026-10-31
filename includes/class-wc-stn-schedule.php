@@ -1,16 +1,15 @@
 <?php
 /**
- * Silnik terminów: najbliższe wysyłki, godziny graniczne, daty dostawy.
+ * Slot engine: next shipments, cutoffs and delivery dates.
  *
- * Czysta logika na DateTimeImmutable w strefie czasowej sklepu, bez HTML.
+ * Plain DateTimeImmutable logic in the shop timezone, no HTML.
  *
- * Model:
- * - dzień wysyłki = dzień tygodnia zaznaczony w ustawieniach, który nie jest świętem ani datą wykluczoną,
- * - godzina graniczna = godzina dla tego dnia tygodnia, przesunięta o N dni wstecz (0 = ten sam dzień),
- * - dostawa = N-ty kolejny dzień doręczeń po wysyłce (bez dni bez doręczeń i świąt), 0 = bez daty dostawy.
+ * - ship day: a selected weekday that is not a holiday or an excluded date,
+ * - cutoff: the time set for that weekday, moved N days back (0 = same day),
+ * - delivery: the Nth delivery day after shipping, skipping no-delivery days and holidays (0 = no date).
  *
- * Harmonogram metody wysyłki to te same opcje z nadpisanymi dniami wysyłki, godzinami granicznymi, przesunięciami
- * (i opcjonalnie liczbą dni dostawy) - WC_Ship_Today_Notice::schedule($method). Święta, daty wykluczone i dni bez doręczeń są wspólne.
+ * A method schedule is the same options with overridden days, cutoffs, offsets and optionally delivery days,
+ * see WC_Ship_Today_Notice::schedule($method). Holidays, excluded dates and no-delivery days are shared.
  */
 
 if (!defined('ABSPATH')) {
@@ -19,12 +18,11 @@ if (!defined('ABSPATH')) {
 
 final class WC_STN_Schedule
 {
-    /** Ile dni do przodu szukamy terminów. */
+    /** How many days ahead to look for slots. */
     const HORIZON_DAYS = 60;
 
     /**
-     * Polskie nazwy dni (ISO-8601: 1 = poniedziałek ... 7 = niedziela). Zostają dla zgodności wstecznej,
-     * wtyczka używa przetłumaczonych form z day_label().
+     * Polish day names (ISO-8601: 1 = Monday). Kept for backward compatibility, the plugin uses day_label().
      */
     const DAY_NOMINATIVE = [1 => 'poniedziałek', 2 => 'wtorek', 3 => 'środa', 4 => 'czwartek', 5 => 'piątek', 6 => 'sobota', 7 => 'niedziela'];
     const DAY_GENITIVE   = [1 => 'poniedziałku', 2 => 'wtorku', 3 => 'środy', 4 => 'czwartku', 5 => 'piątku', 6 => 'soboty', 7 => 'niedzieli'];
@@ -37,13 +35,13 @@ final class WC_STN_Schedule
     /** @var DateTimeZone */
     private $tz;
 
-    /** @var array<string,string>|null Święta: Y-m-d => nazwa. */
+    /** @var array<string,string>|null Holidays: Y-m-d => name. */
     private $holidays = null;
 
     /** @var array<string,bool>|null */
     private $excluded = null;
 
-    /** @var string|null ID instancji metody wysyłki ("flat_rate:3"), null = harmonogram globalny. Ostatni argument filtrów. */
+    /** @var string|null Shipping method instance ID ("flat_rate:3"), null = global. Last argument of the filters. */
     private $method;
 
     public function __construct(array $options, ?DateTimeZone $tz = null, ?string $method = null)
@@ -59,10 +57,10 @@ final class WC_STN_Schedule
     }
 
     /**
-     * Nazwa dnia w formie zależnej od miejsca w zdaniu (ISO-8601: 1 = poniedziałek).
-     * Każda forma to osobny tekst do tłumaczenia, bo polska odmiana (i przyimek "w"/"we") zależy od dnia.
+     * Weekday name in the form the sentence needs (ISO-8601: 1 = Monday).
+     * Each form is a separate string because Polish declension and the "w"/"we" preposition depend on the day.
      *
-     * @param string $form 'name' (poniedziałek), 'until' (do -> poniedziałku), 'on' (w poniedziałek), 'short' (pn).
+     * @param string $form 'name' (Monday), 'until' (after "until"), 'on' (on Monday), 'short' (Mon).
      */
     public static function day_label(int $weekday, string $form): string
     {
@@ -116,7 +114,7 @@ final class WC_STN_Schedule
     }
 
     /**
-     * Słowa do określeń względnych, wspólne dla render_text() i notice.js (frontend_config()).
+     * Relative day words, shared by render_text() and notice.js (through frontend_config()).
      */
     public static function words(): array
     {
@@ -136,7 +134,7 @@ final class WC_STN_Schedule
     }
 
     /**
-     * "Teraz" w strefie sklepu. Filtr pozwala podmienić czas (tryb testowy).
+     * "Now" in the shop timezone. The filter lets test mode replace it.
      */
     public function now(): DateTimeImmutable
     {
@@ -151,7 +149,7 @@ final class WC_STN_Schedule
     }
 
     /* ---------------------------------------------------------
-     * Dni wysyłki
+     * Ship days
      * --------------------------------------------------------- */
 
     public function is_shipping_weekday(DateTimeImmutable $day): bool
@@ -160,7 +158,7 @@ final class WC_STN_Schedule
     }
 
     /**
-     * Święto, którego nie zignorowano w ustawieniach, albo data wykluczona ręcznie.
+     * A holiday not ignored in settings, or a manually excluded date.
      */
     public function is_blocked(string $ymd): bool
     {
@@ -180,7 +178,7 @@ final class WC_STN_Schedule
     }
 
     /**
-     * Godzina graniczna dla danego dnia wysyłki.
+     * Cutoff for a ship day.
      */
     public function cutoff_for(DateTimeImmutable $ship_day): DateTimeImmutable
     {
@@ -216,12 +214,12 @@ final class WC_STN_Schedule
     }
 
     /* ---------------------------------------------------------
-     * Dostawa
+     * Delivery
      * --------------------------------------------------------- */
 
     /**
-     * Dzień doręczeń: nie jest w "dniach bez doręczeń" i nie jest świętem państwowym
-     * (ignorowanie święta dotyczy tylko wysyłki, kurier i tak w święto nie jeździ).
+     * Delivery day: not a no-delivery day and not a public holiday
+     * (ignoring a holiday only affects shipping, couriers still do not run).
      */
     public function is_delivery_day(DateTimeImmutable $day): bool
     {
@@ -251,11 +249,11 @@ final class WC_STN_Schedule
     }
 
     /* ---------------------------------------------------------
-     * Terminy
+     * Slots
      * --------------------------------------------------------- */
 
     /**
-     * Najbliższe terminy, których godzina graniczna jeszcze nie minęła.
+     * Next slots whose cutoff has not passed.
      *
      * @return array<int,array{cutoff:DateTimeImmutable,ship:DateTimeImmutable,delivery:?DateTimeImmutable}>
      */
@@ -289,7 +287,7 @@ final class WC_STN_Schedule
     }
 
     /**
-     * Daty wysyłki (Y-m-d) w zakresie dni, niezależnie od godziny granicznej.
+     * Ship dates (Y-m-d) in a day range, regardless of the cutoff.
      */
     public function shipping_dates(?DateTimeImmutable $from = null, int $days = self::HORIZON_DAYS): array
     {
@@ -307,7 +305,7 @@ final class WC_STN_Schedule
     }
 
     /**
-     * Etykiety terminu do tokenów w tekstach (bez określeń względnych, te liczy JS i render_text()).
+     * Slot labels for text tokens. Relative words are added by JS and render_text().
      */
     public function slot_labels(array $slot): array
     {
@@ -331,8 +329,8 @@ final class WC_STN_Schedule
     }
 
     /**
-     * Wstawia tokeny terminu do tekstu. {countdown} zostaje jako znacznik do podmiany przez JS.
-     * Opcjonalne $labels['ship_short'] / ['delivery_short'] dają tokeny {ship_short} / {delivery_short} (kafelki checkoutu).
+     * Replaces slot tokens in a text. {countdown} stays as a marker for JS.
+     * Optional \$labels['ship_short'] and ['delivery_short'] provide {ship_short} and {delivery_short} (checkout tiles).
      */
     public function render_text(string $text, array $labels, ?DateTimeImmutable $now = null): string
     {
@@ -365,7 +363,7 @@ final class WC_STN_Schedule
             '{delivery_day}'  => $labels['delivery_day'],
             '{delivery_date}' => $labels['delivery_date'],
         ];
-        // Krótkie formy z kafelka checkoutu ("pn 02.11"), tylko gdy wywołujący je poda (widget ich nie ma)
+        // Short forms from the checkout tiles, only when the caller passes them (the widget doesn't)
         foreach (['ship_short', 'delivery_short'] as $key) {
             if (isset($labels[$key])) {
                 $replace['{' . $key . '}'] = (string) $labels[$key];
@@ -376,7 +374,7 @@ final class WC_STN_Schedule
     }
 
     /* ---------------------------------------------------------
-     * Święta i daty wykluczone
+     * Holidays and excluded dates
      * --------------------------------------------------------- */
 
     public function is_holiday(string $ymd): bool
@@ -421,7 +419,7 @@ final class WC_STN_Schedule
         $this->holidays = [];
         $table          = $wpdb->prefix . WC_Ship_Today_Notice::TABLE_NAME;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- własna tabela świąt, brak API WP; wynik trzymany w $this->holidays na czas żądania.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own holiday table, no WP API, kept in $this->holidays for the request.
         $rows = $wpdb->get_results($wpdb->prepare('SELECT holiday_date, holiday_name FROM %i WHERE country_code = %s', $table, $this->options['country_code'] ?? 'PL'));
 
         foreach ((array) $rows as $row) {

@@ -1,9 +1,8 @@
 /**
  * Ship Today & Delivery Dates for WooCommerce - widget [ship_today_notice]
  *
- * Bez AJAX: harmonogram terminów przychodzi w atrybucie data-stn (absolutne znaczniki czasu),
- * więc widget działa poprawnie także na stronie trzymanej w cache przez wiele dni.
- * Logika stanów odpowiada WC_Ship_Today_Notice::initial_state() w PHP.
+ * No AJAX: slots come in the data-stn attribute as absolute timestamps, so the widget stays right on a page
+ * cached for days. The states mirror WC_Ship_Today_Notice::initial_state() in PHP.
  */
 (function () {
   'use strict';
@@ -16,7 +15,7 @@
     return Date.now() + (cfg.nowOffset || 0);
   }
 
-  /** Data Y-m-d w strefie czasowej sklepu. */
+  /** Y-m-d in the shop timezone. */
   function ymd(ms, cfg) {
     try {
       return new Intl.DateTimeFormat('en-CA', {
@@ -44,7 +43,7 @@
     var parts = [];
 
     if (d > 0) {
-      // "%d dzień" / "%d dni" - formy z _n() w PHP
+      // Forms from _n() in PHP
       parts.push((d === 1 ? c.day : c.days).replace('%d', d));
     }
     if (d > 0 || h > 0 || c.h) {
@@ -58,7 +57,7 @@
     return parts.join(' ');
   }
 
-  /** sprintf z %1$s, %2$s (formaty z WC_STN_Schedule::words()). */
+  /** sprintf with %1$s, %2$s (formats from WC_STN_Schedule::words()). */
   function format(fmt, a, b) {
     return fmt.replace('%1$s', a).replace('%2$s', b);
   }
@@ -92,7 +91,6 @@
     });
   }
 
-  /** Stan widgetu w danej chwili. */
   function compute(cfg) {
     var now = nowMs(cfg);
     var nowS = Math.floor(now / 1000);
@@ -136,7 +134,7 @@
       state: state,
       today: today,
       items: items,
-      // Moment kolejnej zmiany treści: najbliższa godzina graniczna albo próg widoczności.
+      // Next content change: the nearest cutoff or the visibility threshold.
       changeAt: vis.mode === 'hours_before' && hoursLeft > vis.hours ? first.cutoff - vis.hours * 3600 : first.cutoff
     };
   }
@@ -157,8 +155,8 @@
       return s;
     }
 
-    // Każdy termin w osobnym elemencie (także pojedynczy): kontener jest flexem z gap, więc luźny tekst
-    // i odliczanie byłyby osobnymi elementami z podwójnym odstępem między nimi.
+    // Wrapped even for a single slot: the container is a flex box with a gap, so loose text and the
+    // countdown would become separate items with a double space between them.
     el.innerHTML = s.items.map(function (item) {
       return '<div class="wc-ship-today-notice__item">' + item.html + '</div>';
     }).join('');
@@ -192,7 +190,7 @@
     tick(el, cfg, s);
 
     var timer = setInterval(function () {
-      // Widget podmieniony przez AJAX (koszyk, checkout): nowy element ma własny zegar, ten kończy pracę
+      // Replaced by AJAX (cart, checkout): the new element has its own timer
       if (!document.documentElement.contains(el)) {
         clearInterval(timer);
         return;
@@ -200,7 +198,7 @@
 
       var nowS = Math.floor(nowMs(cfg) / 1000);
 
-      // Przełączenie na kolejny termin po godzinie granicznej i odświeżenie "dziś/jutro" po północy.
+      // Next slot after the cutoff, and "today/tomorrow" after midnight.
       if ((s.changeAt && nowS >= s.changeAt) || ymd(nowMs(cfg), cfg) !== s.today) {
         s = render(el, cfg);
       }
@@ -218,10 +216,10 @@
     }
   }
 
-  // Dla treści doładowanych AJAX-em (np. popupy, PJAX motywu).
+  // For content loaded with AJAX (popups, theme PJAX).
   window.WcShipTodayNotice = { init: initAll };
 
-  // Klasyczny koszyk i checkout podmieniają fragmenty HTML AJAX-em (zdarzenia jQuery, addEventListener ich nie widzi)
+  // The classic cart and checkout replace HTML fragments. These are jQuery events, addEventListener doesn't see them.
   function bindAjax() {
     if (window.jQuery) {
       window.jQuery(document.body).on('updated_cart_totals updated_wc_div updated_checkout', function () {

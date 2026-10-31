@@ -1,6 +1,6 @@
 /**
- * Ship Today & Delivery Dates for WooCommerce - zakładka "Styl"
- * Podgląd na żywo: pola ustawiają zmienne CSS z notice.css na kontenerze podglądu (bez zapisu).
+ * Ship Today & Delivery Dates for WooCommerce: Style section
+ * Live preview: fields set the notice.css variables on the preview container, without saving.
  */
 (function ($) {
   'use strict';
@@ -23,7 +23,7 @@
       }
     }
 
-    // value: opcjonalnie wartość z color pickera (pole tekstowe bywa jeszcze nieaktualne)
+    // value: optional color picker value, the text field can still be out of date
     function apply(el, value) {
       var $el = $(el);
 
@@ -77,7 +77,7 @@
       });
       $form.find('input[type="number"], select').val('');
       applyAll();
-      // WooCommerce włącza przycisk zapisu dopiero po zdarzeniu change na polu formularza
+      // WooCommerce enables the save button only after a change event on a form field
       $form.find('input[type="number"]').first().trigger('change');
     });
 

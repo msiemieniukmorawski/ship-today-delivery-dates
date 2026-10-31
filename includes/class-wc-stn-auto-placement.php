@@ -1,13 +1,13 @@
 <?php
 /**
- * Automatyczne wyświetlanie widgetu bez shortcode: strona produktu, koszyk, checkout.
+ * Automatic widget display without a shortcode: product page, cart, checkout.
  *
- * Trzy niezależne wiersze w ustawieniach (klucz "auto_placement" w głównej opcji). Nowy sklep: strona produktu włączona (pod przyciskiem
- * "Dodaj do koszyka"), koszyk i checkout wyłączone. Sklep z ustawieniami sprzed tej funkcji: wszystko wyłączone (disabled()).
- * - motyw klasyczny / koszyk i checkout z shortcode: hook WooCommerce z listy i priorytet (puste = domyślny dla hooka),
- * - bloki (koszyk, checkout, formularz "dodaj do koszyka" w szablonie blokowym): przed albo za blokiem, przez filtr render_block_{nazwa},
- *   bo te strony nie wywołują hooków szablonów klasycznych. Strona ma albo jedno, albo drugie, więc rejestrujemy oba (produkt: patrz konstruktor).
- * Render zawsze przez WC_Ship_Today_Notice::shortcode_output(), niezależnie od modułu wyboru terminu.
+ * Three independent rows in settings (key "auto_placement" in the main option). New shops: product page on, below the add to cart
+ * button, cart and checkout off. Shops with settings from before this feature: all off, see disabled().
+ * - classic pages: a WooCommerce hook from the list and a priority (empty = default for the hook),
+ * - blocks (cart, checkout, add to cart form in a block template): above or below the block through render_block_{name},
+ *   because these pages do not run the classic template hooks. A page has one or the other, so both are registered.
+ * Always renders through WC_Ship_Today_Notice::shortcode_output(), independent of the ship date module.
  */
 
 if (!defined('ABSPATH')) {
@@ -16,30 +16,30 @@ if (!defined('ABSPATH')) {
 
 final class WC_STN_Auto_Placement
 {
-    /** Największy priorytet przyjmowany z formularza. */
+    /** Highest priority accepted from the form. */
     const MAX_PRIORITY = 999;
 
-    /** Bloki, przy których widget może stanąć (produkt: stary i nowy blok formularza). */
+    /** Blocks the widget can stand next to (product: old and new form block). */
     const BLOCKS = [
         'product'  => ['woocommerce/add-to-cart-form', 'woocommerce/add-to-cart-with-options'],
         'cart'     => ['woocommerce/cart'],
         'checkout' => ['woocommerce/checkout'],
     ];
 
-    /** Hooki z domyślnym priorytetem (wiersz => hook => priorytet); pierwszy = domyślny hook. Wartości wg wc-template-hooks.php. */
+    /** Hooks with default priorities (row => hook => priority). The first one is the default hook. Values follow wc-template-hooks.php. */
     const HOOKS = [
         'product'  => [
             'woocommerce_after_add_to_cart_form'  => 10,
             'woocommerce_before_add_to_cart_form' => 10,
-            'woocommerce_single_product_summary'  => 25, // cena 10, opis 20, przycisk 30
+            'woocommerce_single_product_summary'  => 25, // price 10, description 20, button 30
         ],
         'cart'     => [
-            'woocommerce_before_cart'         => 20, // komunikaty 10
+            'woocommerce_before_cart'         => 20, // notices 10
             'woocommerce_before_cart_totals'  => 10,
-            'woocommerce_proceed_to_checkout' => 5, // przycisk 20
+            'woocommerce_proceed_to_checkout' => 5, // button 20
         ],
         'checkout' => [
-            'woocommerce_before_checkout_form'         => 20, // komunikaty, logowanie, kupon 10
+            'woocommerce_before_checkout_form'         => 20, // notices, login, coupon 10
             'woocommerce_checkout_before_order_review' => 10,
             'woocommerce_review_order_before_submit'   => 10,
         ],
@@ -48,7 +48,7 @@ final class WC_STN_Auto_Placement
     /** @var WC_Ship_Today_Notice */
     private $plugin;
 
-    /** @var array<string,bool> Wiersze już wyrenderowane w tym żądaniu (jeden widget na wiersz). */
+    /** @var array<string,bool> Rows already rendered in this request (one widget per row). */
     private $rendered = [];
 
     public function __construct(WC_Ship_Today_Notice $plugin)
@@ -61,12 +61,12 @@ final class WC_STN_Auto_Placement
             }
 
             $hook = function () use ($row) {
-                echo $this->render($row); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML z shortcode_output().
+                echo $this->render($row); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML from shortcode_output().
             };
 
             if ('product' === $row) {
-                // Blok formularza wywołuje hooki woocommerce_*_add_to_cart_form od środka, więc przy szablonie z tym blokiem
-                // zostaje samo miejsce przy bloku. Szablon jest znany dopiero przy żądaniu strony.
+                // The form block runs the woocommerce_*_add_to_cart_form hooks from inside, so with that block only the block position
+                // applies. The template is known only when the page is requested.
                 add_action('template_redirect', function () use ($set, $hook) {
                     if ('block' !== self::page_type('product')) {
                         add_action($set['hook'], $hook, self::priority('product', $set));
@@ -99,7 +99,7 @@ final class WC_STN_Auto_Placement
         return $rows;
     }
 
-    /** Domyślne miejsca, ale wyłączone: sklep sprzed tej funkcji nie dostaje widgetu bez swojej decyzji. */
+    /** Default positions, but off: a shop from before this feature doesn't get the widget without deciding to. */
     public static function disabled()
     {
         $rows = self::defaults();
@@ -110,7 +110,7 @@ final class WC_STN_Auto_Placement
         return $rows;
     }
 
-    /** Ustawienia wszystkich wierszy, uzupełnione domyślnymi (zapis z kodu albo starsza opcja). */
+    /** Settings of all rows, filled with defaults. */
     public static function settings(array $options)
     {
         $saved = (array) ($options['auto_placement'] ?? []);
@@ -123,7 +123,7 @@ final class WC_STN_Auto_Placement
         return $rows;
     }
 
-    /** Tylko hooki z listy, priorytet 0-MAX_PRIORITY albo pusty, blok "before"/"after". */
+    /** Listed hooks only, priority 0-MAX_PRIORITY or empty, block "before" or "after". */
     public static function sanitize(array $input)
     {
         $rows = [];
@@ -149,7 +149,7 @@ final class WC_STN_Auto_Placement
         return '' === $set['priority'] ? self::HOOKS[$row][$set['hook']] : (int) $set['priority'];
     }
 
-    /** Czy na bieżącej stronie frontu jest włączony wiersz (JS i CSS widgetu mają być już w <head>). */
+    /** Whether a row is on for the current page (the widget JS and CSS then go to <head>). */
     public static function active_on_page(array $options)
     {
         $rows = self::settings($options);
@@ -171,7 +171,7 @@ final class WC_STN_Auto_Placement
 
     private function around_block($html, $row, array $set)
     {
-        // Pusty koszyk: klasyczny koszyk też nie wywołuje swoich hooków. Formularz produktu tylko na stronie produktu (nie w siatkach).
+        // Classic empty cart doesn't run its hooks either. The form block counts only on the product page, not in grids.
         if ('cart' === $row && function_exists('WC') && WC()->cart && WC()->cart->is_empty()) {
             return $html;
         }
@@ -185,12 +185,12 @@ final class WC_STN_Auto_Placement
     }
 
     /**
-     * Rodzaj strony danego wiersza w tym sklepie, do podpowiedzi w panelu: 'block' albo 'classic'.
+     * Page type of a row in this shop, for the panel: 'block' or 'classic'.
      */
     public static function page_type($row)
     {
         if ('product' === $row) {
-            // Motyw blokowy z domyślnym szablonem (woocommerce/legacy-template) wywołuje zwykłe hooki, liczy się treść szablonu
+            // A block theme with the default template (woocommerce/legacy-template) runs the classic hooks, so check the template content
             $template = wp_is_block_theme() ? get_block_template(get_stylesheet() . '//single-product') : null;
             $content  = $template ? (string) $template->content : '';
 

@@ -34,7 +34,7 @@ final class WC_Ship_Today_Notice
 {
     const OPTION_KEY       = 'wc_ship_today_notice_options';
     const STYLE_KEY        = 'wc_ship_today_notice_style';
-    /** Harmonogramy metod wysyłki: ["flat_rate:3" => [enabled, delivery_days, cutoff_times, cutoff_offsets, delivery_offset]]. */
+    /** Method schedules: ["flat_rate:3" => [enabled, delivery_days, cutoff_times, cutoff_offsets, delivery_offset]]. */
     const METHOD_KEY       = 'wc_ship_today_notice_method_schedules';
     const VERSION_KEY      = 'wc_ship_today_notice_version';
     const CRON_HOOK        = 'wc_ship_today_notice_cron_sync_holidays';
@@ -43,10 +43,9 @@ final class WC_Ship_Today_Notice
     const WPML_DOMAIN      = 'wc-ship-today-notice';
 
     /**
-     * Przełączniki funkcji opcjonalnych (checkboxy). Domyślne wartości w get_options() = zachowanie sprzed przełączników.
-     * Zapisywane tylko z formularza (znacznik _toggles), zapis z kodu bez nich zostawia poprzednie wartości.
+     * Optional feature toggles. Saved only from the form (_toggles marker), so writes from code keep the previous values.
      */
-    /** Teksty checkoutu z ustawień (sanitize_text_field, WPML). Pusty = domyślny przetłumaczony. Druga linia kafelka osobno. */
+    /** Checkout texts from settings (sanitize_text_field, WPML). Empty = translated default. The second tile line is handled separately. */
     const CHECKOUT_TEXTS = [
         'checkout_tile_main',
         'checkout_row_ship_label',
@@ -59,8 +58,8 @@ final class WC_Ship_Today_Notice
     ];
 
     /**
-     * Klucze opcji z zakładki "Checkout" (oprócz CHECKOUT_TEXTS). Reszta opcji należy do zakładki "Ustawienia".
-     * Obie zakładki zapisują tę samą opcję, a każdy formularz ma tylko swoje pola - patrz limit_to_tab().
+     * Option keys of the Checkout section (besides CHECKOUT_TEXTS). All other keys belong to the main section.
+     * Both sections save the same option and each form has only its own fields, see limit_to_tab().
      */
     const CHECKOUT_TAB_KEYS = [
         'checkout_enabled',
@@ -78,10 +77,10 @@ final class WC_Ship_Today_Notice
         'checkout_dates_when_disabled',
     ];
 
-    /** Zakładka w WooCommerce → Ustawienia. */
+    /** Tab under WooCommerce > Settings. */
     const SETTINGS_TAB = 'ship_today_notice';
 
-    /** Strona Settings API zakładki "Checkout" (zakładka "Ustawienia": slug strony wtyczki). */
+    /** Settings API page of the Checkout section. */
     const CHECKOUT_PAGE = 'wc-ship-today-notice-checkout';
 
     const TOGGLES = [
@@ -96,7 +95,7 @@ final class WC_Ship_Today_Notice
         'wpml_strings',
     ];
 
-    /** Ile dni harmonogramu trafia do strony (musi pokryć czas trzymania strony w cache). */
+    /** Days of slots sent to the page. Must cover how long a page can stay in cache. */
     const FRONTEND_DAYS = 42;
 
     /** @var self|null */
@@ -105,10 +104,10 @@ final class WC_Ship_Today_Notice
     /** @var WC_STN_Schedule|null */
     private $schedule = null;
 
-    /** @var int Przesunięcie "teraz" w sekundach w trybie testowym (?stn_now=). */
+    /** @var int Test mode offset of "now" in seconds (?stn_now=). */
     private $now_offset = 0;
 
-    /** @var WC_STN_Checkout_Blocks|null Checkout blokowy (init 0), używany też w maybe_upgrade(). */
+    /** @var WC_STN_Checkout_Blocks|null */
     private $checkout_blocks = null;
 
     public static function instance()
@@ -124,15 +123,15 @@ final class WC_Ship_Today_Notice
         register_activation_hook(__FILE__, [$this, 'on_activate']);
         register_deactivation_hook(__FILE__, [$this, 'on_deactivate']);
 
-        // Tłumaczenia ładuje WordPress (WP 6.8+: Domain Path z nagłówka, pierwszeństwo ma wp-content/languages/plugins/)
+        // WordPress loads the translations itself, wp-content/languages/plugins/ takes precedence.
 
-        // Stary adres panelu: admin_menu, bo sprawdzenie dostępu do strony jest przed admin_init
+        // On admin_menu because the page access check runs before admin_init.
         add_action('admin_menu', [$this, 'redirect_old_page'], 1);
         add_action('admin_init', [$this, 'maybe_upgrade'], 5);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'admin_assets']);
 
-        // Panel jako zakładka WooCommerce → Ustawienia. Priorytet: po zakładkach WooCommerce, żeby wstawić przed "Zaawansowane"
+        // Late priority so the tab can go before WooCommerce's Advanced tab.
         add_filter('woocommerce_settings_tabs_array', [$this, 'add_settings_tab'], 60);
         add_action('woocommerce_sections_' . self::SETTINGS_TAB, [$this, 'output_sections']);
         add_action('woocommerce_settings_' . self::SETTINGS_TAB, [$this, 'render_settings_tab']);
@@ -152,13 +151,13 @@ final class WC_Ship_Today_Notice
 
         add_action('update_option_' . self::OPTION_KEY, [$this, 'on_options_updated'], 10, 2);
         add_action('add_option_' . self::OPTION_KEY, [$this, 'on_options_added'], 10, 2);
-        // Pierwszy zapis stylu to add_option, kolejne to update_option
+        // The first save goes through add_option, later ones through update_option.
         add_action('add_option_' . self::STYLE_KEY, [$this, 'on_style_updated']);
         add_action('update_option_' . self::STYLE_KEY, [$this, 'on_style_updated']);
         add_action('add_option_' . self::METHOD_KEY, [$this, 'on_method_schedules_updated']);
         add_action('update_option_' . self::METHOD_KEY, [$this, 'on_method_schedules_updated']);
 
-        // Na init, a nie przy wczytaniu pliku: get_options() woła __(), a tłumaczenia nie mogą się ładować przed init
+        // Not at file load: get_options() calls __() and translations must not load before init.
         add_action('init', [$this, 'init_checkout'], 0);
     }
 
@@ -166,7 +165,7 @@ final class WC_Ship_Today_Notice
     {
         new WC_STN_Auto_Placement($this);
 
-        // Tryb testowy na init 1: przed polem checkoutu blokowego (init 2), które liczy terminy od "teraz"
+        // Priority 1: test mode must be active before the block checkout computes slots on init 2.
         if (!empty($this->get_options()['test_mode'])) {
             add_action('init', [$this, 'maybe_enable_test_mode'], 1);
         }
@@ -175,8 +174,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Moduł zamówień używa tylko CRUD (get_meta / update_meta_data), więc działa z HPOS.
-     * Checkout blokowy obsługuje WC_STN_Checkout_Blocks.
+     * Orders are accessed through CRUD only, so the plugin works with HPOS.
      */
     public function declare_wc_compatibility()
     {
@@ -187,7 +185,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Przesunięcie "teraz" w sekundach w trybie testowym (0 poza nim).
+     * Test mode offset of "now" in seconds, 0 otherwise.
      */
     public function now_offset()
     {
@@ -195,8 +193,8 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Silnik terminów na aktualnych ustawieniach: globalny albo dla metody wysyłki ("flat_rate:3").
-     * Metoda bez własnego harmonogramu (albo usunięta w WooCommerce) dostaje globalny, ale jej ID trafia do filtrów.
+     * Schedule for the current settings: global or for a shipping method ("flat_rate:3").
+     * A method without its own schedule gets the global one, but its ID still reaches the filters.
      */
     public function schedule($method = null)
     {
@@ -216,7 +214,7 @@ final class WC_Ship_Today_Notice
         return $this->schedule[$method];
     }
 
-    /** ID instancji metody wysyłki: "method_id:instance_id" (np. "flat_rate:3"). */
+    /** Shipping method instance ID: "method_id:instance_id", e.g. "flat_rate:3". */
     public static function valid_method_key($key)
     {
         return is_string($key) && (bool) preg_match('/^[a-z0-9_\-]+:\d+$/i', $key);
@@ -230,8 +228,8 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Klucze opcji nadpisywane przez własny harmonogram metody. Pusta tablica = harmonogram globalny
-     * (brak wpisu, wpis wyłączony albo metody nie ma już w strefach WooCommerce).
+     * Option keys overridden by a method schedule. Empty = global schedule
+     * (no entry, disabled entry, or the method no longer exists in WooCommerce).
      */
     private function method_overrides($method)
     {
@@ -252,11 +250,11 @@ final class WC_Ship_Today_Notice
         return $overrides;
     }
 
-    /** @var array<string,string>|null Metody ze stref WooCommerce: klucz => "Strefa - Nazwa metody". */
+    /** @var array<string,string>|null WooCommerce zone methods: key => "Zone - Method title". */
     private $shipping_methods = null;
 
     /**
-     * Wszystkie instancje metod wysyłki ze stref WooCommerce (także "Pozostałe regiony"), z wtyczek też.
+     * All shipping method instances from WooCommerce zones, including "Rest of the world" and third-party methods.
      */
     public function shipping_methods()
     {
@@ -290,7 +288,7 @@ final class WC_Ship_Today_Notice
         return array_keys($this->shipping_methods());
     }
 
-    /** Metody z włączonym własnym harmonogramem (istniejące w WooCommerce). */
+    /** Methods with an enabled schedule that still exist in WooCommerce. */
     public function methods_with_schedule()
     {
         return array_values(array_filter($this->existing_method_keys(), function ($key) {
@@ -308,8 +306,8 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Automatyczne pobieranie świąt (zapytanie do OpenHolidays bez kliknięcia): co ok. 4 miesiące i od razu przy najbliższym
-     * WP-Cron. Przy wyłączonym przełączniku zdejmuje zaplanowane zdarzenia (zostaje przycisk "Fetch holidays now").
+     * Schedules the holiday download: every ~4 months and on the next WP-Cron run.
+     * With the toggle off, removes the scheduled events (the "Fetch holidays now" button stays).
      */
     private function schedule_holidays_sync()
     {
@@ -321,7 +319,7 @@ final class WC_Ship_Today_Notice
         if (!wp_next_scheduled(self::CRON_HOOK)) {
             wp_schedule_event(time() + HOUR_IN_SECONDS, 'every_four_months', self::CRON_HOOK);
         }
-        // Święta od razu (przy najbliższym wywołaniu WP-Cron), bez blokowania aktywacji zapytaniem do API
+        // On the next WP-Cron run, so activation doesn't wait for the API.
         wp_schedule_single_event(time(), self::CRON_HOOK);
     }
 
@@ -333,8 +331,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * 1.x → 2.0: wykluczenia świąt zapisane po ID wiersza zamieniamy na daty
-     * (ID zmieniały się przy każdym pobraniu świąt, więc wykluczenia przepadały).
+     * 1.x stored ignored holidays by row ID, and the IDs changed on every download. Converts them to dates.
      */
     public function maybe_upgrade()
     {
@@ -348,7 +345,7 @@ final class WC_Ship_Today_Notice
 
         $saved = get_option(self::OPTION_KEY, []);
 
-        // < 2.2.0: stare domyślne teksty "jutro" / "najbliższy dzień roboczy" były błędne np. w piątek po godzinie granicznej
+        // Old defaults said "tomorrow", which is wrong e.g. on Friday after the cutoff.
         if (is_array($saved) && version_compare($installed, '2.2.0', '<')) {
             $texts = $this->migrate_default_texts($saved);
             if ($texts !== $saved) {
@@ -361,14 +358,14 @@ final class WC_Ship_Today_Notice
             global $wpdb;
             $table = $wpdb->prefix . self::TABLE_NAME;
             $ids   = array_map('intval', (array) $saved['excluded_holidays']);
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- jednorazowa migracja 1.x, własna tabela.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off migration, own table.
             $dates = $wpdb->get_col($wpdb->prepare('SELECT holiday_date FROM %i WHERE id IN (' . implode(',', array_fill(0, count($ids), '%d')) . ')', array_merge([$table], $ids)));
             $saved['excluded_holiday_dates'] = array_values(array_unique((array) $dates));
             unset($saved['excluded_holidays']);
             update_option(self::OPTION_KEY, $saved);
         }
 
-        // 2.2.0 → nowsza: select w checkoucie blokowym zastąpił blok "Termin wysyłki" - wstawiamy go od razu (raz na stronę zamówienia)
+        // The block replaced the select field, so add it right away (once per checkout page).
         if ($this->checkout_blocks) {
             $this->checkout_blocks->insert_on_upgrade();
         }
@@ -377,8 +374,8 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Stare domyślne teksty (do 2.1.0, źródło en i tłumaczenia pl/de) → nowe domyślne z {ship_when} w tym samym języku.
-     * Podmieniamy tylko wartości dokładnie równe staremu tekstowi (po trim), teksty zmienione przez sklep zostają.
+     * Old default texts (English source and pl/de translations) => new defaults with {ship_when} in the same language.
+     * Only exact matches are replaced, texts edited by the shop stay.
      */
     public function migrate_default_texts(array $saved)
     {
@@ -432,11 +429,11 @@ final class WC_Ship_Today_Notice
     }
 
     /* ---------------------------------------------------------
-     * Tryb testowy i cache
+     * Test mode and cache
      * --------------------------------------------------------- */
 
     /**
-     * ?stn_now=2026-10-25T19:59 (tylko dla managera sklepu) podmienia "teraz" w PHP i w JS.
+     * ?stn_now=2026-10-25T19:59 (shop managers only) overrides "now" in PHP and JS.
      */
     public function maybe_enable_test_mode()
     {
@@ -453,8 +450,7 @@ final class WC_Ship_Today_Notice
         $this->now_offset = $fake->getTimestamp() - time();
         $offset           = $this->now_offset;
 
-        // Ze znacznika czasu, nie przez modify('+N seconds'): modify liczy po czasie zegarowym
-        // i przy zmianie czasu (np. 25.10) myli się o godzinę.
+        // From a timestamp: modify('+N seconds') uses wall clock time and is an hour off across a DST change.
         add_filter('wc_ship_today_notice_now', function () use ($offset) {
             return (new DateTimeImmutable('@' . (time() + $offset)))->setTimezone(wp_timezone());
         });
@@ -463,19 +459,18 @@ final class WC_Ship_Today_Notice
     public function on_options_updated($old, $new)
     {
         $this->schedule = null;
-        // Przełączniki z domyślnymi wartościami: zapis z kodu (np. migracja) może mieć opcję bez ich kluczy
+        // Merged with defaults: a write from code may not contain the toggle keys.
         $new_toggles = $this->get_options();
 
         if (!empty($new_toggles['wpml_strings'])) {
             $this->wpml_register_strings($old, $new);
         }
 
-        // Przełącznik automatycznego pobierania świąt zmieniony: planujemy albo zdejmujemy cron
         if (!empty($old['holidays_auto_fetch'] ?? true) !== !empty($new_toggles['holidays_auto_fetch'])) {
             $this->schedule_holidays_sync();
         }
 
-        // Inny kraj, język albo region = inne święta: pobieramy od razu, żeby lista w panelu i terminy były aktualne
+        // Another country, language or region means other holidays, so fetch them now.
         foreach (['country_code', 'language_code', 'holiday_subdivision'] as $key) {
             if (!empty($new_toggles['holidays_auto_fetch']) && ($old[$key] ?? null) !== ($new[$key] ?? null)) {
                 if (!$this->fetch_and_store_holidays()) {
@@ -489,7 +484,7 @@ final class WC_Ship_Today_Notice
         $this->reschedule_cache_purge();
     }
 
-    /** Pierwszy zapis ustawień to add_option, a nie update_option. */
+    /** The first save is add_option, not update_option. */
     public function on_options_added($option, $value)
     {
         $this->on_options_updated([], $value);
@@ -508,8 +503,8 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Strony z cache mają tekst startowy policzony przy renderze. JS i tak przelicza termin,
-     * ale czyścimy cache o godzinie granicznej, żeby tekst startowy też był aktualny.
+     * Cached pages hold the initial text from render time. JS recalculates the slot, but purging at the cutoff
+     * keeps the initial text right too.
      */
     private function purge_cache()
     {
@@ -523,7 +518,7 @@ final class WC_Ship_Today_Notice
         $this->reschedule_cache_purge();
     }
 
-    /** Czy jest co czyścić o godzinie granicznej: LiteSpeed Cache albo podpięta akcja (te same, które woła purge_cache()). */
+    /** Whether anything needs purging at the cutoff: LiteSpeed Cache or a hooked action (same as purge_cache()). */
     private function cache_purge_enabled()
     {
         return !empty($this->get_options()['cache_purge_at_cutoff']) && (defined('LSCWP_V') || has_action('wc_ship_today_notice_purge_cache'));
@@ -534,7 +529,7 @@ final class WC_Ship_Today_Notice
         $scheduled = wp_next_scheduled(self::CRON_PURGE_HOOK);
 
         if (!$this->cache_purge_enabled()) {
-            // Np. po wyłączeniu LiteSpeed: zdejmujemy zaplanowane czyszczenie, żeby się dalej nie przeplanowywało
+            // E.g. after LiteSpeed was turned off: stop rescheduling the purge.
             if ($scheduled) {
                 wp_clear_scheduled_hook(self::CRON_PURGE_HOOK);
             }
@@ -553,7 +548,7 @@ final class WC_Ship_Today_Notice
             return;
         }
 
-        // Najbliższa godzina graniczna z harmonogramu globalnego i harmonogramów metod
+        // Nearest cutoff across the global and method schedules.
         $next = null;
         foreach (array_merge([null], $this->methods_with_schedule()) as $method) {
             $slots = $this->schedule($method)->slots(1);
@@ -569,7 +564,7 @@ final class WC_Ship_Today_Notice
     /* ---------------------------------------------------------
      * Admin Menu / Settings
      * --------------------------------------------------------- */
-    /** Adres zakładki (albo sekcji: 'methods', 'checkout', 'style') w WooCommerce → Ustawienia. */
+    /** URL of the tab or a section ('methods', 'checkout', 'style'). */
     public static function settings_url($section = '')
     {
         return add_query_arg(
@@ -578,10 +573,10 @@ final class WC_Ship_Today_Notice
         );
     }
 
-    /** Stare adresy (admin.php?page=wc-ship-today-notice, też &tab=checkout / style) prowadzą do nowego miejsca. */
+    /** Old admin.php?page=wc-ship-today-notice URLs (also &tab=checkout, style) redirect here. */
     public function redirect_old_page()
     {
-        // phpcs:disable WordPress.Security.NonceVerification -- tylko przekierowanie.
+        // phpcs:disable WordPress.Security.NonceVerification -- redirect only.
         if (!isset($_GET['page']) || 'wc-ship-today-notice' !== sanitize_key(wp_unslash($_GET['page']))) {
             return;
         }
@@ -599,7 +594,7 @@ final class WC_Ship_Today_Notice
         return $links;
     }
 
-    /** Zakładka tuż przed "Zaawansowane" (bez niej na końcu). */
+    /** Goes before Advanced, or last if there is no such tab. */
     public function add_settings_tab($tabs)
     {
         $label  = __('Ship Today & Delivery Dates', 'wc-ship-today-notice');
@@ -639,7 +634,7 @@ final class WC_Ship_Today_Notice
         echo '</ul><br class="clear" />';
     }
 
-    /** Sekcja zakładki: '' (Ustawienia), 'methods', 'checkout', 'style'. */
+    /** Current section: '' (settings), 'methods', 'checkout', 'style'. */
     private function current_section()
     {
         $section = isset($_REQUEST['section']) ? sanitize_title(wp_unslash($_REQUEST['section'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification
@@ -648,13 +643,13 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Zapis sekcji (woocommerce_update_options_*: nonce i manage_woocommerce sprawdził WooCommerce). WooCommerce zapisuje na wp_loaded,
-     * przed admin_init, więc sanityzacja jest wołana tutaj, a nie przez register_setting. Styl i metody to osobne opcje.
+     * Saves a section. WooCommerce already checked the nonce and manage_woocommerce. It saves on wp_loaded, before admin_init,
+     * so sanitizing happens here and not through register_setting. Style and methods are separate options.
      */
     public function save_settings()
     {
         $section = $this->current_section();
-        // phpcs:disable WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput -- jw., sanityzują metody sanitize_*.
+        // phpcs:disable WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput -- sanitized by sanitize_*().
         if ('style' === $section) {
             update_option(self::STYLE_KEY, $this->sanitize_style(wp_unslash($_POST[self::STYLE_KEY] ?? [])));
             return;
@@ -671,7 +666,7 @@ final class WC_Ship_Today_Notice
         // phpcs:enable
     }
 
-    /** Błąd na stronie ustawień WooCommerce (poza panelem, np. w cronie, klasy nie ma). Tekst escapuje WooCommerce. */
+    /** Error on the WooCommerce settings page. The class is missing outside the admin, e.g. in cron. WooCommerce escapes the text. */
     private function settings_error($message)
     {
         if (class_exists('WC_Admin_Settings')) {
@@ -679,7 +674,7 @@ final class WC_Ship_Today_Notice
         }
     }
 
-    /** Przycisk "Fetch holidays now" (link z nonce, bez zagnieżdżonego formularza w formularzu WooCommerce). */
+    /** A link with a nonce: a nested form is not possible inside the WooCommerce form. */
     public function handle_fetch_holidays()
     {
         if (!current_user_can('manage_woocommerce')) {
@@ -696,7 +691,7 @@ final class WC_Ship_Today_Notice
 
     public function holidays_fetch_message()
     {
-        $result = isset($_GET['wc_stn_holidays']) ? sanitize_key(wp_unslash($_GET['wc_stn_holidays'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- tylko komunikat.
+        $result = isset($_GET['wc_stn_holidays']) ? sanitize_key(wp_unslash($_GET['wc_stn_holidays'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- notice only.
 
         if ('ok' === $result) {
             WC_Admin_Settings::add_message(__('Holidays updated.', 'wc-ship-today-notice'));
@@ -707,7 +702,6 @@ final class WC_Ship_Today_Notice
 
     public function register_settings()
     {
-        // --- Sekcja: Shortcode Info ---
         add_settings_section(
             'wc_ship_today_shortcode',
             __('Shortcode', 'wc-ship-today-notice'),
@@ -715,7 +709,6 @@ final class WC_Ship_Today_Notice
             'wc-ship-today-notice'
         );
 
-        // --- Sekcja: Main settings ---
         add_settings_section(
             'wc_ship_today_main',
             __('Main settings', 'wc-ship-today-notice'),
@@ -729,7 +722,6 @@ final class WC_Ship_Today_Notice
         add_settings_field('excluded_dates', __('Excluded dates', 'wc-ship-today-notice'), [$this, 'field_excluded_dates'], 'wc-ship-today-notice', 'wc_ship_today_main');
         add_settings_field('preview', __('Upcoming dates', 'wc-ship-today-notice'), [$this, 'field_preview'], 'wc-ship-today-notice', 'wc_ship_today_main');
 
-        // --- Sekcja: automatyczne wyświetlanie widgetu ---
         add_settings_section(
             'wc_ship_today_auto',
             __('Automatic display', 'wc-ship-today-notice'),
@@ -738,7 +730,7 @@ final class WC_Ship_Today_Notice
         );
         add_settings_field('auto_placement', __('Show the widget without a shortcode', 'wc-ship-today-notice'), [$this, 'field_auto_placement'], 'wc-ship-today-notice', 'wc_ship_today_auto');
 
-        // --- Zakładka Checkout: pola modułu ukryte przy wyłączonym module (assets/js/checkout-settings.js) ---
+        // Module fields are hidden while the module is off (assets/js/checkout-settings.js).
         add_settings_section(
             'wc_ship_today_checkout',
             __('Ship date choice at checkout', 'wc-ship-today-notice'),
@@ -750,10 +742,9 @@ final class WC_Ship_Today_Notice
         add_settings_field('checkout_placement', __('Position', 'wc-ship-today-notice'), [$this, 'field_checkout_placement'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
         add_settings_field('checkout_tiles', __('Tiles', 'wc-ship-today-notice'), [$this, 'field_checkout_tiles'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
         add_settings_field('checkout_texts', __('Texts', 'wc-ship-today-notice'), [$this, 'field_checkout_texts'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
-        // Bez klasy: przełącznik "daty przy wyłączonym module" działa właśnie wtedy
+        // No class: this toggle matters exactly when the module is off.
         add_settings_field('checkout_display', __('Dates in orders', 'wc-ship-today-notice'), [$this, 'field_checkout_display'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout');
 
-        // --- Sekcja: Visibility ---
         add_settings_section(
             'wc_ship_today_visibility',
             __('Widget visibility', 'wc-ship-today-notice'),
@@ -763,7 +754,6 @@ final class WC_Ship_Today_Notice
 
         add_settings_field('visibility_mode', __('Display widget', 'wc-ship-today-notice'), [$this, 'field_visibility_mode'], 'wc-ship-today-notice', 'wc_ship_today_visibility');
 
-        // --- Sekcja: Countdown format ---
         add_settings_section(
             'wc_ship_today_countdown',
             __('Countdown format', 'wc-ship-today-notice'),
@@ -773,7 +763,6 @@ final class WC_Ship_Today_Notice
 
         add_settings_field('countdown_format', __('Time labels', 'wc-ship-today-notice'), [$this, 'field_countdown_format'], 'wc-ship-today-notice', 'wc_ship_today_countdown');
 
-        // --- Sekcja: Public holidays API ---
         add_settings_section(
             'wc_ship_today_holidays',
             __('Public holidays API', 'wc-ship-today-notice'),
@@ -787,7 +776,6 @@ final class WC_Ship_Today_Notice
         add_settings_field('holidays_auto_fetch', __('Automatic download', 'wc-ship-today-notice'), [$this, 'field_holidays_auto_fetch'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
         add_settings_field('holidays_list', __('Fetched holidays', 'wc-ship-today-notice'), [$this, 'field_holidays_list'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
 
-        // --- Sekcja: Frontend texts ---
         add_settings_section(
             'wc_ship_today_texts',
             __('Frontend texts', 'wc-ship-today-notice'),
@@ -799,7 +787,6 @@ final class WC_Ship_Today_Notice
         add_settings_field('text_after_cutoff', __('Text after cutoff', 'wc-ship-today-notice'), [$this, 'field_text_after_cutoff'], 'wc-ship-today-notice', 'wc_ship_today_texts');
         add_settings_field('text_not_shipping_day', __('Text when not a shipping day', 'wc-ship-today-notice'), [$this, 'field_text_not_shipping_day'], 'wc-ship-today-notice', 'wc_ship_today_texts');
 
-        // --- Sekcja: funkcje dodatkowe (przełączniki) ---
         add_settings_section(
             'wc_ship_today_advanced',
             __('Advanced', 'wc-ship-today-notice'),
@@ -813,18 +800,15 @@ final class WC_Ship_Today_Notice
     {
         $options = $this->get_options();
 
-        // Cutoff time - legacy fallback (bez pola w formularzu: zostaje poprzednia wartość)
+        // Legacy fallback without a form field: keep the previous value.
         if (preg_match('/^\d{2}:\d{2}$/', $input['cutoff_time'] ?? '')) {
             $options['cutoff_time'] = $input['cutoff_time'];
         }
 
-        // Mode
         $options['mode'] = in_array($input['mode'] ?? '', ['today', 'next_slot'], true) ? $input['mode'] : 'today';
 
-        // Delivery days
         $options['delivery_days'] = array_map('intval', $input['delivery_days'] ?? []);
 
-        // Cutoff times and offsets per day
         foreach ([1, 2, 3, 4, 5, 6, 7] as $day) {
             $time = $input['cutoff_times'][$day] ?? '';
             if (preg_match('/^\d{2}:\d{2}$/', $time)) {
@@ -833,14 +817,11 @@ final class WC_Ship_Today_Notice
             $options['cutoff_offsets'][$day] = max(0, min(6, (int) ($input['cutoff_offsets'][$day] ?? 0)));
         }
 
-        // Delivery
         $options['delivery_offset']  = max(0, min(14, (int) ($input['delivery_offset'] ?? 0)));
         $options['no_delivery_days'] = array_map('intval', $input['no_delivery_days'] ?? []);
 
-        // Excluded dates (now from textarea, one per line or comma-separated)
         $options['excluded_dates'] = sanitize_textarea_field($input['excluded_dates'] ?? '');
 
-        // Ignored holidays (dates Y-m-d)
         $options['excluded_holiday_dates'] = array_values(array_filter(
             array_map('sanitize_text_field', (array) ($input['excluded_holiday_dates'] ?? [])),
             function ($date) {
@@ -848,7 +829,7 @@ final class WC_Ship_Today_Notice
             }
         ));
 
-        // Country & language codes: dwie litery, błędna wartość = poprzednia + komunikat
+        // Two letters. An invalid value keeps the previous one and shows a notice.
         $codes = [
             'country_code'  => __('Country ISO code', 'wc-ship-today-notice'),
             'language_code' => __('Language ISO code', 'wc-ship-today-notice'),
@@ -871,7 +852,7 @@ final class WC_Ship_Today_Notice
             }
         }
 
-        // Region (ISO 3166-2, np. DE-BY): puste = tylko święta ogólnokrajowe
+        // ISO 3166-2, e.g. DE-BY. Empty = nationwide holidays only.
         if (isset($input['holiday_subdivision'])) {
             $value = strtoupper(trim(sanitize_text_field($input['holiday_subdivision'])));
             if ('' === $value || self::valid_subdivision($value, $options['country_code'])) {
@@ -887,30 +868,25 @@ final class WC_Ship_Today_Notice
             }
         }
 
-        // Frontend texts
         $options['text_next_slot'] = wp_kses_post($input['text_next_slot'] ?? '');
         $options['text_before_cutoff'] = wp_kses_post($input['text_before_cutoff'] ?? '');
         $options['text_after_cutoff'] = wp_kses_post($input['text_after_cutoff'] ?? '');
         $options['text_not_shipping_day'] = wp_kses_post($input['text_not_shipping_day'] ?? '');
 
-        // Activation checkboxes
         $options['show_after_cutoff'] = !empty($input['show_after_cutoff']);
         $options['show_not_shipping_day'] = !empty($input['show_not_shipping_day']);
 
-        // Visibility settings
         $allowed_modes = ['disabled', 'always', 'before_cutoff_only', 'hours_before'];
         $options['visibility_mode'] = in_array($input['visibility_mode'] ?? '', $allowed_modes, true)
             ? $input['visibility_mode']
             : 'always';
         $options['visibility_hours_before'] = max(0, (float) ($input['visibility_hours_before'] ?? 1));
 
-        // Countdown format settings
         $options['countdown_label_h'] = sanitize_text_field($input['countdown_label_h'] ?? 'h');
         $options['countdown_label_m'] = sanitize_text_field($input['countdown_label_m'] ?? 'min');
         $options['countdown_label_s'] = sanitize_text_field($input['countdown_label_s'] ?? 's');
         $options['countdown_show_seconds'] = !empty($input['countdown_show_seconds']);
 
-        // Checkout module
         $options['checkout_enabled']   = !empty($input['checkout_enabled']);
         $options['checkout_count']     = max(1, min(12, (int) ($input['checkout_count'] ?? 6)));
         $options['checkout_preselect'] = !empty($input['checkout_preselect']);
@@ -919,14 +895,14 @@ final class WC_Ship_Today_Notice
         $options['checkout_position']  = in_array($input['checkout_position'] ?? '', ['shortcode', 'after_order_notes', 'before_order_review'], true) ? $input['checkout_position'] : 'shortcode';
         $options['checkout_accent']    = (string) sanitize_hex_color($input['checkout_accent'] ?? '');
 
-        // Teksty kafelka, wierszy zamówienia i komunikatów: puste = domyślny przetłumaczony tekst; brak w wejściu (zapis z kodu) = bez zmian
+        // Empty = translated default. Missing from the input (write from code) = unchanged.
         foreach (self::CHECKOUT_TEXTS as $key) {
             if (isset($input[$key])) {
                 $options[$key] = trim(sanitize_text_field((string) $input[$key]));
             }
         }
-        // Druga linia kafelka: null = domyślna, '' = ukryta. Formularz pokazuje domyślną jako wartość pola, więc jej odesłanie
-        // (dla poprzedniego albo nowego "Duży napis" / dostawy) zapisujemy jako null - dalej idzie za tłumaczeniem i presetem.
+        // Second tile line: null = default, '' = hidden. The form shows the default as the field value, so sending it back
+        // (for the previous or new "large text" and delivery state) stores null and keeps following the translation.
         if (isset($input['checkout_tile_sub'])) {
             $prev = $this->get_options();
             $sub  = trim(sanitize_text_field((string) $input['checkout_tile_sub']));
@@ -937,12 +913,12 @@ final class WC_Ship_Today_Notice
             $options['checkout_tile_sub'] = in_array($sub, $defaults, true) ? null : $sub;
         }
 
-        // Automatyczne wyświetlanie: tylko z formularza (zapis z kodu bez tego klucza zostawia poprzednie wartości)
+        // Form only: a write from code without this key keeps the previous values.
         if (isset($input['auto_placement'])) {
             $options['auto_placement'] = WC_STN_Auto_Placement::sanitize((array) $input['auto_placement']);
         }
 
-        // Przełączniki: odznaczony checkbox nie przychodzi w POST, więc bez znacznika formularza (zapis z kodu) nic nie zmieniamy
+        // An unchecked box is missing from POST, so without the form marker nothing changes.
         if (!empty($input['_toggles'])) {
             foreach (self::TOGGLES as $key) {
                 $options[$key] = !empty($input[$key]);
@@ -955,9 +931,8 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Obie zakładki zapisują tę samą opcję, a nieobecny w POST checkbox czytamy jako false, więc zmieniamy tylko klucze
-     * z tego formularza (znacznik _tab), reszta zostaje z zapisanej opcji. Bez znacznika (zapis z kodu, drugie wywołanie
-     * sanityzacji przy add_option) zmieniają się tylko klucze obecne w wejściu.
+     * Both sections save one option and a checkbox missing from POST reads as false, so only the keys of the submitted form
+     * change (_tab marker). Without the marker (write from code, second sanitize pass on add_option) only keys in the input change.
      */
     private function limit_to_tab(array $options, array $input)
     {
@@ -971,7 +946,7 @@ final class WC_Ship_Today_Notice
             if ('checkout' === $tab || 'settings' === $tab) {
                 $keep = ('checkout' === $tab) !== $in_checkout;
             } else {
-                // Przełączniki z formularza sprzed podziału na zakładki: nieobecny = odznaczony
+                // A toggle missing from a form that has the _toggles marker is unchecked.
                 $keep = !array_key_exists($key, $input) && !(!empty($input['_toggles']) && in_array($key, self::TOGGLES, true));
             }
 
@@ -983,7 +958,7 @@ final class WC_Ship_Today_Notice
         return $options;
     }
 
-    /** Treść zakładki, wewnątrz formularza #mainform WooCommerce: bez własnych <form> i przycisków submit. */
+    /** Rendered inside WooCommerce's #mainform: no own <form> or submit buttons. */
     public function render_settings_tab()
     {
         echo '<div class="wc-stn-settings">';
@@ -1025,55 +1000,50 @@ final class WC_Ship_Today_Notice
     {
         $defaults = [
             'cutoff_time' => '14:00', // fallback global cutoff
-            // 'today' = odliczanie do dzisiejszej godziny granicznej (jak w 1.x), 'next_slot' = zawsze najbliższy termin
+            // 'today' = countdown to today's cutoff, 'next_slot' = always the nearest slot
             'mode' => 'today',
             // ISO-8601 numeric: 1=Mon ... 7=Sun
             'delivery_days' => [1, 2, 3, 4, 5],
-            // Cutoff times per day (HH:MM format)
             'cutoff_times' => [
-                1 => '14:00', // Monday
-                2 => '14:00', // Tuesday
-                3 => '14:00', // Wednesday
-                4 => '14:00', // Thursday
-                5 => '14:00', // Friday
-                6 => '12:00', // Saturday
-                7 => '12:00', // Sunday
+                1 => '14:00',
+                2 => '14:00',
+                3 => '14:00',
+                4 => '14:00',
+                5 => '14:00',
+                6 => '12:00',
+                7 => '12:00',
             ],
-            // Ile dni przed dniem wysyłki wypada godzina graniczna (0 = ten sam dzień)
+            // Days before the ship day the cutoff falls on (0 = same day)
             'cutoff_offsets' => [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0, 7 => 0],
-            // Dostawa: N dni doręczeń po wysyłce (0 = bez daty dostawy) i dni bez doręczeń
+            // N delivery days after shipping (0 = no delivery date) and days without delivery
             'delivery_offset' => 0,
             'no_delivery_days' => [7],
             'excluded_dates' => '',
-            'excluded_holiday_dates' => [], // święta ignorowane (wysyłka możliwa), daty Y-m-d
+            'excluded_holiday_dates' => [], // ignored holidays (shipping allowed), Y-m-d
             'country_code' => 'PL',
             'language_code' => 'PL',
-            'holiday_subdivision' => '', // region ISO 3166-2 (np. DE-BY), puste = tylko święta ogólnokrajowe
+            'holiday_subdivision' => '', // ISO 3166-2 (e.g. DE-BY), empty = nationwide only
             'text_next_slot' => __('Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}', 'wc-ship-today-notice'),
             'text_before_cutoff' => __('Order within {countdown} and we will ship today!', 'wc-ship-today-notice'),
-            // {ship_when}: "jutro" albo dzień tygodnia (w piątek po godzinie granicznej następna wysyłka to poniedziałek)
+            // {ship_when}: "tomorrow" or a weekday, e.g. Monday on Friday after the cutoff
             'text_after_cutoff' => __('We will ship {ship_when}.', 'wc-ship-today-notice'),
             'text_not_shipping_day' => __('We will ship {ship_when}.', 'wc-ship-today-notice'),
-            // Activation checkboxes
             'show_after_cutoff' => true,
             'show_not_shipping_day' => true,
-            // Visibility settings
             'visibility_mode' => 'always', // 'disabled', 'always', 'before_cutoff_only', 'hours_before'
             'visibility_hours_before' => 1, // hours before cutoff to show widget
-            // Countdown format settings
             'countdown_label_h' => 'h',
             'countdown_label_m' => 'min',
             'countdown_label_s' => 's',
             'countdown_show_seconds' => true,
-            // Wybór terminu w checkoucie (domyślnie wyłączony)
             'checkout_enabled' => false,
             'checkout_count' => 6,
             'checkout_preselect' => true,
             'checkout_label' => __('Delivery date', 'wc-ship-today-notice'),
-            'checkout_primary' => 'delivery', // co jest dużym napisem na kafelku: 'delivery' albo 'ship'
+            'checkout_primary' => 'delivery', // large text on the tile: 'delivery' or 'ship'
             'checkout_position' => 'shortcode', // 'shortcode', 'after_order_notes', 'before_order_review'
             'checkout_accent' => '',
-            // Teksty checkoutu (CHECKOUT_TEXTS): puste = domyślne przetłumaczone; druga linia kafelka: null = domyślna, '' = ukryta
+            // CHECKOUT_TEXTS: empty = translated default; second tile line: null = default, '' = hidden
             'checkout_tile_main' => '',
             'checkout_tile_sub' => null,
             'checkout_row_ship_label' => '',
@@ -1083,22 +1053,21 @@ final class WC_Ship_Today_Notice
             'checkout_msg_unavailable' => '',
             'checkout_msg_switched' => '',
             'checkout_msg_method' => '',
-            // Przełączniki funkcji opcjonalnych (TOGGLES); domyślnie jak przed ich dodaniem
-            'checkout_review_row' => true, // wiersz z terminem w podsumowaniu zamówienia (checkout)
-            'checkout_order_rows' => true, // wiersze z datami: podziękowanie, maile, Moje konto
-            'checkout_admin_edit' => true, // pole zmiany daty wysyłki w panelu zamówienia
-            'checkout_list_column' => true, // kolumna, sortowanie i filtr na liście zamówień
-            'checkout_dates_when_disabled' => false, // daty z zamówień widoczne także przy wyłączonym module
-            'holidays_auto_fetch' => true, // automatyczne pobieranie świąt (cron, aktywacja, zmiana kraju)
-            'cache_purge_at_cutoff' => true, // czyszczenie cache o godzinie granicznej (LiteSpeed / akcja)
-            'test_mode' => true, // ?stn_now= dla manage_woocommerce
-            'wpml_strings' => true, // rejestracja i tłumaczenie tekstów widgetu w WPML
-            'auto_placement' => WC_STN_Auto_Placement::defaults(), // widget bez shortcode: nowy sklep ma go na stronie produktu
+            'checkout_review_row' => true,
+            'checkout_order_rows' => true,
+            'checkout_admin_edit' => true,
+            'checkout_list_column' => true,
+            'checkout_dates_when_disabled' => false, // dates from orders also shown with the module off
+            'holidays_auto_fetch' => true,
+            'cache_purge_at_cutoff' => true,
+            'test_mode' => true,
+            'wpml_strings' => true,
+            'auto_placement' => WC_STN_Auto_Placement::defaults(), // new shops get the widget on the product page
         ];
 
         $saved = get_option(self::OPTION_KEY, []);
 
-        // Zapisane ustawienia bez tego klucza = sklep sprzed automatycznego wyświetlania: aktualizacja nie dokłada mu widgetu
+        // Saved settings without this key predate the feature: an update must not add the widget.
         if (is_array($saved) && $saved && !isset($saved['auto_placement'])) {
             $saved['auto_placement'] = WC_STN_Auto_Placement::disabled();
         }
@@ -1111,8 +1080,8 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
 
     /**
-     * Pola zakładki "Styl": klucz => [typ, zmienna CSS bez prefiksu, min, max].
-     * Stan "nie dzień wysyłki" ma na froncie klasę --after, więc dziedziczy kolory "po".
+     * Style tab fields: key => [type, CSS variable without prefix, min, max].
+     * The "not a shipping day" state uses the --after class, so it inherits the "after" colors.
      */
     private function style_fields()
     {
@@ -1133,7 +1102,7 @@ final class WC_Ship_Today_Notice
         ];
     }
 
-    /** Pusta wartość = domyślny wygląd z notice.css. */
+    /** Empty value = default look from notice.css. */
     public function get_style()
     {
         $saved = get_option(self::STYLE_KEY, []);
@@ -1165,8 +1134,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Zmienne CSS dla notice.css (na :root, więc własny CSS na elemencie dalej je nadpisuje).
-     * Czysty CSS w HTML strony, działa też ze stron w cache (cache czyszczony po zapisie).
+     * CSS variables for notice.css. On :root, so custom CSS on the element still wins.
      */
     private function style_css()
     {
@@ -1189,7 +1157,6 @@ final class WC_Ship_Today_Notice
 
     public function admin_assets($hook)
     {
-        // Tylko nasza zakładka, nie pozostałe zakładki WooCommerce
         if ('woocommerce_page_wc-settings' !== $hook || !isset($_GET['tab']) || self::SETTINGS_TAB !== sanitize_title(wp_unslash($_GET['tab']))) { // phpcs:ignore WordPress.Security.NonceVerification
             return;
         }
@@ -1264,7 +1231,7 @@ final class WC_Ship_Today_Notice
         $o    = $this->get_options();
         $name = self::STYLE_KEY;
 
-        // Przykładowe odliczanie w formacie z ustawień (jak formatCountdown w notice.js)
+        // Sample countdown in the configured format (see formatCountdown() in notice.js)
         $countdown = '01' . $o['countdown_label_h'] . ' 25' . $o['countdown_label_m'];
         if (!empty($o['countdown_show_seconds'])) {
             $countdown .= ' 08' . $o['countdown_label_s'];
@@ -1364,7 +1331,7 @@ final class WC_Ship_Today_Notice
                 <h2><?php esc_html_e('Preview', 'wc-ship-today-notice'); ?></h2>
                 <div id="wc-stn-style-preview" style="background:#fff;border:1px solid #c3c4c7;padding:16px;">
                     <p style="margin:0 0 6px;"><?php esc_html_e('Before cutoff', 'wc-ship-today-notice'); ?></p>
-                    <div class="wc-ship-today-notice wc-ship-today-notice--before"><div class="wc-ship-today-notice__item"><?php echo $before_html; // phpcs:ignore WordPress.Security.EscapeOutput -- esc_html__ + esc_html wyżej. ?></div></div>
+                    <div class="wc-ship-today-notice wc-ship-today-notice--before"><div class="wc-ship-today-notice__item"><?php echo $before_html; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above. ?></div></div>
                     <p style="margin:16px 0 6px;"><?php esc_html_e('After cutoff', 'wc-ship-today-notice'); ?></p>
                     <div class="wc-ship-today-notice wc-ship-today-notice--after"><div class="wc-ship-today-notice__item"><?php echo esc_html(str_replace('{ship_when}', WC_STN_Schedule::words()['tomorrow'], __('We will ship {ship_when}.', 'wc-ship-today-notice'))); ?></div></div>
                 </div>
@@ -1378,8 +1345,8 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
 
     /**
-     * Automatyczne wyświetlanie: tabela wierszy. Pokazujemy opcje działające dla strony tego sklepu (hook albo miejsce przy bloku),
-     * druga wartość zostaje w ukrytym polu, żeby nie przepadła przy zmianie rodzaju strony.
+     * Shows the options that work for this shop's page type (hook or block position). The other value stays in a hidden field,
+     * so it survives a change of page type.
      */
     public function field_auto_placement()
     {
@@ -1505,13 +1472,13 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Section callback: lista tokenów
+     * Section callback: tokens list
      */
     public function section_texts_info()
     {
         ?>
         <?php
-        // Przykłady z tych samych tłumaczeń co na froncie, więc pokazują odmianę w języku sklepu
+        // Examples use the frontend translations, so they show the shop language's forms
         $w      = WC_STN_Schedule::words();
         $sunday = WC_STN_Schedule::day_label(7, 'until');
         $on_mon = WC_STN_Schedule::day_label(1, 'on');
@@ -1522,7 +1489,7 @@ final class WC_Ship_Today_Notice
         ?>
         <p class="description">
             <?php echo esc_html__('Tokens:', 'wc-ship-today-notice'); ?> <code>{countdown}</code> <?php echo esc_html__('countdown', 'wc-ship-today-notice'); ?>,
-            <code>{cutoff_when}</code> <?php echo $q(sprintf($w['relative'], $w['today'], '20:00')) . ' / ' . $q(sprintf($w['relative'], $w['tomorrow'], '20:00')) . ' / ' . $q(sprintf($w['until'], $sunday, '20:00')); // phpcs:ignore WordPress.Security.EscapeOutput -- esc_html w $q. ?>,
+            <code>{cutoff_when}</code> <?php echo $q(sprintf($w['relative'], $w['today'], '20:00')) . ' / ' . $q(sprintf($w['relative'], $w['tomorrow'], '20:00')) . ' / ' . $q(sprintf($w['until'], $sunday, '20:00')); // phpcs:ignore WordPress.Security.EscapeOutput -- esc_html in $q. ?>,
             <code>{cutoff_day}</code> <?php echo $q($sunday); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{cutoff_time}</code> "20:00", <code>{cutoff_date}</code> "25.10",
             <code>{ship_when}</code> <?php echo $q($w['today']) . ' / ' . $q($w['tomorrow']) . ' / ' . $q($on_mon); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{ship_day}</code> <?php echo $q($on_mon); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{ship_date}</code>,
             <code>{delivery_when}</code> <?php echo $q($w['tomorrow']) . ' / ' . $q($on_tue); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{delivery_day}</code> <?php echo $q($on_tue); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{delivery_date}</code> (<?php echo esc_html__('requires the delivery setting', 'wc-ship-today-notice'); ?>).
@@ -1548,14 +1515,13 @@ final class WC_Ship_Today_Notice
         if (empty($o['checkout_enabled']) || !WC_STN_Checkout_Blocks::supported()) {
             return;
         }
-        // Checkout blokowy: blok "Termin wysyłki" wstawiany raz automatycznie, sklep może go przesunąć albo usunąć
         $status = WC_STN_Checkout_Blocks::block_status();
         if ('present' === $status) {
             echo '<p class="description">' . esc_html__('Block checkout: the "Ship date" block is on the checkout page. You can move it in the editor like other checkout blocks.', 'wc-ship-today-notice') . '</p>';
         } elseif ('missing' === $status) {
             echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date" block is not on the checkout page, so customers cannot choose a ship date (orders are placed without it). Add the block in the checkout page editor (inside the checkout form).', 'wc-ship-today-notice') . '</p>';
         }
-        // Wiersz w podsumowaniu: wstawiany raz automatycznie; gdy układ strony na to nie pozwolił albo sklep go usunął - informacja
+        // Inserted once: can be missing if the page layout didn't allow it or the shop removed it
         if ('missing' === WC_STN_Checkout_Blocks::block_status(WC_STN_Checkout_Blocks::ROW_BLOCK) && !empty($o['checkout_review_row'])) {
             echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date summary row" block is not in the order summary, so the selected date is not shown there. Add it in the checkout page editor (inside the order summary).', 'wc-ship-today-notice') . '</p>';
         }
@@ -1631,8 +1597,8 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Teksty kafelka, wierszy w zamówieniu i komunikatów checkoutu. Puste pole = domyślny tekst (podpowiedź w polu),
-     * wyjątek: druga linia kafelka - pusta = ukryta, domyślna jest wpisana w pole (przycisk przywraca ją).
+     * Tile, order row and checkout message texts. Empty field = default, shown as a placeholder.
+     * Exception: the second tile line. Empty = hidden, and the default is the field value (a button restores it).
      */
     public function field_checkout_texts()
     {
@@ -1682,7 +1648,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Checkbox przełącznika z opisem pod spodem. Znacznik _toggles mówi sanitize_options(), że formularz zawierał przełączniki.
+     * Toggle checkbox with a description. The _toggles marker tells sanitize_options() that the form had toggles.
      */
     private function toggle_checkbox($key, $label, $description)
     {
@@ -1701,7 +1667,7 @@ final class WC_Ship_Today_Notice
     {
         $o       = $this->get_options();
         $enabled = !empty($o['checkout_enabled']);
-        // Klasy dla checkout-settings.js. Przy wyłączonym module działają tylko wiersze i lista (przy włączonym "daty przy wyłączonym module")
+        // Classes for checkout-settings.js. With the module off only the rows and the list work (with the "dates when disabled" toggle on)
         $part    = function ($class, $visible, callable $toggle) {
             printf('<div class="%s%s">', esc_attr($class), $visible ? '' : ' hidden');
             $toggle();
@@ -1761,7 +1727,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Tabela dni wysyłki, godzin granicznych i przesunięć: globalna (name = OPTION_KEY) albo metody (name = METHOD_KEY[klucz]).
+     * Shipping days, cutoffs and offsets table: global (name = OPTION_KEY) or for a method (name = METHOD_KEY[key]).
      */
     private function render_days_table($name, array $o)
     {
@@ -1860,7 +1826,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Podgląd 5 najbliższych terminów na zapisanych ustawieniach.
+     * Preview of the next 5 slots from the saved settings.
      */
     public function field_preview()
     {
@@ -1876,7 +1842,7 @@ final class WC_Ship_Today_Notice
         }
     }
 
-    /** Tabela 5 najbliższych terminów. Zwraca, czy były terminy. */
+    /** Table of the next 5 slots. Returns whether there were any. */
     private function render_preview(WC_STN_Schedule $schedule)
     {
         $slots = $schedule->slots(5);
@@ -1909,7 +1875,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Harmonogramy metod wysyłki: lista stref i metod WooCommerce, dla każdej "własne godziny" + tabela jak globalna.
+     * Method schedules: WooCommerce zones and methods, each with "own hours" and a table like the global one.
      */
     public function field_method_schedules()
     {
@@ -1930,7 +1896,7 @@ final class WC_Ship_Today_Notice
             $entry   = $saved[$key] ?? [];
             $enabled = !empty($entry['enabled']);
             $name    = self::METHOD_KEY . '[' . $key . ']';
-            // Bez zapisanego wpisu tabela startuje od ustawień globalnych
+            // Without a saved entry the table starts from the global settings
             $values  = $entry ? $entry : $global;
 
             printf(
@@ -1963,16 +1929,16 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Wpisy dla metod z formularza. Bez znacznika _form (np. sekcja niewyrenderowana) zostaje zapisana wartość.
-     * Wpisy metod, których nie ma w formularzu (usunięte w WooCommerce), znikają przy zapisie.
+     * Method entries from the form. Without the _form marker the saved value stays.
+     * Entries of methods missing from the form (removed in WooCommerce) are dropped on save.
      */
     public function sanitize_method_schedules($input)
     {
         if (!is_array($input)) {
             return $this->get_method_schedules();
         }
-        // Formularz bez metod (np. WooCommerce wyłączony) niczego nie kasuje. Tablica bez znacznika _form to zapis z kodu albo
-        // drugie wywołanie sanityzacji przy pierwszym zapisie opcji (add_option) - normalizujemy ją tak samo.
+        // A form without methods (e.g. WooCommerce off) deletes nothing. An array without _form is a write from code or the
+        // second sanitize pass on add_option, normalized the same way.
         if (!empty($input['_form']) && !$this->shipping_methods()) {
             return $this->get_method_schedules();
         }
@@ -2049,7 +2015,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Field: lista świąt (bieżący i następny rok) z możliwością ignorowania po dacie.
+     * Field: holidays of the current and next year, each can be ignored by date.
      */
     public function field_holidays_list()
     {
@@ -2058,7 +2024,7 @@ final class WC_Ship_Today_Notice
         $table = $wpdb->prefix . self::TABLE_NAME;
 
         $year = (int) wp_date('Y');
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- własna tabela świąt, brak API WP; tylko panel.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own holiday table, no WP API, admin only.
         $holidays = $wpdb->get_results(
             $wpdb->prepare(
                 'SELECT DISTINCT holiday_date, holiday_name FROM %i WHERE country_code = %s AND YEAR(holiday_date) IN (%d, %d) ORDER BY holiday_date ASC',
@@ -2268,7 +2234,7 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
     public function cron_sync_holidays()
     {
-        // Zdarzenie zaplanowane przed wyłączeniem przełącznika: nic nie pobieramy, zdejmujemy resztę
+        // Event scheduled before the toggle was turned off: fetch nothing, clear the rest
         if (empty($this->get_options()['holidays_auto_fetch'])) {
             wp_clear_scheduled_hook(self::CRON_HOOK);
             return;
@@ -2278,7 +2244,7 @@ final class WC_Ship_Today_Notice
             return;
         }
 
-        // Błąd sieci / API: ponowna próba za 6 h, chyba że coś jest już zaplanowane wcześniej
+        // Network or API error: retry in 6 hours unless something is scheduled sooner
         $next = wp_next_scheduled(self::CRON_HOOK);
         if (!$next || $next > time() + 6 * HOUR_IN_SECONDS) {
             wp_schedule_single_event(time() + 6 * HOUR_IN_SECONDS, self::CRON_HOOK);
@@ -2286,7 +2252,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Pobiera święta na bieżący i następny rok (w grudniu potrzebne są już święta styczniowe).
+     * Fetches the current and next year (January holidays are already needed in December).
      */
     private function fetch_and_store_holidays()
     {
@@ -2335,7 +2301,7 @@ final class WC_Ship_Today_Notice
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
-        // Pusta albo błędna odpowiedź nie kasuje zapisanych świąt (każdy kraj ma choć jedno święto w roku)
+        // An empty or invalid response keeps the saved holidays (every country has a holiday in a year)
         if (!is_array($data) || !$data) {
             return false;
         }
@@ -2347,7 +2313,7 @@ final class WC_Ship_Today_Notice
         $table = $wpdb->prefix . self::TABLE_NAME;
 
         // Remove this year for this country before insert (exclusions are stored by date, so they survive)
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- własna tabela świąt, brak API WP; po zapisie cache nie ma czego unieważniać.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own holiday table, no WP API, nothing to invalidate after saving.
         $wpdb->query(
             $wpdb->prepare(
                 'DELETE FROM %i WHERE country_code = %s AND holiday_date BETWEEN %s AND %s',
@@ -2359,7 +2325,7 @@ final class WC_Ship_Today_Notice
         );
 
         foreach ($holidays as $date => $name) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- własna tabela świąt.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- own holiday table.
             $wpdb->insert($table, [
                 'country_code' => $country,
                 'holiday_date' => $date,
@@ -2371,7 +2337,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Kod regionu ISO 3166-2 danego kraju, np. DE-BY albo DE-BY-AU (kody OpenHolidays są hierarchiczne).
+     * ISO 3166-2 region code of a country, e.g. DE-BY or DE-BY-AU (OpenHolidays codes are hierarchical).
      */
     public static function valid_subdivision($code, $country)
     {
@@ -2379,10 +2345,10 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Odpowiedź OpenHolidays /PublicHolidays → [Y-m-d => nazwa].
-     * Święta regionalne (nationwide: false) tylko dla wybranego regionu albo jego regionu nadrzędnego
-     * (region DE-BY-AU dostaje święta DE-BY, region DE-BY nie dostaje świąt DE-BY-AU).
-     * Święta wielodniowe (startDate..endDate) rozwijane na kolejne dni, przycięte do zakresu roku.
+     * OpenHolidays /PublicHolidays response to [Y-m-d => name].
+     * Regional holidays (nationwide: false) only for the selected region or its parent
+     * (DE-BY-AU gets DE-BY holidays, DE-BY does not get DE-BY-AU ones).
+     * Multi-day holidays (startDate..endDate) expand to single days, clipped to the year.
      */
     public static function holidays_from_api(array $data, $lang, $subdivision, $from, $to)
     {
@@ -2428,7 +2394,7 @@ final class WC_Ship_Today_Notice
                 }
             }
 
-            // Kolejne dni jako tekst Y-m-d (bez stref czasowych); limit 31 dni na wypadek błędnych danych
+            // Dates as Y-m-d text (no timezones), 31 day limit in case of bad data
             $day = new DateTimeImmutable($start . ' 12:00:00', new DateTimeZone('UTC'));
             for ($i = 0; $i < 31; $i++) {
                 $ymd = $day->format('Y-m-d');
@@ -2456,8 +2422,8 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Skrypt i styl ładowane na każdej stronie (razem ok. 5 KB): shortcode bywa renderowany
-     * z cache Elementora albo w popupach, wtedy enqueue z wnętrza shortcode by nie zadziałał.
+     * Registers the widget assets and enqueues them in <head> where the widget is expected.
+     * shortcode_output() enqueues them late for any other place.
      */
     public function register_assets()
     {
@@ -2468,8 +2434,8 @@ final class WC_Ship_Today_Notice
         $this->register_widget_assets();
 
         /**
-         * Czy ładować JS i CSS widgetu na tej stronie już w <head> (domyślnie: shortcode w treści wpisów z głównego zapytania).
-         * true wymusza ładowanie, np. dla widgetu w treści doładowanej AJAX-em przed WcShipTodayNotice.init().
+         * Whether to load the widget JS and CSS in <head> on this page (default: shortcode in the main query posts or automatic display).
+         * True forces loading, e.g. for a widget in AJAX-loaded content before WcShipTodayNotice.init().
          */
         if (apply_filters('wc_ship_today_notice_load_assets', $this->page_has_shortcode() || WC_STN_Auto_Placement::active_on_page($this->get_options()))) {
             $this->enqueue_widget_assets();
@@ -2477,8 +2443,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Shortcode w treści albo krótkim opisie (np. produktu WooCommerce) wpisów z głównego zapytania (pojedynczy wpis, strona,
-     * lista wpisów). Blok "Shortcode" (core/shortcode) zapisuje w post_content zwykły tekst [ship_today_notice], więc też jest wykrywany.
+     * Shortcode in the content or excerpt of the main query posts. The Shortcode block stores plain text, so it is detected too.
      */
     private function page_has_shortcode()
     {
@@ -2493,7 +2458,7 @@ final class WC_Ship_Today_Notice
         return false;
     }
 
-    /** Rejestracja JS i CSS widgetu razem ze stylem z zakładki "Styl" (inline przy notice.css). */
+    /** Registers the widget JS and CSS, with the Style tab CSS inline. */
     private function register_widget_assets()
     {
         if (wp_style_is('wc-ship-today-notice', 'registered')) {
@@ -2545,7 +2510,7 @@ final class WC_Ship_Today_Notice
         $mode     = in_array($atts['mode'], ['today', 'next_slot'], true) ? $atts['mode'] : $o['mode'];
         $count    = max(1, min(10, (int) $atts['count']));
         $text     = wp_kses_post($atts['text']);
-        // method="flat_rate:3": harmonogram tej metody (bez wykrywania metody klienta - strona może być w cache)
+        // method="flat_rate:3": that method's schedule, no customer detection because the page may be cached
         $schedule = $this->schedule(trim((string) $atts['method']));
 
         $config = $this->frontend_config($o, $mode, $count, $text, $schedule);
@@ -2557,8 +2522,8 @@ final class WC_Ship_Today_Notice
         }
         $classes[] = $state['hide'] ? 'wc-ship-today-notice--hidden' : 'wc-ship-today-notice--' . $state['class'];
 
-        // Widget poza treścią wpisu (sidebar, szablon, page builder): skrypt idzie do stopki, a CSS wypisujemy przy widgecie,
-        // jeśli <head> już był, żeby nie było chwili bez stylu
+        // Widget outside post content (sidebar, template, page builder): the script goes to the footer and the CSS is printed
+        // next to the widget if <head> is already out, so there is no unstyled moment
         $this->enqueue_widget_assets();
         $css = '';
         if (did_action('wp_head') && !wp_style_is('wc-ship-today-notice', 'done')) {
@@ -2572,12 +2537,12 @@ final class WC_Ship_Today_Notice
             esc_attr(implode(' ', $classes)),
             esc_attr(wp_json_encode($config)),
             $state['hide'] ? ' style="display:none;"' : '',
-            $state['html'] // phpcs:ignore WordPress.Security.EscapeOutput -- teksty z wp_kses_post + etykiety dni.
+            $state['html'] // phpcs:ignore WordPress.Security.EscapeOutput -- texts from wp_kses_post and day labels.
         );
     }
 
     /**
-     * Dane dla JS: harmonogram na FRONTEND_DAYS dni (absolutne znaczniki czasu, więc działa ze strony z cache).
+     * Data for JS: slots for FRONTEND_DAYS days as absolute timestamps, so it works from a cached page.
      */
     private function frontend_config(array $o, $mode, $count, $text, WC_STN_Schedule $schedule)
     {
@@ -2631,7 +2596,7 @@ final class WC_Ship_Today_Notice
     }
 
     /**
-     * Ten sam stan co w notice.js, policzony na serwerze (pierwsze wyświetlenie i brak JS).
+     * Same state as notice.js, computed on the server (first paint and no JS).
      */
     private function initial_state(array $config, WC_STN_Schedule $schedule)
     {
@@ -2667,7 +2632,7 @@ final class WC_Ship_Today_Notice
             $template = $config['templates'][(0 === $i || 'next' === $state) ? $state : 'next'];
             $html     = $schedule->render_text($template, $slot, $now);
             $html     = str_replace('{countdown}', '<span class="wc-ship-today-countdown"></span>', $html);
-            // Także pojedynczy termin w elemencie: kontener jest flexem z gap (patrz render() w notice.js)
+            // A single slot too: the container is a flex box with a gap (see render() in notice.js)
             $items[]  = '<div class="wc-ship-today-notice__item">' . $html . '</div>';
         }
 
@@ -2680,8 +2645,8 @@ final class WC_Ship_Today_Notice
 
 
     /**
-     * "%d dzień" / "%d dni" w odliczaniu. JS dostaje formę dla 1 i dla 2 (notice.js wybiera po d === 1),
-     * więc języki z kilkoma formami liczby mnogiej mają tu uproszczenie.
+     * "%d day" / "%d days" in the countdown. JS gets the forms for 1 and 2 and picks by d === 1,
+     * so languages with more plural forms are simplified here.
      */
     private static function countdown_days($n)
     {
@@ -2703,7 +2668,7 @@ final class WC_Ship_Today_Notice
         icl_register_string(self::WPML_DOMAIN, 'text_after_cutoff', $new['text_after_cutoff'] ?? '');
         icl_register_string(self::WPML_DOMAIN, 'text_not_shipping_day', $new['text_not_shipping_day'] ?? '');
 
-        // Teksty checkoutu: tylko własne (puste = domyślne z tłumaczeń wtyczki)
+        // Checkout texts: custom ones only (empty = plugin translation)
         foreach (array_merge(self::CHECKOUT_TEXTS, ['checkout_tile_sub']) as $key) {
             if (isset($new[$key]) && '' !== (string) $new[$key]) {
                 icl_register_string(self::WPML_DOMAIN, $key, (string) $new[$key]);
@@ -2711,7 +2676,7 @@ final class WC_Ship_Today_Notice
         }
     }
 
-    /** Tekst z ustawień przetłumaczony przez WPML (przy włączonym przełączniku), inaczej bez zmian. */
+    /** Text from settings translated by WPML when the toggle is on, otherwise unchanged. */
     public function t($key, $fallback)
     {
         if (empty($this->get_options()['wpml_strings'])) {

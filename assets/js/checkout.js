@@ -1,12 +1,9 @@
 /**
- * Ship Today & Delivery Dates for WooCommerce: wybór terminu w checkoucie.
+ * Ship Today & Delivery Dates for WooCommerce: ship date tiles in the classic checkout.
  *
- * - zaznaczenie kafelka odświeża podsumowanie zamówienia (update_checkout),
- * - gdy godzina graniczna terminu minie na otwartej stronie, kafelek znika, dochodzi kolejny termin,
- *   a zaznaczenie przechodzi na najbliższy z komunikatem,
- * - przy harmonogramach metod wysyłki: zmiana metody (fragment #wc-stn-checkout-data z update_checkout) przelicza kafelki;
- *   zaznaczenie zostaje, jeśli termin istnieje dla nowej metody, inaczej przechodzi na najbliższy z komunikatem.
- * Ostateczna kontrola jest i tak na serwerze przy składaniu zamówienia.
+ * Selecting a tile refreshes the order review. When a cutoff passes on an open page the tile goes, the next slot joins
+ * and the selection moves to the nearest slot with a notice. With method schedules, a method change rebuilds the tiles
+ * from the #wc-stn-checkout-data fragment. The server has the final say when the order is placed.
  */
 (function ($) {
   'use strict';
@@ -32,7 +29,7 @@
 
     label.appendChild(input);
     label.appendChild(main);
-    // Pusta druga linia (ustawienia) = bez elementu, jak w HTML z PHP
+    // Empty second line = no element, same as the PHP markup
     if (tile.sub) {
       var sub = document.createElement('span');
       sub.className = 'wc-stn-tile__sub';
@@ -49,7 +46,7 @@
     });
   }
 
-  // Termin w komunikacie: tile.label (domyślny duży napis), niezależnie od własnych tekstów kafelka
+  // tile.label: the default large text, regardless of custom tile texts
   function slotLabel(cfg, value) {
     var tile = (cfg.tiles || []).filter(function (t) { return t.value === value; })[0];
     return tile ? (tile.label || tile.main) : value;
@@ -59,7 +56,7 @@
     $fs.find('.wc-stn-checkout__notice').text(text).prop('hidden', !text);
   }
 
-  // Dane z elementu #wc-stn-checkout-data (tylko przy harmonogramach metod), inaczej z atrybutu data-stn-checkout
+  // From #wc-stn-checkout-data (method schedules only), otherwise from the data-stn-checkout attribute
   function readConfig($fs) {
     var $data = $fs.find('.wc-stn-checkout__data');
     try {
@@ -87,7 +84,7 @@
       return;
     }
 
-    // Ten sam widoczny termin (duży napis, np. ta sama data dostawy z innej daty wysyłki), potem ta sama data wysyłki - bez komunikatu
+    // Same visible slot first (e.g. same delivery date from another ship date), then same ship date: no notice
     var prevLabel = prevValue ? slotLabel(prev || cfg, prevValue) : '';
     var same = open.filter(function (tile) { return prevLabel && (tile.label || tile.main) === prevLabel; })[0] ||
       open.filter(function (tile) { return tile.value === prevValue; })[0];
@@ -156,7 +153,7 @@
       if (!cfg) return;
 
       if ($fs.data('stnInit')) {
-        // Po update_checkout: inna metoda wysyłki = inne terminy
+        // Another shipping method means other slots
         if ((cfg.method || '') !== (($fs.data('stnCfg') || {}).method || '')) {
           applyMethod($fs, cfg);
         }

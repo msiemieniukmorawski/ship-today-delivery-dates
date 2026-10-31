@@ -1,6 +1,6 @@
 /**
- * Zakładka wtyczki w WooCommerce → Ustawienia. Style WooCommerce dla .form-table są pisane pod jego pola
- * (select 400px, vertical-align: top), tu wracamy do wyglądu pól WordPressa. Ładowane tylko na tej zakładce.
+ * Plugin tab under WooCommerce > Settings. WooCommerce styles .form-table for its own fields
+ * (400px selects, vertical-align: top), this restores the WordPress look. Loaded on this tab only.
  */
 
 .woocommerce .wc-stn-settings table.form-table select {
@@ -24,7 +24,7 @@
   width: 100%;
 }
 
-/* Tabele w polach (dni, terminy, święta): tekst na wysokości pól */
+/* Tables inside fields (days, slots, holidays): text in line with the inputs */
 .wc-stn-settings table.widefat td {
   vertical-align: middle;
 }
@@ -34,7 +34,7 @@
   padding: 8px 10px;
 }
 
-/* Sekcja Styl: trzy kolory w rzędzie obok podglądu */
+/* Style section: three colors in a row next to the preview */
 .woocommerce .wc-stn-settings #wc-stn-style-form table.form-table th {
   width: 170px;
   padding-right: 10px;

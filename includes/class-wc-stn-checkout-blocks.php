@@ -1,17 +1,17 @@
 <?php
 /**
- * Wybór terminu w checkoucie blokowym (WooCommerce Blocks).
+ * Ship date choice in the block checkout.
  *
- * Własny blok wewnętrzny checkoutu "wc-stn/ship-date" (rodzic: woocommerce/checkout-fields-block) z kafelkami jak
- * w klasycznym checkoucie, JS bez kroku build (assets/blocks/ship-date/):
- * - wtyczka raz wstawia blok do strony zamówienia z blokami (pod "Metody wysyłki"); dalej sklep może go przesuwać i usuwać
- *   w edytorze jak inne bloki checkoutu, usuniętego nie wstawiamy ponownie (opcja BLOCK_INSERTED_KEY); blok "wymuszony"
- *   (lock.remove) odpada, bo WooCommerce dokłada takie bloki na koniec formularza, pod przycisk zamówienia,
- * - termin trafia do Store API przez setExtensionData (namespace "wc-stn"), razem ze znacznikiem, że blok był widoczny,
- * - walidacja i zapis tych samych meta co w klasycznym checkoucie przy składaniu zamówienia; bez znacznika (np. płatność
- *   ekspresowa, zamówienie z zewnątrz Store API) data nie jest wymagana, więc brak bloku nie blokuje zamówień.
+ * Inner block "wc-stn/ship-date" (parent: woocommerce/checkout-fields-block) with the same tiles as the classic checkout.
+ * JS has no build step (assets/blocks/ship-date/).
+ * - The block is inserted once into a block checkout page, below the shipping options. After that the shop can move or remove it,
+ *   and a removed block is not added back. It is not a forced block (lock.remove) because WooCommerce appends those at the end
+ *   of the form, below the place order button.
+ * - The date goes to the Store API through setExtensionData (namespace "wc-stn") with a marker that the block was visible.
+ * - Validated and saved like in the classic checkout. Without the marker (express payment, external Store API order)
+ *   no date is required, so a missing block never blocks orders.
  *
- * Hooki rejestruje tylko, gdy moduł jest włączony w ustawieniach.
+ * Hooks are registered only with the module on.
  */
 
 use Automattic\WooCommerce\StoreApi\Exceptions\RouteException;
@@ -25,22 +25,22 @@ final class WC_STN_Checkout_Blocks
 {
     const BLOCK = 'wc-stn/ship-date';
 
-    /** Wiersz z wybranym terminem w podsumowaniu zamówienia (jak review_row() w klasycznym checkoucie). */
+    /** Row with the selected slot in the order summary, like review_row() in the classic checkout. */
     const ROW_BLOCK = 'wc-stn/ship-date-row';
 
-    /** ID strony zamówienia, do której wiersz podsumowania został już raz wstawiony automatycznie. */
+    /** Checkout page ID the summary row was already inserted into. */
     const ROW_INSERTED_KEY = 'wc_ship_today_notice_row_inserted';
 
-    /** Namespace danych rozszerzenia w Store API (extensions.wc-stn). */
+    /** Store API extension namespace (extensions.wc-stn). */
     const API_NAMESPACE = 'wc-stn';
 
-    /** ID strony zamówienia, do której blok został już raz wstawiony automatycznie. */
+    /** Checkout page ID the block was already inserted into. */
     const BLOCK_INSERTED_KEY = 'wc_ship_today_notice_block_inserted';
 
-    /** Meta użytkownika: ID strony zamówienia, dla której zamknięto powiadomienie o braku bloku. */
+    /** User meta: checkout page ID the "missing block" notice was dismissed for. */
     const NOTICE_DISMISSED_META = 'wc_stn_block_notice_dismissed';
 
-    /** Sprawdzone na WooCommerce 11.x; na starszych blok się nie rejestruje (checkout blokowy bez wyboru terminu). */
+    /** Tested on WooCommerce 11.x. Older versions get no block, so the block checkout has no ship date choice. */
     const MIN_WC_VERSION = '10.1.0';
 
     /** @var WC_Ship_Today_Notice */
@@ -60,7 +60,7 @@ final class WC_STN_Checkout_Blocks
 
         add_action('init', [$this, 'register_block'], 2);
         add_action('woocommerce_blocks_checkout_block_registration', [$this, 'register_integration']);
-        // Moduł startuje na init 0, zwykle już po woocommerce_blocks_loaded
+        // The module starts on init 0, usually after woocommerce_blocks_loaded
         if (did_action('woocommerce_blocks_loaded')) {
             $this->register_store_api_data();
         } else {
@@ -78,7 +78,7 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Typ bloku dla edytora (block.json) i skrypty. Skrypt frontu rejestruje komponent przez wc.blocksCheckout.
+     * Block type for the editor (block.json) and scripts. The frontend script registers the component through wc.blocksCheckout.
      */
     public function register_block()
     {
@@ -89,7 +89,7 @@ final class WC_STN_Checkout_Blocks
         wp_register_script('wc-stn-ship-date-frontend', $url . 'frontend.js', ['wc-blocks-checkout', 'wc-settings', 'wp-element', 'wp-data'], WC_STN_VERSION, true);
         wp_register_script('wc-stn-ship-date-editor', $url . 'editor.js', ['wp-blocks', 'wp-block-editor', 'wp-element'], WC_STN_VERSION, true);
         if (is_admin()) {
-            // Tylko panel (edytor): na froncie nie liczymy terminów przy każdym żądaniu
+            // Admin only: don't compute slots on every frontend request
             wp_add_inline_script('wc-stn-ship-date-editor', 'window.wcStnShipDateEditor = ' . wp_json_encode($this->editor_data()) . ';', 'before');
         }
 
@@ -97,7 +97,7 @@ final class WC_STN_Checkout_Blocks
             'editor_script_handles' => ['wc-stn-ship-date-editor'],
             'editor_style_handles'  => ['wc-stn-checkout'],
         ]);
-        // Wiersz podsumowania: ten sam skrypt edytora i frontu (frontend.js rejestruje oba bloki)
+        // Same editor and frontend scripts: frontend.js registers both blocks
         register_block_type(plugin_dir_path(WC_STN_FILE) . 'assets/blocks/ship-date-row/', [
             'editor_script_handles' => ['wc-stn-ship-date-editor'],
         ]);
@@ -110,7 +110,7 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Pola extensions.wc-stn w żądaniu POST /wc/store/v1/checkout.
+     * extensions.wc-stn fields of POST /wc/store/v1/checkout.
      */
     public function register_store_api_data()
     {
@@ -131,8 +131,8 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Dane dla bloku na froncie (wcSettings "wc-stn-ship-date_data"): terminy na FRONTEND_DAYS dni, jak data-stn-checkout
-     * w klasycznym checkoucie, więc JS dokłada kolejne terminy, gdy godzina graniczna minie na otwartej stronie.
+     * Data for the frontend block (wcSettings "wc-stn-ship-date_data"): slots for FRONTEND_DAYS days, like data-stn-checkout
+     * in the classic checkout, so JS can add the next slots when a cutoff passes on an open page.
      */
     public function script_data()
     {
@@ -157,13 +157,13 @@ final class WC_STN_Checkout_Blocks
             'choose'    => $this->checkout->choose_message(),
             'empty'     => __('No delivery dates available. Please contact us.', 'wc-ship-today-notice'),
             'closed'    => $this->checkout->switched_message(),
-            // Wiersz w podsumowaniu (blok ROW_BLOCK): przełącznik "checkout_review_row", treść jak w klasycznym checkoucie
+            // Summary row (ROW_BLOCK): "checkout_review_row" toggle, same content as the classic checkout
             'reviewRow' => !empty($o['checkout_review_row']),
             'rows'      => $rows,
         ];
 
-        // Harmonogramy metod wysyłki: terminy i wiersze podsumowania dla każdej metody z własnymi godzinami, z tych samych slotów
-        // (JS wybiera wg stawki w koszyku; ta sama data wysyłki może mieć u metody inną datę dostawy). Bez nich dane są jak wcześniej.
+        // Slots and summary rows for each method with its own hours (JS picks by the cart rate;
+        // the same ship date can have another delivery date for a method).
         foreach ($this->plugin->methods_with_schedule() as $method) {
             $method_schedule = $this->plugin->schedule($method);
             $data['methods'][$method]    = [];
@@ -179,7 +179,7 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Podgląd w edytorze: etykieta i kilka terminów z aktualnych ustawień.
+     * Editor preview: label and a few slots from the current settings.
      */
     private function editor_data()
     {
@@ -198,8 +198,8 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Jednorazowe wstawienie bloku do strony zamówienia z checkoutem blokowym (pod "Metody wysyłki", inaczej przed płatnością).
-     * Po wstawieniu albo gdy blok już jest - zapamiętuje stronę i więcej jej nie zmienia, więc usunięty blok nie wraca.
+     * Inserts the blocks into a block checkout page once. After inserting, or if a block is already there, the page is remembered
+     * and not changed again, so a removed block does not come back.
      */
     public function maybe_insert_block()
     {
@@ -207,8 +207,8 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Przy aktualizacji wtyczki (WC_Ship_Today_Notice::maybe_upgrade): sklep z checkoutem blokowym miał w 2.2.0 pole select,
-     * które zniknęło, więc blok wstawiamy od razu, bez sprawdzania uprawnień bieżącego użytkownika.
+     * On plugin update (WC_Ship_Today_Notice::maybe_upgrade): shops that had the select field get the block right away,
+     * regardless of the current user's capabilities.
      */
     public function insert_on_upgrade()
     {
@@ -226,7 +226,7 @@ final class WC_STN_Checkout_Blocks
             return;
         }
 
-        // Każdy blok osobno, raz na stronę zamówienia: [blok, znacznik, rodzic, wstaw za, inaczej przed (null = na koniec)]
+        // Each block separately, once per checkout page: [block, marker, parent, insert after, otherwise before (null = at the end)]
         $placements = [
             [self::BLOCK, self::BLOCK_INSERTED_KEY, 'woocommerce/checkout-fields-block', 'woocommerce/checkout-shipping-methods-block', 'woocommerce/checkout-payment-block'],
             [self::ROW_BLOCK, self::ROW_INSERTED_KEY, 'woocommerce/checkout-order-summary-totals-block', 'woocommerce/checkout-order-summary-shipping-block', null],
@@ -239,19 +239,19 @@ final class WC_STN_Checkout_Blocks
 
             $content = (string) get_post_field('post_content', $page_id);
             if (!has_block('woocommerce/checkout', $content)) {
-                return; // klasyczny checkout (shortcode) albo checkout w szablonie motywu
+                return; // classic checkout (shortcode) or checkout in a theme template
             }
 
             if (!has_block($name, $content)) {
                 $blocks = parse_blocks($content);
-                // Starszy układ (strony zapisane we wcześniejszych wersjach WooCommerce): wiersze sum bezpośrednio w podsumowaniu,
-                // bez bloku sum. Edytor WooCommerce i tak zamyka je w checkout-order-summary-totals-block przy otwarciu strony
-                // (gubiąc przy tym nieznane bloki), więc robimy to samo przed wstawieniem wiersza.
+                // Older layout (pages saved with earlier WooCommerce versions): total rows directly in the summary, without the totals block.
+                // The WooCommerce editor wraps them in checkout-order-summary-totals-block when the page opens and drops unknown blocks
+                // on the way, so do the same before inserting the row.
                 if (self::ROW_BLOCK === $name && !has_block($parent, $content)) {
                     $this->wrap_legacy_totals($blocks);
                 }
                 if (!$this->insert_into($blocks, $name, $parent, $after, $before)) {
-                    continue; // bez znacznika: status w ustawieniach pokazuje, że trzeba dodać ręcznie
+                    continue; // no marker: the settings status tells the shop to add it manually
                 }
                 wp_update_post(['ID' => $page_id, 'post_content' => wp_slash(serialize_blocks($blocks))]);
             }
@@ -261,9 +261,9 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Starszy układ podsumowania: zamyka wiersze sum (subtotal, fee, discount, shipping, taxes) w bloku
-     * woocommerce/checkout-order-summary-totals-block, w miejscu pierwszego z nich - jak migracja układu w edytorze WooCommerce.
-     * Zwraca, czy coś zmienił.
+     * Older summary layout: wraps the total rows (subtotal, fee, discount, shipping, taxes) in
+     * woocommerce/checkout-order-summary-totals-block at the position of the first one, like the WooCommerce editor migration.
+     * Returns whether anything changed.
      */
     private function wrap_legacy_totals(array &$blocks)
     {
@@ -307,7 +307,7 @@ final class WC_STN_Checkout_Blocks
                 'innerContent' => self::inner_content($open, count($totals), '</div>'),
             ]]);
 
-            // Treść rodzica od nowa: otwierający i zamykający HTML z oryginału, bloki rozdzielone pustą linią
+            // Parent content from scratch: opening and closing HTML from the original, blocks separated by a blank line
             $first = $block['innerContent'][0] ?? '';
             $last  = end($block['innerContent']);
             $block['innerBlocks']  = $children;
@@ -319,7 +319,7 @@ final class WC_STN_Checkout_Blocks
         return false;
     }
 
-    /** innerContent bloku z $count blokami wewnętrznymi: otwarcie, null, "\n\n", null, ..., zamknięcie. */
+    /** innerContent of a block with $count inner blocks: opening, null, "\n\n", null, ..., closing. */
     private static function inner_content($open, $count, $close)
     {
         $content = [$open];
@@ -335,7 +335,7 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Wstawia blok $name do bloku $parent za $after (albo przed $before, a bez $before na koniec). Zwraca, czy wstawił.
+     * Inserts block $name into $parent after $after (or before $before, without $before at the end). Returns whether it did.
      */
     private function insert_into(array &$blocks, $name, $parent, $after, $before)
     {
@@ -367,7 +367,7 @@ final class WC_STN_Checkout_Blocks
                 'innerContent' => [$html],
             ]]);
 
-            // innerContent: null w miejscu każdego bloku wewnętrznego; nowy null za $index-tym
+            // innerContent has a null for each inner block; the new null goes at position $index
             $content = [];
             $seen    = 0;
             $added   = false;
@@ -382,7 +382,7 @@ final class WC_STN_Checkout_Blocks
                 }
             }
             if (!$added) {
-                // za ostatnim blokiem: przed końcowym tekstem (zamknięcie </div> rodzica)
+                // after the last block: before the closing HTML of the parent
                 $last = count($content) - 1;
                 array_splice($content, is_string($content[$last]) ? $last : $last + 1, 0, ["\n\n", null]);
             }
@@ -395,8 +395,8 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Powiadomienie w całym panelu (manage_woocommerce): checkout blokowy bez bloku terminu, czyli bez wyboru daty.
-     * Na stronie ustawień wtyczki jest ten sam status w sekcji checkoutu, więc tam go pomijamy.
+     * Admin notice (manage_woocommerce): block checkout without the ship date block, so no date choice.
+     * Skipped on the Checkout section, which shows the same status.
      */
     public function missing_block_notice()
     {
@@ -405,8 +405,7 @@ final class WC_STN_Checkout_Blocks
         }
 
         $page_id = (int) wc_get_page_id('checkout');
-        // Zakładka Checkout pokazuje status bloku sama, powiadomienie byłoby dublem
-        // phpcs:disable WordPress.Security.NonceVerification -- tylko wybór strony panelu, bez zapisu.
+        // phpcs:disable WordPress.Security.NonceVerification -- only picks the admin page, saves nothing.
         $on_checkout_tab = 'wc-settings' === sanitize_key(wp_unslash($_GET['page'] ?? '')) && WC_Ship_Today_Notice::SETTINGS_TAB === sanitize_title(wp_unslash($_GET['tab'] ?? '')) && 'checkout' === sanitize_key(wp_unslash($_GET['section'] ?? ''));
         // phpcs:enable
         if ($on_checkout_tab || $page_id === (int) get_user_meta(get_current_user_id(), self::NOTICE_DISMISSED_META, true)) {
@@ -427,7 +426,7 @@ final class WC_STN_Checkout_Blocks
 
     public function maybe_dismiss_notice()
     {
-        if (empty($_GET['wc_stn_dismiss_block_notice']) || !current_user_can('manage_woocommerce')) { // phpcs:ignore WordPress.Security.NonceVerification -- nonce niżej.
+        if (empty($_GET['wc_stn_dismiss_block_notice']) || !current_user_can('manage_woocommerce')) { // phpcs:ignore WordPress.Security.NonceVerification -- nonce checked below.
             return;
         }
         check_admin_referer('wc_stn_dismiss_block_notice');
@@ -435,9 +434,9 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Czy strona zamówienia ma checkout blokowy i czy jest w nim blok terminu (status w panelu).
+     * Whether the checkout page has the block checkout and the given block in it (status in the panel).
      *
-     * @return string 'classic', 'present' albo 'missing'
+     * @return string 'classic', 'present' or 'missing'
      */
     public static function block_status($block = self::BLOCK)
     {
@@ -452,13 +451,13 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Walidacja przy składaniu zamówienia (Store API) i zapis tych samych meta co w klasycznym checkoucie.
+     * Validation when the order is placed (Store API) and saving the same meta as the classic checkout.
      */
     public function validate_and_save($order, $request)
     {
         $data = (array) ($request['extensions'][self::API_NAMESPACE] ?? []);
 
-        // Blok nie był widoczny (brak bloku, płatność ekspresowa, odbiór osobisty) - data nie jest wymagana.
+        // Block not visible (no block, express payment, local pickup): no date required.
         if (empty($data['rendered']) || !WC()->cart || !WC()->cart->needs_shipping() || $this->checkout->only_local_pickup()) {
             return;
         }

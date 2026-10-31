@@ -1,6 +1,6 @@
 /**
- * Zakładka "Checkout": pola modułu widoczne od razu po zaznaczeniu checkboxa, bez zapisu.
- * Ukryte pola zostają w formularzu i dalej się zapisują.
+ * Checkout section: module fields appear right after ticking the checkbox, without saving.
+ * Hidden fields stay in the form and are still saved.
  */
 (function () {
   'use strict';
@@ -21,7 +21,7 @@
 
   function sync() {
     toggle('.wc-stn-if-module', module.checked);
-    // Wiersze dat i kolumna listy działają też bez modułu, gdy włączone są daty przy wyłączonym module
+    // Date rows and the list column also work without the module when "dates when disabled" is on
     toggle('.wc-stn-if-dates', module.checked || dates.checked);
   }
 
