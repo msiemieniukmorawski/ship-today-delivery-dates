@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.6.1-orange" alt="Version 2.6.1">
+  <img src="https://img.shields.io/badge/version-2.6.2-orange" alt="Version 2.6.2">
   <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
   <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
@@ -589,7 +589,7 @@ wc-ship-today-notice/
 
 ## Changelog
 
-### Unreleased
+### 2.6.2 (2026-10-31)
 
 - Default texts and admin labels no longer use em or en dashes. The default text before the cutoff is now "Order within {countdown} and we will ship today!".
 - The tab in WooCommerce → Settings is now called **Delivery dates** (the address is unchanged). The full plugin name stays in the plugin list.

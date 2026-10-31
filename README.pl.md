@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/wersja-2.6.1-orange" alt="Wersja 2.6.1">
+  <img src="https://img.shields.io/badge/wersja-2.6.2-orange" alt="Wersja 2.6.2">
   <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
   <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
@@ -595,7 +595,7 @@ wc-ship-today-notice/
 
 ## Changelog
 
-### Niewydane
+### 2.6.2 (31.10.2026)
 
 - Domyślne teksty i etykiety panelu nie mają już półpauz ani pauz. Domyślny tekst przed godziną graniczną to teraz „Zamów w ciągu {countdown}, a wyślemy dziś!”.
 - Zakładka w WooCommerce → Ustawienia nazywa się teraz **Terminy dostawy** (adres bez zmian). Pełna nazwa wtyczki zostaje na liście wtyczek.
