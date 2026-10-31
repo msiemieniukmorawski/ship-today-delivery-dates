@@ -4,7 +4,6 @@
  *
  * Kafelki z najbliższymi terminami z silnika, walidacja w chwili złożenia zamówienia,
  * zapis w zamówieniu (HPOS), wyświetlanie w podsumowaniu, mailach, panelu zamówienia i na liście zamówień.
- * Opcjonalnie wyłącza Iconic Delivery Slots w koszyku i checkoucie (okres przejściowy).
  *
  * Hooki rejestruje tylko, gdy moduł jest włączony w ustawieniach. Wyjątek: wyświetlanie dat z istniejących zamówień
  * (maile, panel tylko do odczytu, lista) przy przełączniku checkout_dates_when_disabled. Każdą część wyświetlania
@@ -67,12 +66,6 @@ final class WC_STN_Checkout
             $this->admin_edit = true;
             add_action('woocommerce_process_shop_order_meta', [$this, 'admin_order_save'], 20, 2);
         }
-
-        // Okres przejściowy: Iconic aktywny, ale nie działa w koszyku i checkoucie
-        if (!empty($o['disable_iconic'])) {
-            add_action('wp_loaded', [$this, 'disable_iconic_checkout'], 99);
-            add_action('wp_enqueue_scripts', [$this, 'dequeue_iconic_assets'], 999);
-        }
     }
 
     /**
@@ -103,11 +96,6 @@ final class WC_STN_Checkout
         add_filter('manage_edit-shop_order_sortable_columns', [$this, 'list_sortable_columns']);
         add_filter('request', [$this, 'legacy_list_request']);
         add_action('restrict_manage_posts', [$this, 'legacy_filter_dropdown'], 20);
-    }
-
-    public static function iconic_active()
-    {
-        return class_exists('\Iconic_WDS\Checkout');
     }
 
     /* ---------------------------------------------------------
@@ -610,11 +598,10 @@ final class WC_STN_Checkout
         $schedule = $this->plugin->schedule();
         $ship     = $order->get_meta(self::META_SHIP);
         $delivery = $order->get_meta(self::META_DELIVERY);
-        $iconic   = $order->get_meta('jckwds_date');
         $edit     = $this->admin_edit && ($order->is_editable() || current_user_can('edit_shop_orders'));
 
         // Bez dat i bez pola zmiany (tylko odczyt) nie ma czego pokazać
-        if (!$ship && !$iconic && !$edit) {
+        if (!$ship && !$edit) {
             return;
         }
 
@@ -627,8 +614,6 @@ final class WC_STN_Checkout
                 echo '<br><strong>' . esc_html__('Delivery:', 'wc-ship-today-notice') . '</strong> ' . esc_html($this->date_long($schedule->date($delivery)));
             }
             echo '</p>';
-        } elseif ($iconic) {
-            echo '<p><strong>' . esc_html__('Ship date (Iconic):', 'wc-ship-today-notice') . '</strong> ' . esc_html($iconic) . '</p>';
         }
 
         if ($edit) {
@@ -729,19 +714,14 @@ final class WC_STN_Checkout
         $schedule = $this->plugin->schedule();
         $ship     = $order->get_meta(self::META_SHIP);
 
-        if ($ship) {
-            echo esc_html($this->date_short($schedule->date($ship)));
-            $delivery = $order->get_meta(self::META_DELIVERY);
-            if ($delivery) {
-                echo '<br><small>' . esc_html($this->delivery_short($schedule->date($delivery))) . '</small>';
-            }
+        if (!$ship) {
             return;
         }
 
-        // Zamówienia sprzed przełączenia: data z Iconic, tylko do wglądu (bez migracji).
-        $iconic = (string) $order->get_meta('jckwds_date_ymd');
-        if (preg_match('/^(\d{4})(\d{2})(\d{2})$/', $iconic, $m)) {
-            echo esc_html($this->date_short($schedule->date("{$m[1]}-{$m[2]}-{$m[3]}"))) . '<br><small>Iconic</small>';
+        echo esc_html($this->date_short($schedule->date($ship)));
+        $delivery = $order->get_meta(self::META_DELIVERY);
+        if ($delivery) {
+            echo '<br><small>' . esc_html($this->delivery_short($schedule->date($delivery))) . '</small>';
         }
     }
 
@@ -834,42 +814,6 @@ final class WC_STN_Checkout
         }
 
         return $vars;
-    }
-
-    /* ---------------------------------------------------------
-     * Okres przejściowy: wyłączenie Iconic w koszyku i checkoucie
-     * --------------------------------------------------------- */
-
-    /**
-     * Iconic rejestruje hooki na wp_loaded (10), my zdejmujemy je na wp_loaded (99), także dla AJAX checkoutu.
-     * Sprawdzone na Iconic 2.13.0. Sam filtr iconic_wds_delivery_slots_allowed nie wystarcza:
-     * Checkout::checkout_fields dodaje wymagane pole "jckwds" bez sprawdzania tego filtra.
-     */
-    public function disable_iconic_checkout()
-    {
-        if (!self::iconic_active()) {
-            return;
-        }
-
-        add_filter('iconic_wds_delivery_slots_allowed', '__return_false', 99);
-
-        remove_filter('woocommerce_checkout_fields', ['Iconic_WDS\Checkout', 'checkout_fields'], 10);
-        remove_filter('woocommerce_checkout_posted_data', ['Iconic_WDS\Checkout', 'checkout_posted_data'], 10);
-        remove_action('woocommerce_checkout_process', ['Iconic_WDS\Checkout', 'classic_checkout_process'], 10);
-        remove_action('woocommerce_after_checkout_validation', ['Iconic_WDS\Checkout', 'catch_shipping'], 10);
-        remove_action('woocommerce_checkout_update_order_meta', ['Iconic_WDS\Order', 'update_order_meta'], 10);
-
-        add_shortcode('iconic-wds-fields', '__return_empty_string');
-    }
-
-    public function dequeue_iconic_assets()
-    {
-        if (!self::iconic_active() || !function_exists('is_checkout') || !(is_checkout() || is_cart())) {
-            return;
-        }
-
-        wp_dequeue_script('jckwds-script');
-        wp_dequeue_style('jckwds-style');
     }
 
     /* ---------------------------------------------------------

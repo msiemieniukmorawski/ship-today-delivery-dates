@@ -32,7 +32,6 @@ Show customers how long they have to order so the parcel ships in the next slot:
 * Stored in the order (HPOS compatible), shown on the thank-you page, in emails, in My Account and in the order admin, where the date can be changed.
 * "Shipping" column with sorting and a filter in the orders list.
 * Not required for local pickup.
-* Optional switch that disables Iconic Delivery Slots in the cart and checkout during a migration period (tested with Iconic 2.13.0; it only works when you turn it on).
 
 **For developers**
 

@@ -79,7 +79,6 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
 - **Cutoff times per shipping method** (e.g. parcel locker until 15:00, courier until 13:00): tiles and validation follow the selected
   method, and changing the method recalculates the tiles.
 - Local pickup doesn't require a date. HPOS compatible.
-- A switch that turns off Iconic Delivery Slots during a migration.
 
 **For developers**
 - `wc_stn_*` functions, filters, a cache purge action, `window.WcShipTodayNotice.init()`.
@@ -137,7 +136,6 @@ and supports both the HPOS orders list and the legacy posts table.
 | Order admin: changing the ship date | yes, with the module | Dates in orders | Off: the dates are read-only. |
 | "Shipping" column, sorting and filter in the orders list | yes, with the module | Dates in orders | HPOS and the legacy posts table. |
 | Dates of existing orders while the module is off | **no** | Dates in orders | On: rows in emails/thank-you page/My Account, the order admin (read-only) and the list work without the module, according to the switches above. |
-| Turning off Iconic Delivery Slots | no | Iconic Delivery Slots | The field shows only with Iconic active and works only with the module on. |
 | Cache purge at the cutoff | yes, with LiteSpeed Cache active or the `wc_ship_today_notice_purge_cache` action hooked | Advanced → Optional features | The cache is always purged after saving the settings. |
 | WPML | yes, with WPML active | Advanced → Optional features | Four widget texts are registered when saving the settings and shown translated. |
 | Test mode `?stn_now=` | yes | Advanced → Optional features | Only for `manage_woocommerce`. |
@@ -281,7 +279,7 @@ CSS variables: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `
 </details>
 
 <details>
-<summary><b>Ship date choice at checkout (classic, block, Iconic)</b></summary>
+<summary><b>Ship date choice at checkout (classic, block)</b></summary>
 
 Enable it in **WooCommerce → Ship Today Notice → Checkout → Module**. While the module is off the tab shows only this checkbox and the
 option to keep showing dates of existing orders (with the options it depends on). The other fields appear as soon as you tick the checkbox,
@@ -299,7 +297,6 @@ without saving; hidden fields keep their values.
 | Texts → Tile | as above | "Large text" (empty = default) and "Second line" (the field holds the default; **empty = no second line**, with a "Restore default" button). Tokens below. |
 | Texts → Rows after the order is placed | `Ship date:` / `Planned delivery:` | Labels in emails, on the thank-you page and in My Account. Empty = translated defaults. Both rows can be turned off in "Dates in orders". |
 | Texts → Messages | as before | No date selected (`{field}`), cutoff passed and date unavailable (`{slot}`), date closed while the page was open (`{slot}`, `{next_slot}`). Empty = default (shown as a placeholder). |
-| Iconic Delivery Slots | - | See below. |
 
 **Tile texts.** The tokens are the same as in the widget, calculated for the tile's date: `{ship_when}`, `{ship_day}`, `{ship_date}`, `{delivery_when}`,
 `{delivery_day}`, `{delivery_date}`, `{cutoff_when}`, `{cutoff_time}`, `{cutoff_date}`, plus the short tile forms `{ship_short}`
@@ -337,7 +334,6 @@ translations, so a store in Polish or German gets the translation without any ch
   An empty field removes the dates. An invalid date (e.g. 31.02) isn't saved and the admin shows a message. The customer isn't notified of the change.
 - Orders list (HPOS and legacy): a "Shipping" column after the order date, sorting and a ship date filter
   (ship dates from 14 days back to 31 days ahead). Sorting shows only orders with a date from this module.
-  Iconic orders show their date marked "Iconic" (read-only, no migration).
 
 **Block checkout**
 
@@ -373,19 +369,6 @@ an inner block of the checkout form, parent `woocommerce/checkout-fields-block`)
   If the row can't be added, the checkout section of the settings shows it in red and the plugin retries on the next admin visit.
   There's no row when the "Row with the date in the order summary at checkout" switch is off, when the page has no tiles block or when no date is selected.
   Both blocks share the selected date through the `wc-stn/ship-date` `wp.data` store.
-- The Iconic switch works only in the classic checkout.
-
-**Migrating from Iconic Delivery Slots**
-
-With Iconic active, the settings show "Disable Iconic Delivery Slots in the cart and checkout". With the module on, the plugin then:
-
-- returns `false` in `iconic_wds_delivery_slots_allowed`,
-- removes (on `wp_loaded` 99) Iconic's hooks for fields, data, validation and saving meta,
-- replaces the `[iconic-wds-fields]` shortcode with an empty string,
-- turns off the `jckwds-script` script and `jckwds-style` style in the cart and checkout.
-
-Iconic stays active in the admin (old orders, its column and the Deliveries page), but new orders no longer reach it.
-Tested on Iconic 2.13.0. To roll back, uncheck the switch and restore `[iconic-wds-fields]` at checkout.
 
 **Order meta**
 
@@ -394,8 +377,6 @@ Tested on Iconic 2.13.0. To roll back, uncheck the switch and restore `[iconic-w
 | `_wc_stn_ship_date` | ship date `Y-m-d` |
 | `_wc_stn_delivery_date` | delivery date `Y-m-d` or an empty string |
 | `_wc_stn_cutoff` | timestamp of the selected date's cutoff (removed on a manual date change) |
-
-Read only for display (Iconic): `jckwds_date` (order admin), `jckwds_date_ymd` (orders list).
 
 </details>
 
@@ -570,7 +551,7 @@ wc-ship-today-notice/
 ├── index.php
 ├── includes/
 │   ├── class-wc-stn-schedule.php   # Schedule engine (shipping days, cutoff, delivery, tokens, weekday forms)
-│   ├── class-wc-stn-checkout.php   # Classic checkout, orders, orders list, Iconic switch
+│   ├── class-wc-stn-checkout.php   # Classic checkout, orders, orders list
 │   ├── class-wc-stn-checkout-blocks.php  # Block checkout: "Ship date" block, page insertion, Store API
 │   ├── class-wc-stn-auto-placement.php  # Automatic display: hooks, block positions
 │   ├── class-wc-stn-blocks-integration.php  # Block script and data (IntegrationInterface)
@@ -601,7 +582,7 @@ wc-ship-today-notice/
 - New **Checkout** tab next to Settings and Style with the whole "Ship date choice at checkout" section. With the module off only the
   module checkbox and the "dates of existing orders" option are shown; the other fields appear right after ticking the checkbox, without saving.
 - Saving one tab doesn't change the fields of the other. Saving the options from code changes only the keys it passes.
-- The `disable_iconic` setting keeps its value while Iconic isn't active.
+- Removed support for Iconic Delivery Slots.
 - The "no Ship date block" notice now also shows on the Settings and Style tabs (only the Checkout tab has the block status).
 - **Automatic display:** show the widget on the product page, cart and checkout without a shortcode, with a position and priority for each. Block cart, block checkout and block product templates get above/below the block. New shops: on for the product page, below the add to cart button. Updated shops: off until enabled.
 - The widget's JS keeps working when the classic cart or checkout replaces it with AJAX, and the timer of a removed widget stops.

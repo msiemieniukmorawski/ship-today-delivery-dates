@@ -79,7 +79,6 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 - **Godziny graniczne zależne od metody wysyłki** (np. paczkomat do 15:00, kurier do 13:00): kafelki i walidacja wg wybranej metody,
   zmiana metody przelicza kafelki.
 - Odbiór osobisty nie wymaga daty. Zgodność z HPOS.
-- Przełącznik wyłączający Iconic Delivery Slots na czas przejścia.
 
 **Dla programistów**
 - Funkcje `wc_stn_*`, filtry, akcja czyszczenia cache, `window.WcShipTodayNotice.init()`.
@@ -137,7 +136,6 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 | Panel zamówienia: zmiana daty wysyłki | tak, z modułem | Daty w zamówieniach | Wyłączone: daty tylko do odczytu. |
 | Kolumna „Wysyłka”, sortowanie, filtr na liście zamówień | tak, z modułem | Daty w zamówieniach | HPOS i stara tabela postów. |
 | Daty istniejących zamówień przy wyłączonym module | **nie** | Daty w zamówieniach | Włączone: wiersze w mailach/podziękowaniu/Moim koncie, panel (tylko odczyt) i lista działają bez modułu, wg przełączników wyżej. |
-| Wyłączenie Iconic Delivery Slots | nie | Iconic Delivery Slots | Pole widać tylko przy aktywnym Iconic, działa tylko z włączonym modułem. |
 | Czyszczenie cache o godzinie granicznej | tak, gdy aktywny LiteSpeed Cache albo podpięta akcja `wc_ship_today_notice_purge_cache` | Zaawansowane → Funkcje opcjonalne | Po zapisie ustawień cache jest czyszczony zawsze. |
 | WPML | tak, gdy aktywny WPML | Zaawansowane → Funkcje opcjonalne | Cztery teksty widgetu rejestrowane przy zapisie ustawień i pokazywane w tłumaczeniu. |
 | Tryb testowy `?stn_now=` | tak | Zaawansowane → Funkcje opcjonalne | Tylko dla `manage_woocommerce`. |
@@ -283,7 +281,7 @@ Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-b
 </details>
 
 <details>
-<summary><b>Wybór terminu w checkoucie (klasyczny, blokowy, Iconic)</b></summary>
+<summary><b>Wybór terminu w checkoucie (klasyczny, blokowy)</b></summary>
 
 Włączenie: **WooCommerce → Ship Today Notice → Checkout → Moduł**. Przy wyłączonym module zakładka pokazuje tylko ten checkbox i opcję
 pokazywania dat istniejących zamówień (z przełącznikami, od których zależy). Pozostałe pola pojawiają się od razu po zaznaczeniu checkboxa,
@@ -301,7 +299,6 @@ bez zapisu, a ukryte zachowują wartości.
 | Teksty → Kafelek | jak wyżej | „Duży napis” (puste = domyślny) i „Druga linia” (pole ma wpisaną domyślną; **puste = bez drugiej linii**, przycisk „Przywróć domyślną”). Tokeny niżej. |
 | Teksty → Wiersze po złożeniu zamówienia | `Data wysyłki:` / `Planowana dostawa:` | Etykiety w mailach, na stronie podziękowania i w Moim koncie. Puste = domyślne (przetłumaczone). Oba wiersze wyłącza przełącznik w „Daty w zamówieniach”. |
 | Teksty → Komunikaty | jak dotąd | „Nie wybrano terminu” (`{field}`), „Minęła godzina graniczna” i „Termin niedostępny” (`{slot}`), „Termin zamknął się przy otwartej stronie” (`{slot}`, `{next_slot}`). Puste = domyślny (pole pokazuje go w podpowiedzi). |
-| Iconic Delivery Slots | - | Patrz niżej. |
 
 **Teksty kafelka.** Tokeny jak w widgecie, liczone dla terminu z kafelka: `{ship_when}`, `{ship_day}`, `{ship_date}`, `{delivery_when}`,
 `{delivery_day}`, `{delivery_date}`, `{cutoff_when}`, `{cutoff_time}`, `{cutoff_date}` oraz krótkie formy z kafelka `{ship_short}`
@@ -340,7 +337,6 @@ tekst z tłumaczeń wtyczki, więc sklep pl/de bez zmian dostaje tłumaczenie.
   Puste pole usuwa daty. Błędna data (np. 31.02) nie jest zapisywana, panel pokazuje komunikat. Klient nie dostaje powiadomienia o zmianie.
 - Lista zamówień (HPOS i stara): kolumna „Wysyłka” za datą zamówienia, sortowanie i filtr „Wysyłka: dd.mm.rrrr”
   (dni wysyłki od 14 dni wstecz do 31 dni w przód). Sortowanie pokazuje tylko zamówienia z datą z tego modułu.
-  Zamówienia z Iconic mają datę z dopiskiem „Iconic” (tylko odczyt, bez migracji).
 
 **Checkout blokowy**
 
@@ -377,20 +373,6 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
   kolejnym wejściu do panelu. Wiersza nie ma, gdy przełącznik „Wiersz z terminem
   w podsumowaniu zamówienia” jest wyłączony, gdy na stronie nie ma bloku kafelków albo gdy termin nie jest wybrany.
   Oba bloki dzielą wybrany termin przez store `wp.data` `wc-stn/ship-date`.
-- Przełącznik Iconic działa tylko w klasycznym checkoucie.
-
-**Okres przejściowy z Iconic Delivery Slots**
-
-Gdy Iconic jest aktywny, w ustawieniach pojawia się „Wyłącz Iconic Delivery Slots w koszyku i checkoucie”. Przy włączonym
-module wtyczka wtedy:
-
-- zwraca `false` w `iconic_wds_delivery_slots_allowed`,
-- zdejmuje (na `wp_loaded` 99) hooki Iconic od pól, danych, walidacji i zapisu meta,
-- zastępuje shortcode `[iconic-wds-fields]` pustym tekstem,
-- wyłącza skrypt `jckwds-script` i styl `jckwds-style` w koszyku i checkoucie.
-
-Iconic zostaje aktywny w panelu (stare zamówienia, jego kolumna i strona Deliveries), ale nowe zamówienia już do niego nie
-trafiają. Sprawdzone na Iconic 2.13.0. Wycofanie: odznacz przełącznik i przywróć `[iconic-wds-fields]` w checkoucie.
 
 **Meta zamówień**
 
@@ -399,8 +381,6 @@ trafiają. Sprawdzone na Iconic 2.13.0. Wycofanie: odznacz przełącznik i przyw
 | `_wc_stn_ship_date` | data wysyłki `Y-m-d` |
 | `_wc_stn_delivery_date` | data dostawy `Y-m-d` albo pusty tekst |
 | `_wc_stn_cutoff` | znacznik czasu godziny granicznej wybranego terminu (usuwany przy ręcznej zmianie daty) |
-
-Odczytywane (Iconic, tylko do wyświetlania): `jckwds_date` (panel zamówienia), `jckwds_date_ymd` (lista zamówień).
 
 </details>
 
@@ -576,7 +556,7 @@ wc-ship-today-notice/
 ├── index.php
 ├── includes/
 │   ├── class-wc-stn-schedule.php   # Silnik terminów (dni wysyłki, godzina graniczna, dostawa, tokeny, odmiana dni)
-│   ├── class-wc-stn-checkout.php   # Klasyczny checkout, zamówienia, lista zamówień, przełącznik Iconic
+│   ├── class-wc-stn-checkout.php   # Klasyczny checkout, zamówienia, lista zamówień
 │   ├── class-wc-stn-checkout-blocks.php  # Checkout blokowy: blok "Ship date", wstawienie do strony, Store API
 │   ├── class-wc-stn-auto-placement.php  # Automatyczne wyświetlanie: hooki, miejsca przy blokach
 │   ├── class-wc-stn-blocks-integration.php  # Skrypt i dane bloku dla checkoutu blokowego (IntegrationInterface)
@@ -608,7 +588,7 @@ wc-ship-today-notice/
 - Nowa zakładka **Checkout** obok „Ustawień” i „Stylu” z całą sekcją „Wybór terminu w checkoucie”. Przy wyłączonym module widać tylko
   checkbox modułu i opcję „daty istniejących zamówień”; pozostałe pola pojawiają się od razu po zaznaczeniu checkboxa, bez zapisu.
 - Zapis jednej zakładki nie zmienia pól drugiej. Zapis opcji z kodu zmienia tylko podane klucze.
-- Ustawienie `disable_iconic` zachowuje wartość, gdy Iconic nie jest aktywny.
+- Usunięto obsługę Iconic Delivery Slots.
 - Powiadomienie o braku bloku „Termin wysyłki” pojawia się też w zakładkach Ustawienia i Styl (status bloku jest tylko w zakładce Checkout).
 - **Automatyczne wyświetlanie:** widget na stronie produktu, w koszyku i checkoucie bez shortcode, z miejscem i priorytetem dla każdej strony. Koszyk i checkout blokowy oraz blokowy szablon produktu: nad albo pod blokiem. Nowe sklepy: włączone na stronie produktu, pod przyciskiem „Dodaj do koszyka”. Sklepy po aktualizacji: wyłączone, dopóki same nie włączą.
 - JS widgetu działa dalej, gdy klasyczny koszyk albo checkout podmieni go AJAX-em, a zegar usuniętego widgetu się zatrzymuje.

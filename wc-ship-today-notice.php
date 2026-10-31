@@ -70,7 +70,6 @@ final class WC_Ship_Today_Notice
         'checkout_primary',
         'checkout_position',
         'checkout_accent',
-        'disable_iconic',
         'checkout_tile_sub',
         'checkout_review_row',
         'checkout_order_rows',
@@ -633,9 +632,6 @@ final class WC_Ship_Today_Notice
         add_settings_field('checkout_texts', __('Texts', 'wc-ship-today-notice'), [$this, 'field_checkout_texts'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
         // Bez klasy: przełącznik "daty przy wyłączonym module" działa właśnie wtedy
         add_settings_field('checkout_display', __('Dates in orders', 'wc-ship-today-notice'), [$this, 'field_checkout_display'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout');
-        if (WC_STN_Checkout::iconic_active()) {
-            add_settings_field('disable_iconic', 'Iconic Delivery Slots', [$this, 'field_disable_iconic'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
-        }
 
         // --- Sekcja: Visibility ---
         add_settings_section(
@@ -802,10 +798,6 @@ final class WC_Ship_Today_Notice
         $options['checkout_primary']   = in_array($input['checkout_primary'] ?? '', ['delivery', 'ship'], true) ? $input['checkout_primary'] : 'delivery';
         $options['checkout_position']  = in_array($input['checkout_position'] ?? '', ['shortcode', 'after_order_notes', 'before_order_review'], true) ? $input['checkout_position'] : 'shortcode';
         $options['checkout_accent']    = (string) sanitize_hex_color($input['checkout_accent'] ?? '');
-        // Pole jest tylko przy aktywnym Iconic: bez niego zostaje zapisana wartość
-        if (WC_STN_Checkout::iconic_active()) {
-            $options['disable_iconic'] = !empty($input['disable_iconic']);
-        }
 
         // Teksty kafelka, wierszy zamówienia i komunikatów: puste = domyślny przetłumaczony tekst; brak w wejściu (zapis z kodu) = bez zmian
         foreach (self::CHECKOUT_TEXTS as $key) {
@@ -997,7 +989,6 @@ final class WC_Ship_Today_Notice
             'checkout_primary' => 'delivery', // co jest dużym napisem na kafelku: 'delivery' albo 'ship'
             'checkout_position' => 'shortcode', // 'shortcode', 'after_order_notes', 'before_order_review'
             'checkout_accent' => '',
-            'disable_iconic' => false,
             // Teksty checkoutu (CHECKOUT_TEXTS): puste = domyślne przetłumaczone; druga linia kafelka: null = domyślna, '' = ukryta
             'checkout_tile_main' => '',
             'checkout_tile_sub' => null,
@@ -1660,27 +1651,6 @@ final class WC_Ship_Today_Notice
         $this->toggle_checkbox('cache_purge_at_cutoff', __('Purge the page cache at each cutoff time', 'wc-ship-today-notice'), __('Only with LiteSpeed Cache or a hooked wc_ship_today_notice_purge_cache action: a WP-Cron event at each cutoff time, so cached pages get a fresh start text. The cache is still purged after saving the settings.', 'wc-ship-today-notice'));
         $this->toggle_checkbox('test_mode', __('Test mode ?stn_now=', 'wc-ship-today-notice'), __('Shop managers can add ?stn_now=2026-12-20T19:59 to any URL to see the widget and the checkout at another time.', 'wc-ship-today-notice'));
         $this->toggle_checkbox('wpml_strings', __('WPML: translate the widget texts', 'wc-ship-today-notice'), __('With WPML active: the four widget texts are registered as strings when saving and shown translated. Off: the texts are shown as saved.', 'wc-ship-today-notice'));
-    }
-
-    public function field_disable_iconic()
-    {
-        $o = $this->get_options();
-        ?>
-        <label>
-            <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[disable_iconic]" value="1" <?php checked(!empty($o['disable_iconic'])); ?> />
-            <?php esc_html_e('Disable Iconic Delivery Slots in the cart and checkout (works only with the module enabled)', 'wc-ship-today-notice'); ?>
-        </label>
-        <p class="description">
-            <?php esc_html_e('For the transition period: Iconic stays active in the admin (old orders, its column and the Deliveries page), but it does not show the calendar, validate or save dates for new orders.', 'wc-ship-today-notice'); ?>
-            <?php
-            printf(
-                /* translators: %s: [iconic-wds-fields] shortcode */
-                esc_html__('New orders will not appear in Iconic. To roll back: uncheck this and put the %s shortcode back in the checkout.', 'wc-ship-today-notice'),
-                '<code>[iconic-wds-fields]</code>'
-            );
-            ?>
-        </p>
-        <?php
     }
 
     public function field_mode()
