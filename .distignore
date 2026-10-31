@@ -10,6 +10,7 @@
 /scripts
 /tests
 /README.md
+/README.pl.md
 /package.json
 /package-lock.json
 .DS_Store
