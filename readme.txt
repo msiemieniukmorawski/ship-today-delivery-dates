@@ -16,6 +16,7 @@ Show customers how long they have to order so the parcel ships in the next slot:
 
 **Notice widget**
 
+* Automatic display on the product page, cart and checkout without a shortcode, with a position and priority for each. New shops show it on the product page, below the add to cart button, right after activation (block pages: above or below the block).
 * Shortcode `[ship_today_notice]` with two modes: "ships today" (countdown to today's cutoff) and "next slot" (always the nearest cutoff).
 * Shipping weekdays with a cutoff time per day. The cutoff can fall 0-6 days before the ship day (e.g. ships on Monday, order by Sunday 8 pm).
 * Delivery date: N delivery days after shipping, skipping days without deliveries and public holidays.
@@ -48,10 +49,14 @@ All plugin texts are translatable (English source): the admin, weekday names and
 3. Go to WooCommerce → Ship Today Notice. Set the shipping weekdays and cutoff times.
 4. Click "Fetch holidays now" at the bottom of the settings page to download holidays right away.
 5. Optionally set the delivery days, then save and check the "Next slots" preview.
-6. Add `[ship_today_notice]` to the product page, cart, header or a popup.
+6. The widget already shows on product pages. Change it in "Automatic display" (product page, cart, checkout), or add `[ship_today_notice]` anywhere (e.g. the header or a popup).
 7. Optionally enable the ship date choice in the Checkout tab.
 
 == Frequently Asked Questions ==
+
+= I installed the plugin but see no message. =
+
+A new shop shows the widget on product pages, below the add to cart button. Shops updating from an earlier version keep it off until they turn it on: use WooCommerce → Ship Today Notice → "Automatic display" for the product page, cart or checkout, or add the `[ship_today_notice]` shortcode.
 
 = Does it work with the block-based checkout? =
 

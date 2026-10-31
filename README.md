@@ -91,7 +91,7 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
 1. Upload the plugin to `wp-content/plugins/wc-ship-today-notice/` and activate it (WooCommerce must be active).
 2. Go to **WooCommerce → Ship Today Notice**, select the shipping days and set the cutoff times.
 3. Optionally set **Delivery** (delivery days after shipping) and check the **Upcoming dates** table.
-4. Add the shortcode to a product page, the cart or the header:
+4. The widget already shows on product pages, below the add to cart button. Change it in **Automatic display** (product page, cart, checkout), or add the shortcode anywhere:
 
    ```
    [ship_today_notice]
@@ -119,6 +119,7 @@ and supports both the HPOS orders list and the legacy posts table.
 | Feature | Default | Where to enable | Notes |
 |---|---|---|---|
 | `[ship_today_notice]` widget | yes, once the shortcode is added | shortcode | "Display widget" = Always. The widget JS and CSS load only on pages with the widget (shortcode detected in the content/short description or rendered; filter `wc_ship_today_notice_load_assets`). |
+| Automatic display (no shortcode) | **product page: yes** in a new shop, below the add to cart button; cart and checkout: no | Automatic display | Each page separately, with a position and priority. Shops updating from an earlier version: all off. |
 | Message mode | "Ship today" | Message mode / `mode` attribute | |
 | Shipping days | Mon-Fri, until 14:00 the same day | Delivery weekdays & cutoff times | Sat/Sun default to 12:00 but aren't selected. |
 | Delivery date | no (0 days) | Delivery | Days without deliveries default to Sunday. |
@@ -145,6 +146,28 @@ and supports both the HPOS orders list and the legacy posts table.
 Every switch defaults to the previous behavior, and when off it doesn't register its hooks (cron: the event isn't scheduled or gets
 removed). With the checkout module off, the plugin doesn't register its hooks. Dates already saved in orders stay in the meta and are
 shown only with the "Show dates of existing orders also when the module is disabled" switch on.
+
+## Automatic display
+
+**Settings → Automatic display** shows the widget without a shortcode. Product page, Cart and Checkout are independent rows, each with a checkbox, a position and a priority. In a new shop the widget shows on the product page below the add to cart button right after activation; Cart and Checkout are off. Shops updating from an earlier version keep everything off until they turn it on. The widget does not depend on the ship date choice at checkout.
+
+| Page | Position (classic pages) | Default priority |
+|---|---|---|
+| Product page | Below the add to cart form (default) | 10 |
+| | Above the add to cart form | 10 |
+| | In the product summary | 25 (title 5, price 10, description 20, add to cart 30, meta 40) |
+| Cart | Above the cart | 20 (notices 10) |
+| | Above the cart totals | 10 |
+| | Next to the "Proceed to checkout" button | 5 (button 20) |
+| Checkout | Above the checkout form | 20 (notices, login, coupon 10) |
+| | Above the order review | 10 |
+| | Above the "Place order" button | 10 |
+
+- **Priority** decides the order among elements on the same hook: a lower number comes first. An empty field uses the default above. The accepted range is 0-999.
+- **Block pages:** the block cart, the block checkout and product templates with the add to cart block don't run these hooks. The panel detects them and offers **above or below the block** instead, without a priority. A position inside a WooCommerce block is not available.
+- A block theme with the `legacy-template` product template runs the classic hooks, so it gets the classic options.
+- The widget renders through the same code as the shortcode: same texts, style and visibility rules. A page that also has `[ship_today_notice]` shows two widgets, and that is up to the shop.
+- The classic cart and checkout refresh parts of the page with AJAX. The widget starts again after `updated_cart_totals`, `updated_wc_div` and `updated_checkout`, so the countdown keeps running and timers don't pile up.
 
 ## Documentation
 
@@ -447,7 +470,7 @@ The API receives only the country code, language code and date range - no custom
 | `wc_ship_today_notice_cutoff_time` | `string $time` (`H:i`), `int $weekday` (1 = Mon), `string $ship_ymd`, `?string $method` | A different cutoff for a specific day. |
 | `wc_ship_today_notice_slots` | `array $slots`, `int $count`, `DateTimeImmutable $now`, `?string $method` | Change the date list (widget, checkout, validation). |
 | `wc_ship_today_notice_text` | `string $text`, `string $state` (`next`, `before`, `after`, `not_shipping`), `string $mode`, `?string $method` | Widget text before tokens are replaced. |
-| `wc_ship_today_notice_load_assets` | `bool $load` (shortcode detection result) | `true` = widget JS and CSS in `<head>` on this page. Needed when the widget arrives in content loaded with AJAX (popup, PJAX). |
+| `wc_ship_today_notice_load_assets` | `bool $load` (shortcode detected or Automatic display on this page) | `true` = widget JS and CSS in `<head>` on this page. Needed when the widget arrives in content loaded with AJAX (popup, PJAX). |
 
 `$method` (last argument, optional, so old callbacks keep working) is the shipping method instance ID (`flat_rate:3`) the date is
 calculated for, even if that method has no own times, or `null` for the main schedule.
@@ -549,6 +572,7 @@ wc-ship-today-notice/
 │   ├── class-wc-stn-schedule.php   # Schedule engine (shipping days, cutoff, delivery, tokens, weekday forms)
 │   ├── class-wc-stn-checkout.php   # Classic checkout, orders, orders list, Iconic switch
 │   ├── class-wc-stn-checkout-blocks.php  # Block checkout: "Ship date" block, page insertion, Store API
+│   ├── class-wc-stn-auto-placement.php  # Automatic display: hooks, block positions
 │   ├── class-wc-stn-blocks-integration.php  # Block script and data (IntegrationInterface)
 │   └── functions.php               # Public wc_stn_* API
 ├── assets/
@@ -579,6 +603,8 @@ wc-ship-today-notice/
 - Saving one tab doesn't change the fields of the other. Saving the options from code changes only the keys it passes.
 - The `disable_iconic` setting keeps its value while Iconic isn't active.
 - The "no Ship date block" notice now also shows on the Settings and Style tabs (only the Checkout tab has the block status).
+- **Automatic display:** show the widget on the product page, cart and checkout without a shortcode, with a position and priority for each. Block cart, block checkout and block product templates get above/below the block. New shops: on for the product page, below the add to cart button. Updated shops: off until enabled.
+- The widget's JS keeps working when the classic cart or checkout replaces it with AJAX, and the timer of a removed widget stops.
 
 ### 2.4.1 (2026-10-31)
 

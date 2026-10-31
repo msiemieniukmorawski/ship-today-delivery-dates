@@ -27,6 +27,7 @@ define('WC_STN_FILE', __FILE__);
 require_once __DIR__ . '/includes/class-wc-stn-schedule.php';
 require_once __DIR__ . '/includes/class-wc-stn-checkout.php';
 require_once __DIR__ . '/includes/class-wc-stn-checkout-blocks.php';
+require_once __DIR__ . '/includes/class-wc-stn-auto-placement.php';
 require_once __DIR__ . '/includes/functions.php';
 
 final class WC_Ship_Today_Notice
@@ -157,6 +158,8 @@ final class WC_Ship_Today_Notice
 
     public function init_checkout()
     {
+        new WC_STN_Auto_Placement($this);
+
         // Tryb testowy na init 1: przed polem checkoutu blokowego (init 2), które liczy terminy od "teraz"
         if (!empty($this->get_options()['test_mode'])) {
             add_action('init', [$this, 'maybe_enable_test_mode'], 1);
@@ -607,6 +610,15 @@ final class WC_Ship_Today_Notice
         add_settings_field('preview', __('Upcoming dates', 'wc-ship-today-notice'), [$this, 'field_preview'], 'wc-ship-today-notice', 'wc_ship_today_main');
         add_settings_field('method_schedules', __('Shipping methods', 'wc-ship-today-notice'), [$this, 'field_method_schedules'], 'wc-ship-today-notice', 'wc_ship_today_main');
 
+        // --- Sekcja: automatyczne wyświetlanie widgetu ---
+        add_settings_section(
+            'wc_ship_today_auto',
+            __('Automatic display', 'wc-ship-today-notice'),
+            '__return_false',
+            'wc-ship-today-notice'
+        );
+        add_settings_field('auto_placement', __('Show the widget without a shortcode', 'wc-ship-today-notice'), [$this, 'field_auto_placement'], 'wc-ship-today-notice', 'wc_ship_today_auto');
+
         // --- Zakładka Checkout: pola modułu ukryte przy wyłączonym module (assets/js/checkout-settings.js) ---
         add_settings_section(
             'wc_ship_today_checkout',
@@ -813,6 +825,11 @@ final class WC_Ship_Today_Notice
             $options['checkout_tile_sub'] = in_array($sub, $defaults, true) ? null : $sub;
         }
 
+        // Automatyczne wyświetlanie: tylko z formularza (zapis z kodu bez tego klucza zostawia poprzednie wartości)
+        if (isset($input['auto_placement'])) {
+            $options['auto_placement'] = WC_STN_Auto_Placement::sanitize((array) $input['auto_placement']);
+        }
+
         // Przełączniki: odznaczony checkbox nie przychodzi w POST, więc bez znacznika formularza (zapis z kodu) nic nie zmieniamy
         if (!empty($input['_toggles'])) {
             foreach (self::TOGGLES as $key) {
@@ -1001,9 +1018,16 @@ final class WC_Ship_Today_Notice
             'cache_purge_at_cutoff' => true, // czyszczenie cache o godzinie granicznej (LiteSpeed / akcja)
             'test_mode' => true, // ?stn_now= dla manage_woocommerce
             'wpml_strings' => true, // rejestracja i tłumaczenie tekstów widgetu w WPML
+            'auto_placement' => WC_STN_Auto_Placement::defaults(), // widget bez shortcode: nowy sklep ma go na stronie produktu
         ];
 
         $saved = get_option(self::OPTION_KEY, []);
+
+        // Zapisane ustawienia bez tego klucza = sklep sprzed automatycznego wyświetlania: aktualizacja nie dokłada mu widgetu
+        if (is_array($saved) && $saved && !isset($saved['auto_placement'])) {
+            $saved['auto_placement'] = WC_STN_Auto_Placement::disabled();
+        }
+
         return wp_parse_args($saved, $defaults);
     }
 
@@ -1280,13 +1304,93 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
 
     /**
+     * Automatyczne wyświetlanie: tabela wierszy. Pokazujemy opcje działające dla strony tego sklepu (hook albo miejsce przy bloku),
+     * druga wartość zostaje w ukrytym polu, żeby nie przepadła przy zmianie rodzaju strony.
+     */
+    public function field_auto_placement()
+    {
+        $name  = self::OPTION_KEY . '[auto_placement]';
+        $rows  = WC_STN_Auto_Placement::settings($this->get_options());
+        $texts = [
+            'product'  => __('Product page', 'wc-ship-today-notice'),
+            'cart'     => __('Cart', 'wc-ship-today-notice'),
+            'checkout' => __('Checkout', 'wc-ship-today-notice'),
+        ];
+        $hooks = [
+            'woocommerce_before_add_to_cart_form'      => __('Above the add to cart form', 'wc-ship-today-notice'),
+            'woocommerce_after_add_to_cart_form'       => __('Below the add to cart form', 'wc-ship-today-notice'),
+            'woocommerce_single_product_summary'       => __('In the product summary (position set by the priority)', 'wc-ship-today-notice'),
+            'woocommerce_before_cart'                  => __('Above the cart', 'wc-ship-today-notice'),
+            'woocommerce_before_cart_totals'           => __('Above the cart totals', 'wc-ship-today-notice'),
+            'woocommerce_proceed_to_checkout'          => __('Next to the "Proceed to checkout" button', 'wc-ship-today-notice'),
+            'woocommerce_before_checkout_form'         => __('Above the checkout form', 'wc-ship-today-notice'),
+            'woocommerce_checkout_before_order_review' => __('Above the order review', 'wc-ship-today-notice'),
+            'woocommerce_review_order_before_submit'   => __('Above the "Place order" button', 'wc-ship-today-notice'),
+        ];
+        $block_texts = [
+            'product'  => [__('Above the add to cart block', 'wc-ship-today-notice'), __('Below the add to cart block', 'wc-ship-today-notice')],
+            'cart'     => [__('Above the cart block', 'wc-ship-today-notice'), __('Below the cart block', 'wc-ship-today-notice')],
+            'checkout' => [__('Above the checkout block', 'wc-ship-today-notice'), __('Below the checkout block', 'wc-ship-today-notice')],
+        ];
+
+        echo '<table class="widefat striped" style="max-width:760px"><thead><tr>';
+        printf('<th>%s</th><th>%s</th><th>%s</th><th>%s</th>', esc_html__('Page', 'wc-ship-today-notice'), esc_html__('Show', 'wc-ship-today-notice'), esc_html__('Position', 'wc-ship-today-notice'), esc_html__('Priority', 'wc-ship-today-notice'));
+        echo '</tr></thead><tbody>';
+
+        foreach ($rows as $row => $set) {
+            $is_block = 'block' === WC_STN_Auto_Placement::page_type($row);
+            $field    = $name . '[' . $row . ']';
+
+            echo '<tr><td>' . esc_html($texts[$row]) . '</td><td>';
+            printf('<input type="checkbox" name="%s" value="1" %s />', esc_attr($field . '[enabled]'), checked(!empty($set['enabled']), true, false));
+            echo '</td><td>';
+
+            if ($is_block) {
+                printf('<select name="%s">', esc_attr($field . '[block]'));
+                foreach (['before', 'after'] as $i => $value) {
+                    printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($set['block'], $value, false), esc_html($block_texts[$row][$i]));
+                }
+                echo '</select>';
+                printf('<input type="hidden" name="%s" value="%s" />', esc_attr($field . '[hook]'), esc_attr($set['hook']));
+                printf('</td><td>&ndash;<input type="hidden" name="%s" value="%s" />', esc_attr($field . '[priority]'), esc_attr($set['priority']));
+            } else {
+                printf('<select name="%s">', esc_attr($field . '[hook]'));
+                foreach (WC_STN_Auto_Placement::HOOKS[$row] as $hook => $default) {
+                    printf('<option value="%s" %s>%s</option>', esc_attr($hook), selected($set['hook'], $hook, false), esc_html($hooks[$hook]));
+                }
+                echo '</select>';
+                printf('<input type="hidden" name="%s" value="%s" />', esc_attr($field . '[block]'), esc_attr($set['block']));
+                printf(
+                    '</td><td><input type="number" min="0" max="%d" step="1" name="%s" value="%s" placeholder="%d" style="width:80px" />',
+                    (int) WC_STN_Auto_Placement::MAX_PRIORITY,
+                    esc_attr($field . '[priority]'),
+                    esc_attr($set['priority']),
+                    (int) WC_STN_Auto_Placement::HOOKS[$row][$set['hook']]
+                );
+            }
+            echo '</td></tr>';
+
+            if ($is_block) {
+                echo '<tr><td colspan="4" class="description">' . esc_html(
+                    'product' === $row
+                        ? __('The product template uses the add to cart block, so the widget can only be placed above or below this block. The priority is not available.', 'wc-ship-today-notice')
+                        : __('This page uses a WooCommerce block, so the widget can only be placed above or below the whole block. The priority is not available.', 'wc-ship-today-notice')
+                ) . '</td></tr>';
+            }
+        }
+
+        echo '</tbody></table>';
+        echo '<p class="description">' . esc_html__('Works next to the shortcode and independently of the ship date choice: a page with both shows two widgets. Priority: elements on the same position are shown from the lowest number. In the product summary the title has 5, the price 10, the description 20, the add to cart button 30, so 25 is above the button. Empty = a default that fits the position.', 'wc-ship-today-notice') . '</p>';
+    }
+
+    /**
      * Section callback: Shortcode info
      */
     public function section_shortcode_info()
     {
         ?>
         <div style="background:#f0f6fc;border:1px solid #c3d9ed;border-radius:4px;padding:12px 16px;margin-bottom:20px;">
-            <strong><?php esc_html_e('Use this shortcode to display the widget:', 'wc-ship-today-notice'); ?></strong>
+            <strong><?php esc_html_e('Use this shortcode to display the widget (or turn on "Automatic display" below):', 'wc-ship-today-notice'); ?></strong>
             <code style="display:inline-block;margin:8px 0;padding:6px 12px;background:#fff;border-radius:3px;font-size:14px;">[ship_today_notice]</code>
             <p class="description" style="margin:0 0 6px;">
                 <?php esc_html_e('Place it on product pages, cart, sidebar, or anywhere you want to show the shipping countdown.', 'wc-ship-today-notice'); ?>
@@ -2314,7 +2418,7 @@ final class WC_Ship_Today_Notice
          * Czy ładować JS i CSS widgetu na tej stronie już w <head> (domyślnie: shortcode w treści wpisów z głównego zapytania).
          * true wymusza ładowanie, np. dla widgetu w treści doładowanej AJAX-em przed WcShipTodayNotice.init().
          */
-        if (apply_filters('wc_ship_today_notice_load_assets', $this->page_has_shortcode())) {
+        if (apply_filters('wc_ship_today_notice_load_assets', $this->page_has_shortcode() || WC_STN_Auto_Placement::active_on_page($this->get_options()))) {
             $this->enqueue_widget_assets();
         }
     }

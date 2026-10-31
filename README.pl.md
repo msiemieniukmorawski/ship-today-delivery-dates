@@ -91,7 +91,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 1. Wgraj wtyczkę do `wp-content/plugins/wc-ship-today-notice/` i aktywuj ją (wymaga aktywnego WooCommerce).
 2. **WooCommerce → Ship Today Notice**: zaznacz dni wysyłki i ustaw godziny graniczne.
 3. Opcjonalnie ustaw **Dostawę** (ile dni doręczeń po wysyłce) i sprawdź tabelę **Najbliższe terminy**.
-4. Wstaw shortcode na kartę produktu, do koszyka albo nagłówka:
+4. Widget od razu pokazuje się na stronach produktów, pod przyciskiem „Dodaj do koszyka”. Zmienisz to w **Automatycznym wyświetlaniu** (strona produktu, koszyk, checkout), możesz też wstawić shortcode w dowolnym miejscu:
 
    ```
    [ship_today_notice]
@@ -119,6 +119,7 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 | Funkcja | Domyślnie | Gdzie się włącza | Uwagi |
 |---|---|---|---|
 | Widget `[ship_today_notice]` | tak, po wstawieniu shortcode | shortcode | „Wyświetlanie widgetu” = Zawsze. JS i CSS widgetu ładują się tylko na stronach z widgetem (wykrycie shortcode w treści/krótkim opisie albo render shortcode; filtr `wc_ship_today_notice_load_assets`). |
+| Automatyczne wyświetlanie (bez shortcode) | **strona produktu: tak** w nowym sklepie, pod przyciskiem „Dodaj do koszyka”; koszyk i checkout: nie | Automatyczne wyświetlanie | Każda strona osobno, z miejscem i priorytetem. Sklepy po aktualizacji z wcześniejszej wersji: wszystko wyłączone. |
 | Tryb komunikatu | „Wysyłka dziś” | Tryb komunikatu / atrybut `mode` | |
 | Dni wysyłki | pn-pt, do 14:00 tego samego dnia | Delivery weekdays & cutoff times | sob/nd mają domyślnie 12:00, ale nie są zaznaczone. |
 | Data dostawy | nie (0 dni) | Dostawa | Dni bez doręczeń domyślnie: niedziela. |
@@ -146,6 +147,28 @@ Każdy przełącznik ma domyślnie dotychczasowe zachowanie, a wyłączony nie r
 planowane albo jest zdejmowane). Gdy moduł checkoutu jest wyłączony, wtyczka nie rejestruje jego hooków. Daty zapisane wcześniej
 w zamówieniach zostają w meta i są pokazywane tylko przy włączonym przełączniku „Pokazuj daty istniejących zamówień także przy
 wyłączonym module”.
+
+## Automatyczne wyświetlanie
+
+**Ustawienia → Automatyczne wyświetlanie** pokazuje widget bez shortcode. Strona produktu, Koszyk i Checkout to niezależne wiersze: checkbox, miejsce i priorytet. W nowym sklepie widget pokazuje się na stronie produktu pod przyciskiem „Dodaj do koszyka” zaraz po aktywacji, Koszyk i Checkout są wyłączone. Sklepy aktualizujące wtyczkę z wcześniejszej wersji mają wszystko wyłączone, dopóki same tego nie włączą. Widget nie zależy od wyboru terminu w checkoucie.
+
+| Strona | Miejsce (strony klasyczne) | Domyślny priorytet |
+|---|---|---|
+| Strona produktu | Pod formularzem „Dodaj do koszyka” (domyślnie) | 10 |
+| | Nad formularzem „Dodaj do koszyka” | 10 |
+| | W podsumowaniu produktu | 25 (tytuł 5, cena 10, opis 20, przycisk 30, meta 40) |
+| Koszyk | Nad koszykiem | 20 (komunikaty 10) |
+| | Nad podsumowaniem koszyka | 10 |
+| | Przy przycisku „Przejdź do płatności” | 5 (przycisk 20) |
+| Checkout | Nad formularzem zamówienia | 20 (komunikaty, logowanie, kupon 10) |
+| | Nad podsumowaniem zamówienia | 10 |
+| | Nad przyciskiem „Złóż zamówienie” | 10 |
+
+- **Priorytet** ustala kolejność wśród elementów w tym samym hooku: mniejsza liczba idzie pierwsza. Puste pole to wartość domyślna z tabeli. Zakres 0-999.
+- **Strony blokowe:** koszyk blokowy, checkout blokowy i szablon produktu z blokiem „Dodaj do koszyka” nie wywołują tych hooków. Panel je rozpoznaje i pokazuje wybór **nad albo pod blokiem**, bez priorytetu. Miejsca wewnątrz bloku WooCommerce nie są dostępne.
+- Motyw blokowy z szablonem produktu `legacy-template` wywołuje hooki klasyczne, więc ma opcje klasyczne.
+- Widget renderuje ten sam kod co shortcode: te same teksty, styl i widoczność. Strona, która ma też `[ship_today_notice]`, pokaże dwa widgety - to wybór sklepu.
+- Klasyczny koszyk i checkout odświeżają fragmenty strony AJAX-em. Widget startuje ponownie po `updated_cart_totals`, `updated_wc_div` i `updated_checkout`, więc odliczanie działa dalej, a timery się nie mnożą.
 
 ## Dokumentacja
 
@@ -453,7 +476,7 @@ Do API idzie tylko kod kraju, kod języka i zakres dat - bez danych klientów (s
 | `wc_ship_today_notice_cutoff_time` | `string $time` (`H:i`), `int $weekday` (1 = pn), `string $ship_ymd`, `?string $method` | Inna godzina graniczna dla konkretnego dnia. |
 | `wc_ship_today_notice_slots` | `array $slots`, `int $count`, `DateTimeImmutable $now`, `?string $method` | Zmiana listy terminów (widget, checkout, walidacja). |
 | `wc_ship_today_notice_text` | `string $text`, `string $state` (`next`, `before`, `after`, `not_shipping`), `string $mode`, `?string $method` | Tekst widgetu przed wstawieniem tokenów. |
-| `wc_ship_today_notice_load_assets` | `bool $load` (wynik wykrycia shortcode) | `true` = JS i CSS widgetu w `<head>` na tej stronie. Potrzebne, gdy widget przychodzi w treści doładowanej AJAX-em (popup, PJAX). |
+| `wc_ship_today_notice_load_assets` | `bool $load` (wykryty shortcode albo Automatyczne wyświetlanie na tej stronie) | `true` = JS i CSS widgetu w `<head>` na tej stronie. Potrzebne, gdy widget przychodzi w treści doładowanej AJAX-em (popup, PJAX). |
 
 `$method` (ostatni argument, opcjonalny - stare callbacki działają bez zmian) to ID instancji metody wysyłki (`flat_rate:3`),
 dla której liczony jest termin, także gdy metoda nie ma własnych godzin, albo `null` dla harmonogramu globalnego.
@@ -555,6 +578,7 @@ wc-ship-today-notice/
 │   ├── class-wc-stn-schedule.php   # Silnik terminów (dni wysyłki, godzina graniczna, dostawa, tokeny, odmiana dni)
 │   ├── class-wc-stn-checkout.php   # Klasyczny checkout, zamówienia, lista zamówień, przełącznik Iconic
 │   ├── class-wc-stn-checkout-blocks.php  # Checkout blokowy: blok "Ship date", wstawienie do strony, Store API
+│   ├── class-wc-stn-auto-placement.php  # Automatyczne wyświetlanie: hooki, miejsca przy blokach
 │   ├── class-wc-stn-blocks-integration.php  # Skrypt i dane bloku dla checkoutu blokowego (IntegrationInterface)
 │   └── functions.php               # Publiczne API wc_stn_*
 ├── assets/
@@ -586,6 +610,8 @@ wc-ship-today-notice/
 - Zapis jednej zakładki nie zmienia pól drugiej. Zapis opcji z kodu zmienia tylko podane klucze.
 - Ustawienie `disable_iconic` zachowuje wartość, gdy Iconic nie jest aktywny.
 - Powiadomienie o braku bloku „Termin wysyłki” pojawia się też w zakładkach Ustawienia i Styl (status bloku jest tylko w zakładce Checkout).
+- **Automatyczne wyświetlanie:** widget na stronie produktu, w koszyku i checkoucie bez shortcode, z miejscem i priorytetem dla każdej strony. Koszyk i checkout blokowy oraz blokowy szablon produktu: nad albo pod blokiem. Nowe sklepy: włączone na stronie produktu, pod przyciskiem „Dodaj do koszyka”. Sklepy po aktualizacji: wyłączone, dopóki same nie włączą.
+- JS widgetu działa dalej, gdy klasyczny koszyk albo checkout podmieni go AJAX-em, a zegar usuniętego widgetu się zatrzymuje.
 
 ### 2.4.1 (31.10.2026)
 

@@ -191,7 +191,13 @@
     var s = render(el, cfg);
     tick(el, cfg, s);
 
-    setInterval(function () {
+    var timer = setInterval(function () {
+      // Widget podmieniony przez AJAX (koszyk, checkout): nowy element ma własny zegar, ten kończy pracę
+      if (!document.documentElement.contains(el)) {
+        clearInterval(timer);
+        return;
+      }
+
       var nowS = Math.floor(nowMs(cfg) / 1000);
 
       // Przełączenie na kolejny termin po godzinie granicznej i odświeżenie "dziś/jutro" po północy.
@@ -215,11 +221,22 @@
   // Dla treści doładowanych AJAX-em (np. popupy, PJAX motywu).
   window.WcShipTodayNotice = { init: initAll };
 
+  // Klasyczny koszyk i checkout podmieniają fragmenty HTML AJAX-em (zdarzenia jQuery, addEventListener ich nie widzi)
+  function bindAjax() {
+    if (window.jQuery) {
+      window.jQuery(document.body).on('updated_cart_totals updated_wc_div updated_checkout', function () {
+        initAll();
+      });
+    }
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
       initAll();
+      bindAjax();
     });
   } else {
     initAll();
+    bindAjax();
   }
 })();
