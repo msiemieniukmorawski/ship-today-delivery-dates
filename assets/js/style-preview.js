@@ -77,6 +77,8 @@
       });
       $form.find('input[type="number"], select').val('');
       applyAll();
+      // WooCommerce włącza przycisk zapisu dopiero po zdarzeniu change na polu formularza
+      $form.find('input[type="number"]').first().trigger('change');
     });
 
     applyAll();

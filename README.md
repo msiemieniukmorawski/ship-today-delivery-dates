@@ -45,18 +45,18 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
   </tr>
 </table>
 
-**Style tab** - set the look of the widget in the admin, with a live preview:
+**Style section** - set the look of the widget in the admin, with a live preview:
 
-<p align="center"><img src=".wordpress-org/screenshot-5.png" alt="Style tab with a live preview" width="820"></p>
+<p align="center"><img src=".wordpress-org/screenshot-5.png" alt="Style section with a live preview" width="820"></p>
 
 <details>
-<summary>Settings: shipping days, automatic display and the Checkout tab</summary>
+<summary>Settings: shipping days, automatic display and the Checkout section</summary>
 
 <p align="center"><img src=".wordpress-org/screenshot-4.png" alt="Shipping days settings and upcoming dates" width="820"></p>
 
 <p align="center"><img src=".wordpress-org/screenshot-7.png" alt="Automatic display of the widget: page, position and priority" width="820"></p>
 
-<p align="center"><img src=".wordpress-org/screenshot-8.png" alt="Checkout tab with tiles, texts and order dates" width="820"></p>
+<p align="center"><img src=".wordpress-org/screenshot-8.png" alt="Checkout section with tiles, texts and order dates" width="820"></p>
 
 </details>
 
@@ -67,7 +67,7 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
 - Texts with tokens and correct weekday forms: "until Sunday 20:00", "on Tuesday", "bis Sonntag", "do niedzieli".
 - A list of several upcoming dates (`count="3"`), custom text and a CSS class in the shortcode.
 - **Works with cached pages** - a 42-day schedule sits in the HTML and the browser works out the state. LiteSpeed Cache is purged at the cutoff.
-- **Style tab** - colors, border, font and alignment set in the admin with a live preview, no CSS needed.
+- **Style section** - colors, border, font and alignment set in the admin with a live preview, no CSS needed.
 
 **Schedule**
 - Shipping days and a cutoff time per day, including cutoffs that fall earlier (ship on Monday, orders until Sunday 20:00).
@@ -92,7 +92,7 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
 ## Quick start
 
 1. Upload the plugin to `wp-content/plugins/wc-ship-today-notice/` and activate it (WooCommerce must be active).
-2. Go to **WooCommerce → Ship Today Notice**, select the shipping days and set the cutoff times.
+2. Go to **WooCommerce → Settings → Ship Today Notice**, select the shipping days and set the cutoff times.
 3. Optionally set **Delivery** (delivery days after shipping) and check the **Upcoming dates** table.
 4. The widget already shows on product pages, below the add to cart button. Change it in **Automatic display** (product page, cart, checkout), or add the shortcode anywhere:
 
@@ -101,7 +101,7 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
    [ship_today_notice mode="next_slot" text="Order {cutoff_when}, we will deliver {delivery_when}. Time left: {countdown}"]
    ```
 
-5. Optionally enable the ship date choice in the **Checkout** tab and open the **Style** tab.
+5. Optionally enable the ship date choice in the **Checkout** section and open the **Style** section.
 
 Holidays download by themselves right after activation (WP-Cron). To get them immediately, use "Fetch holidays now" at the bottom of the settings.
 
@@ -132,9 +132,9 @@ and supports both the HPOS orders list and the legacy posts table.
 | Excluded dates | none | Excluded dates | |
 | Text after the cutoff / on non-shipping days | yes | checkboxes next to the texts | Applies to "ship today" mode. |
 | Seconds in the countdown | yes | Countdown format | |
-| Custom widget look | no (styles from `notice.css`) | **Style** tab | Empty field = default look. |
-| Ship date choice at checkout | **no** | **Checkout** tab → Module | Default position: `[ship_today_checkout]` shortcode only. |
-| Date row in the checkout order summary | yes, with the module | Checkout tab → Dates in orders | Both checkouts. |
+| Custom widget look | no (styles from `notice.css`) | **Style** section | Empty field = default look. |
+| Ship date choice at checkout | **no** | **Checkout** section → Module | Default position: `[ship_today_checkout]` shortcode only. |
+| Date row in the checkout order summary | yes, with the module | Checkout section → Dates in orders | Both checkouts. |
 | "Ship date" / "Planned delivery" rows: emails, thank-you page, My Account | yes, with the module | same | |
 | Order admin: dates | with the module | automatic | The box appears only when the order has dates or they can be changed. |
 | Order admin: changing the ship date | yes, with the module | Dates in orders | Off: the dates are read-only. |
@@ -257,9 +257,9 @@ are updated automatically when upgrading to 2.2.0.
 </details>
 
 <details>
-<summary><b>Look and the Style tab</b></summary>
+<summary><b>Look and the Style section</b></summary>
 
-WooCommerce → Ship Today Notice → **Style**: the look of `[ship_today_notice]` without writing CSS, with a live preview of the
+WooCommerce → Settings → Ship Today Notice → **Style**: the look of `[ship_today_notice]` without writing CSS, with a live preview of the
 states before and after the cutoff.
 
 | Option | Description |
@@ -285,7 +285,7 @@ CSS variables: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `
 <details>
 <summary><b>Ship date choice at checkout (classic, block)</b></summary>
 
-Enable it in **WooCommerce → Ship Today Notice → Checkout → Module**. While the module is off the tab shows only this checkbox and the
+Enable it in **WooCommerce → Settings → Ship Today Notice → Checkout → Module**. While the module is off the section shows only this checkbox and the
 option to keep showing dates of existing orders (with the options it depends on). The other fields appear as soon as you tick the checkbox,
 without saving; hidden fields keep their values.
 
@@ -349,7 +349,7 @@ an inner block of the checkout form, parent `woocommerce/checkout-fields-block`)
 - **Insertion:** on the first admin visit after enabling the module, the plugin adds the block to the checkout page once
   (below "Shipping options", or before "Payment" if there are none). After that the block is yours: you can **move** it in the checkout page
   editor, **remove** it and add it again from the inserter (search for "Ship date"). A removed block isn't added back.
-  The **Checkout** tab shows whether the block is on the checkout page. A checkout in a theme template
+  The **Checkout** section shows whether the block is on the checkout page. A checkout in a theme template
   (Site Editor) isn't changed automatically - add the block there by hand.
 - **Without the block** the customer doesn't pick a date and orders go through without one (sales aren't blocked). The admin then shows a
   notice (to `manage_woocommerce` users, dismissible; it comes back if the checkout page changes).
@@ -387,7 +387,7 @@ an inner block of the checkout form, parent `woocommerce/checkout-fields-block`)
 <details>
 <summary><b>Cutoff times per shipping method</b></summary>
 
-WooCommerce → Ship Today Notice → **Shipping methods** (below "Upcoming dates"): a list of all methods from your WooCommerce shipping
+WooCommerce → Settings → Ship Today Notice → **Shipping methods** section: a list of all methods from your WooCommerce shipping
 zones (including "Rest of the world" and methods from plugins, such as parcel lockers), each as a `method:instance` instance
 (e.g. `flat_rate:3`), so different zones and countries can have different times.
 
@@ -465,7 +465,7 @@ The widget JS and CSS load only where the widget is:
   → CSS in `<head>`, JS in the footer;
 - anywhere else that renders the shortcode on the server (sidebar widget, template, page builder) → on render:
   CSS printed right before the widget (no unstyled flash), JS in the footer;
-- the style from the Style tab always goes with `notice.css`.
+- the style from the Style section always goes with `notice.css`.
 
 Detection looks at posts in the main query, so for example a product list where one product has the shortcode in its short description
 loads the assets even if the list doesn't display it.
@@ -519,7 +519,7 @@ and JS (widget, tiles, checkout validation). The date is read in the store time 
 <summary><b>Database and uninstalling</b></summary>
 
 - Option `wc_ship_today_notice_options` - all settings (array).
-- Option `wc_ship_today_notice_style` - Style tab settings (array, empty values = defaults).
+- Option `wc_ship_today_notice_style` - Style section settings (array, empty values = defaults).
 - Option `wc_ship_today_notice_version` - version for migrations.
 - Option `wc_ship_today_notice_method_schedules` - cutoff times per shipping method (key: method instance ID).
 - Table `{prefix}wc_ship_today_notice_holidays` - downloaded holidays.
@@ -565,8 +565,8 @@ wc-ship-today-notice/
 │   ├── css/checkout.css            # Checkout tiles
 │   ├── js/notice.js                # Widget: states, countdown, switching dates
 │   ├── js/checkout.js              # Tiles: selection, cutoff passing
-│   ├── js/style-preview.js         # Live preview in the Style tab
-│   ├── js/checkout-settings.js     # Checkout tab: show/hide the module fields
+│   ├── js/style-preview.js         # Live preview in the Style section
+│   ├── js/checkout-settings.js     # Checkout section: show/hide the module fields
 │   ├── blocks/ship-date/           # Block checkout: tiles and summary row (editor.js, frontend.js; no build step)
 │   └── blocks/ship-date-row/       # block.json of the order summary row
 ├── languages/                      # .pot, pl_PL and de_DE (.po + .mo)
@@ -580,6 +580,12 @@ wc-ship-today-notice/
 </details>
 
 ## Changelog
+
+### Unreleased
+
+- The plugin settings moved to a **Ship Today Notice** tab in WooCommerce → Settings, right before "Advanced", with the Settings, Shipping methods, Checkout and Style sections.
+  The item in the WooCommerce side menu is gone; old addresses redirect to the new place. A "Settings" link was added to the plugins list.
+- Cutoff times per shipping method moved to their own **Shipping methods** section.
 
 ### 2.5.0 (2026-10-31)
 

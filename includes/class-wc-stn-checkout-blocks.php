@@ -193,7 +193,7 @@ final class WC_STN_Checkout_Blocks
             'row'    => $data['rows'] ? reset($data['rows']) : ['', ''],
             'rowHint' => $data['reviewRow']
                 ? __('Shows the ship date selected in the "Ship date" block.', 'wc-ship-today-notice')
-                : __('Hidden: the order summary row is turned off in WooCommerce → Ship Today Notice → Checkout.', 'wc-ship-today-notice'),
+                : __('Hidden: the order summary row is turned off in WooCommerce → Settings → Ship Today Notice → Checkout.', 'wc-ship-today-notice'),
         ];
     }
 
@@ -407,7 +407,7 @@ final class WC_STN_Checkout_Blocks
         $page_id = (int) wc_get_page_id('checkout');
         // Zakładka Checkout pokazuje status bloku sama, powiadomienie byłoby dublem
         // phpcs:disable WordPress.Security.NonceVerification -- tylko wybór strony panelu, bez zapisu.
-        $on_checkout_tab = 'wc-ship-today-notice' === sanitize_key(wp_unslash($_GET['page'] ?? '')) && 'checkout' === sanitize_key(wp_unslash($_GET['tab'] ?? ''));
+        $on_checkout_tab = 'wc-settings' === sanitize_key(wp_unslash($_GET['page'] ?? '')) && WC_Ship_Today_Notice::SETTINGS_TAB === sanitize_title(wp_unslash($_GET['tab'] ?? '')) && 'checkout' === sanitize_key(wp_unslash($_GET['section'] ?? ''));
         // phpcs:enable
         if ($on_checkout_tab || $page_id === (int) get_user_meta(get_current_user_id(), self::NOTICE_DISMISSED_META, true)) {
             return;

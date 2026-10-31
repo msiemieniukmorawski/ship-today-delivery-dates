@@ -78,6 +78,9 @@ final class WC_Ship_Today_Notice
         'checkout_dates_when_disabled',
     ];
 
+    /** Zakładka w WooCommerce → Ustawienia. */
+    const SETTINGS_TAB = 'ship_today_notice';
+
     /** Strona Settings API zakładki "Checkout" (zakładka "Ustawienia": slug strony wtyczki). */
     const CHECKOUT_PAGE = 'wc-ship-today-notice-checkout';
 
@@ -105,9 +108,6 @@ final class WC_Ship_Today_Notice
     /** @var int Przesunięcie "teraz" w sekundach w trybie testowym (?stn_now=). */
     private $now_offset = 0;
 
-    /** @var string|false Hook strony ustawień (do ładowania skryptów zakładki "Styl"). */
-    private $page_hook = false;
-
     /** @var WC_STN_Checkout_Blocks|null Checkout blokowy (init 0), używany też w maybe_upgrade(). */
     private $checkout_blocks = null;
 
@@ -126,13 +126,20 @@ final class WC_Ship_Today_Notice
 
         // Tłumaczenia ładuje WordPress (WP 6.8+: Domain Path z nagłówka, pierwszeństwo ma wp-content/languages/plugins/)
 
-        add_action('admin_menu', [$this, 'register_admin_menu']);
+        // Stary adres panelu: admin_menu, bo sprawdzenie dostępu do strony jest przed admin_init
+        add_action('admin_menu', [$this, 'redirect_old_page'], 1);
         add_action('admin_init', [$this, 'maybe_upgrade'], 5);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'admin_assets']);
-        // Panel jest dla manage_woocommerce, a options.php domyślnie wymaga manage_options
-        add_filter('option_page_capability_' . self::OPTION_KEY, [$this, 'settings_capability']);
-        add_filter('option_page_capability_' . self::STYLE_KEY, [$this, 'settings_capability']);
+
+        // Panel jako zakładka WooCommerce → Ustawienia. Priorytet: po zakładkach WooCommerce, żeby wstawić przed "Zaawansowane"
+        add_filter('woocommerce_settings_tabs_array', [$this, 'add_settings_tab'], 60);
+        add_action('woocommerce_sections_' . self::SETTINGS_TAB, [$this, 'output_sections']);
+        add_action('woocommerce_settings_' . self::SETTINGS_TAB, [$this, 'render_settings_tab']);
+        add_action('woocommerce_update_options_' . self::SETTINGS_TAB, [$this, 'save_settings']);
+        add_action('woocommerce_settings_start', [$this, 'holidays_fetch_message']);
+        add_action('admin_post_wc_stn_fetch_holidays', [$this, 'handle_fetch_holidays']);
+        add_filter('plugin_action_links_' . plugin_basename(__FILE__), [$this, 'plugin_action_links']);
         add_action('before_woocommerce_init', [$this, 'declare_wc_compatibility']);
 
         add_action('init', [$this, 'register_shortcode']);
@@ -177,11 +184,6 @@ final class WC_Ship_Today_Notice
             \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', WC_STN_FILE, true);
             \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', WC_STN_FILE, true);
         }
-    }
-
-    public function settings_capability()
-    {
-        return 'manage_woocommerce';
     }
 
     /**
@@ -477,7 +479,7 @@ final class WC_Ship_Today_Notice
         foreach (['country_code', 'language_code', 'holiday_subdivision'] as $key) {
             if (!empty($new_toggles['holidays_auto_fetch']) && ($old[$key] ?? null) !== ($new[$key] ?? null)) {
                 if (!$this->fetch_and_store_holidays()) {
-                    add_settings_error(self::OPTION_KEY, 'holidays_fetch', __('Failed to update holidays.', 'wc-ship-today-notice'), 'error');
+                    $this->settings_error(__('Failed to update holidays.', 'wc-ship-today-notice'));
                 }
                 break;
             }
@@ -567,25 +569,144 @@ final class WC_Ship_Today_Notice
     /* ---------------------------------------------------------
      * Admin Menu / Settings
      * --------------------------------------------------------- */
-    public function register_admin_menu()
+    /** Adres zakładki (albo sekcji: 'methods', 'checkout', 'style') w WooCommerce → Ustawienia. */
+    public static function settings_url($section = '')
     {
-        $this->page_hook = add_submenu_page(
-            'woocommerce',
-            __('Ship Today Notice', 'wc-ship-today-notice'),
-            __('Ship Today Notice', 'wc-ship-today-notice'),
-            'manage_woocommerce',
-            'wc-ship-today-notice',
-            [$this, 'render_settings_page']
+        return add_query_arg(
+            array_filter(['page' => 'wc-settings', 'tab' => self::SETTINGS_TAB, 'section' => $section]),
+            admin_url('admin.php')
         );
+    }
+
+    /** Stare adresy (admin.php?page=wc-ship-today-notice, też &tab=checkout / style) prowadzą do nowego miejsca. */
+    public function redirect_old_page()
+    {
+        // phpcs:disable WordPress.Security.NonceVerification -- tylko przekierowanie.
+        if (!isset($_GET['page']) || 'wc-ship-today-notice' !== sanitize_key(wp_unslash($_GET['page']))) {
+            return;
+        }
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+        // phpcs:enable
+
+        wp_safe_redirect(self::settings_url(in_array($tab, ['checkout', 'style'], true) ? $tab : ''));
+        exit;
+    }
+
+    public function plugin_action_links($links)
+    {
+        array_unshift($links, sprintf('<a href="%s">%s</a>', esc_url(self::settings_url()), esc_html__('Settings', 'wc-ship-today-notice')));
+
+        return $links;
+    }
+
+    /** Zakładka tuż przed "Zaawansowane" (bez niej na końcu). */
+    public function add_settings_tab($tabs)
+    {
+        $label  = __('Ship Today Notice', 'wc-ship-today-notice');
+        $result = [];
+
+        foreach ($tabs as $key => $name) {
+            if ('advanced' === $key) {
+                $result[self::SETTINGS_TAB] = $label;
+            }
+            $result[$key] = $name;
+        }
+        $result[self::SETTINGS_TAB] = $label;
+
+        return $result;
+    }
+
+    public function output_sections()
+    {
+        $sections = [
+            ''         => __('Settings', 'wc-ship-today-notice'),
+            'methods'  => __('Shipping methods', 'wc-ship-today-notice'),
+            'checkout' => __('Checkout', 'wc-ship-today-notice'),
+            'style'    => __('Style', 'wc-ship-today-notice'),
+        ];
+        $current  = $this->current_section();
+
+        echo '<ul class="subsubsub">';
+        foreach (array_keys($sections) as $i => $section) {
+            printf(
+                '<li><a href="%s" class="%s">%s</a>%s</li>',
+                esc_url(self::settings_url($section)),
+                $section === $current ? 'current' : '',
+                esc_html($sections[$section]),
+                $i < count($sections) - 1 ? ' | ' : ''
+            );
+        }
+        echo '</ul><br class="clear" />';
+    }
+
+    /** Sekcja zakładki: '' (Ustawienia), 'methods', 'checkout', 'style'. */
+    private function current_section()
+    {
+        $section = isset($_REQUEST['section']) ? sanitize_title(wp_unslash($_REQUEST['section'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+
+        return in_array($section, ['methods', 'checkout', 'style'], true) ? $section : '';
+    }
+
+    /**
+     * Zapis sekcji (woocommerce_update_options_*: nonce i manage_woocommerce sprawdził WooCommerce). WooCommerce zapisuje na wp_loaded,
+     * przed admin_init, więc sanityzacja jest wołana tutaj, a nie przez register_setting. Styl i metody to osobne opcje.
+     */
+    public function save_settings()
+    {
+        $section = $this->current_section();
+        // phpcs:disable WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput -- jw., sanityzują metody sanitize_*.
+        if ('style' === $section) {
+            update_option(self::STYLE_KEY, $this->sanitize_style(wp_unslash($_POST[self::STYLE_KEY] ?? [])));
+            return;
+        }
+
+        if ('methods' === $section) {
+            update_option(self::METHOD_KEY, $this->sanitize_method_schedules(wp_unslash($_POST[self::METHOD_KEY] ?? null)));
+            return;
+        }
+
+        $input         = (array) wp_unslash($_POST[self::OPTION_KEY] ?? []);
+        $input['_tab'] = 'checkout' === $section ? 'checkout' : 'settings';
+        update_option(self::OPTION_KEY, $this->sanitize_options($input));
+        // phpcs:enable
+    }
+
+    /** Błąd na stronie ustawień WooCommerce (poza panelem, np. w cronie, klasy nie ma). Tekst escapuje WooCommerce. */
+    private function settings_error($message)
+    {
+        if (class_exists('WC_Admin_Settings')) {
+            WC_Admin_Settings::add_error($message);
+        }
+    }
+
+    /** Przycisk "Fetch holidays now" (link z nonce, bez zagnieżdżonego formularza w formularzu WooCommerce). */
+    public function handle_fetch_holidays()
+    {
+        if (!current_user_can('manage_woocommerce')) {
+            wp_die(esc_html__('Sorry, you are not allowed to do this.', 'wc-ship-today-notice'), 403);
+        }
+        check_admin_referer('wc_stn_fetch_holidays');
+
+        $result         = $this->fetch_and_store_holidays();
+        $this->schedule = null;
+
+        wp_safe_redirect(add_query_arg('wc_stn_holidays', $result ? 'ok' : 'failed', self::settings_url()));
+        exit;
+    }
+
+    public function holidays_fetch_message()
+    {
+        $result = isset($_GET['wc_stn_holidays']) ? sanitize_key(wp_unslash($_GET['wc_stn_holidays'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- tylko komunikat.
+
+        if ('ok' === $result) {
+            WC_Admin_Settings::add_message(__('Holidays updated.', 'wc-ship-today-notice'));
+        } elseif ('failed' === $result) {
+            WC_Admin_Settings::add_error(__('Failed to update holidays.', 'wc-ship-today-notice'));
+        }
     }
 
     public function register_settings()
     {
-        register_setting(self::OPTION_KEY, self::OPTION_KEY, [$this, 'sanitize_options']);
-        register_setting(self::STYLE_KEY, self::STYLE_KEY, [$this, 'sanitize_style']);
-        // Ten sam formularz co główne ustawienia (grupa OPTION_KEY), osobna opcja
-        register_setting(self::OPTION_KEY, self::METHOD_KEY, ['sanitize_callback' => [$this, 'sanitize_method_schedules'], 'default' => []]);
-
         // --- Sekcja: Shortcode Info ---
         add_settings_section(
             'wc_ship_today_shortcode',
@@ -607,7 +728,6 @@ final class WC_Ship_Today_Notice
         add_settings_field('delivery', __('Delivery', 'wc-ship-today-notice'), [$this, 'field_delivery'], 'wc-ship-today-notice', 'wc_ship_today_main');
         add_settings_field('excluded_dates', __('Excluded dates', 'wc-ship-today-notice'), [$this, 'field_excluded_dates'], 'wc-ship-today-notice', 'wc_ship_today_main');
         add_settings_field('preview', __('Upcoming dates', 'wc-ship-today-notice'), [$this, 'field_preview'], 'wc-ship-today-notice', 'wc_ship_today_main');
-        add_settings_field('method_schedules', __('Shipping methods', 'wc-ship-today-notice'), [$this, 'field_method_schedules'], 'wc-ship-today-notice', 'wc_ship_today_main');
 
         // --- Sekcja: automatyczne wyświetlanie widgetu ---
         add_settings_section(
@@ -741,12 +861,12 @@ final class WC_Ship_Today_Notice
             if (preg_match('/^[A-Z]{2}$/', $value)) {
                 $options[$key] = $value;
             } else {
-                add_settings_error(self::OPTION_KEY, 'invalid_' . $key, sprintf(
+                $this->settings_error(sprintf(
                     /* translators: 1: field label, 2: entered value, 3: previous value */
                     __('%1$s: "%2$s" is not a two-letter code. The previous value %3$s was kept.', 'wc-ship-today-notice'),
-                    esc_html($label),
-                    esc_html($value),
-                    esc_html($options[$key])
+                    $label,
+                    $value,
+                    $options[$key]
                 ));
             }
         }
@@ -758,11 +878,11 @@ final class WC_Ship_Today_Notice
                 $options['holiday_subdivision'] = $value;
             } else {
                 $options['holiday_subdivision'] = '';
-                add_settings_error(self::OPTION_KEY, 'invalid_holiday_subdivision', sprintf(
+                $this->settings_error(sprintf(
                     /* translators: 1: entered value, 2: country code */
                     __('Region "%1$s" is not a region code of %2$s (e.g. DE-BY). Only nationwide holidays are used.', 'wc-ship-today-notice'),
-                    esc_html($value),
-                    esc_html($options['country_code'])
+                    $value,
+                    $options['country_code']
                 ));
             }
         }
@@ -863,78 +983,37 @@ final class WC_Ship_Today_Notice
         return $options;
     }
 
-    public function render_settings_page()
+    /** Treść zakładki, wewnątrz formularza #mainform WooCommerce: bez własnych <form> i przycisków submit. */
+    public function render_settings_tab()
     {
-        if (!current_user_can('manage_woocommerce')) {
+        $section = $this->current_section();
+
+        if ('style' === $section) {
+            $this->render_style_tab();
             return;
         }
 
-        // Manual sync action
-        if (
-            isset($_POST['wc_ship_today_manual_sync']) &&
-            check_admin_referer('wc_ship_today_manual_sync', 'wc_ship_today_manual_sync_nonce')
-        ) {
-            $result = $this->fetch_and_store_holidays();
-            $this->schedule = null;
-            add_settings_error(
-                self::OPTION_KEY,
-                'manual_sync',
-                $result ? __('Holidays updated.', 'wc-ship-today-notice') : __('Failed to update holidays.', 'wc-ship-today-notice'),
-                $result ? 'updated' : 'error'
-            );
+        if ('methods' === $section) {
+            echo '<h2>' . esc_html__('Shipping methods', 'wc-ship-today-notice') . '</h2>';
+            $this->field_method_schedules();
+            return;
         }
 
-        settings_errors(self::OPTION_KEY);
+        if ('checkout' === $section) {
+            echo '<div id="wc-stn-checkout-settings">';
+            do_settings_sections(self::CHECKOUT_PAGE);
+            echo '</div>';
+            return;
+        }
 
-        $tab      = $this->current_tab();
-        $page_url = admin_url('admin.php?page=wc-ship-today-notice');
-?>
-        <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+        do_settings_sections('wc-ship-today-notice');
+        ?>
+        <hr style="margin: 30px 0;">
 
-            <nav class="nav-tab-wrapper" style="margin-bottom:16px;">
-                <a href="<?php echo esc_url($page_url); ?>" class="nav-tab<?php echo 'settings' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e('Settings', 'wc-ship-today-notice'); ?></a>
-                <a href="<?php echo esc_url(add_query_arg('tab', 'checkout', $page_url)); ?>" class="nav-tab<?php echo 'checkout' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e('Checkout', 'wc-ship-today-notice'); ?></a>
-                <a href="<?php echo esc_url(add_query_arg('tab', 'style', $page_url)); ?>" class="nav-tab<?php echo 'style' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e('Style', 'wc-ship-today-notice'); ?></a>
-            </nav>
-
-            <?php if ('style' === $tab) : ?>
-                <?php $this->render_style_tab(); ?>
-            <?php elseif ('checkout' === $tab) : ?>
-
-            <form method="post" action="options.php" id="wc-stn-checkout-settings">
-                <?php
-                settings_fields(self::OPTION_KEY);
-                printf('<input type="hidden" name="%s[_tab]" value="checkout" />', esc_attr(self::OPTION_KEY));
-                do_settings_sections(self::CHECKOUT_PAGE);
-                submit_button();
-                ?>
-            </form>
-
-            <?php else : ?>
-
-            <form method="post" action="options.php">
-                <?php
-                settings_fields(self::OPTION_KEY);
-                printf('<input type="hidden" name="%s[_tab]" value="settings" />', esc_attr(self::OPTION_KEY));
-                do_settings_sections('wc-ship-today-notice');
-                submit_button();
-                ?>
-            </form>
-
-            <hr style="margin: 30px 0;">
-
-            <h2><?php esc_html_e('Fetch holidays', 'wc-ship-today-notice'); ?></h2>
-            <p class="description"><?php esc_html_e('Fetches holidays for the current and next year. Holidays are also fetched automatically every 4 months.', 'wc-ship-today-notice'); ?></p>
-            <form method="post" style="margin-top:12px;">
-                <?php wp_nonce_field('wc_ship_today_manual_sync', 'wc_ship_today_manual_sync_nonce'); ?>
-                <input type="hidden" name="wc_ship_today_manual_sync" value="1" />
-                <?php submit_button(__('Fetch holidays now', 'wc-ship-today-notice'), 'secondary', 'submit', false); ?>
-            </form>
-
-            <?php endif; ?>
-        </div>
-    <?php
+        <h2><?php esc_html_e('Fetch holidays', 'wc-ship-today-notice'); ?></h2>
+        <p class="description"><?php esc_html_e('Fetches holidays for the current and next year. Holidays are also fetched automatically every 4 months.', 'wc-ship-today-notice'); ?></p>
+        <p><a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=wc_stn_fetch_holidays'), 'wc_stn_fetch_holidays')); ?>"><?php esc_html_e('Fetch holidays now', 'wc-ship-today-notice'); ?></a></p>
+        <?php
     }
 
     public function get_options()
@@ -1103,20 +1182,14 @@ final class WC_Ship_Today_Notice
         return '' === $css ? '' : ':root{' . $css . '}';
     }
 
-    private function current_tab()
-    {
-        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification
-
-        return in_array($tab, ['style', 'checkout'], true) ? $tab : 'settings';
-    }
-
     public function admin_assets($hook)
     {
-        if (!$this->page_hook || $hook !== $this->page_hook) {
+        // Tylko nasza zakładka, nie pozostałe zakładki WooCommerce
+        if ('woocommerce_page_wc-settings' !== $hook || !isset($_GET['tab']) || self::SETTINGS_TAB !== sanitize_title(wp_unslash($_GET['tab']))) { // phpcs:ignore WordPress.Security.NonceVerification
             return;
         }
 
-        if ('checkout' === $this->current_tab()) {
+        if ('checkout' === $this->current_section()) {
             wp_enqueue_script(
                 'wc-ship-today-notice-checkout-settings',
                 plugins_url('assets/js/checkout-settings.js', __FILE__),
@@ -1127,7 +1200,7 @@ final class WC_Ship_Today_Notice
             return;
         }
 
-        if ('style' !== $this->current_tab()) {
+        if ('style' !== $this->current_section()) {
             return;
         }
 
@@ -1198,8 +1271,7 @@ final class WC_Ship_Today_Notice
         $col = 'display:inline-block;vertical-align:top;margin:0 16px 8px 0;';
         ?>
         <div style="display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start;">
-            <form method="post" action="options.php" id="wc-stn-style-form" style="flex:1 1 520px;min-width:0;">
-                <?php settings_fields($name); ?>
+            <div id="wc-stn-style-form" style="flex:1 1 520px;min-width:0;">
                 <p class="description"><?php esc_html_e('Empty field = default look. Changes are shown in the preview right away; click "Save Changes" to apply them on the site.', 'wc-ship-today-notice'); ?></p>
 
                 <h2><?php esc_html_e('Colors', 'wc-ship-today-notice'); ?></h2>
@@ -1272,10 +1344,9 @@ final class WC_Ship_Today_Notice
                 </table>
 
                 <p class="submit">
-                    <?php submit_button(null, 'primary', 'submit', false); ?>
-                    <button type="button" class="button" id="wc-stn-style-reset" style="margin-left:8px;"><?php esc_html_e('Restore defaults', 'wc-ship-today-notice'); ?></button>
+                    <button type="button" class="button" id="wc-stn-style-reset"><?php esc_html_e('Restore defaults', 'wc-ship-today-notice'); ?></button>
                 </p>
-            </form>
+            </div>
 
             <div style="flex:0 1 380px;min-width:260px;position:sticky;top:46px;">
                 <h2><?php esc_html_e('Preview', 'wc-ship-today-notice'); ?></h2>
@@ -1841,7 +1912,7 @@ final class WC_Ship_Today_Notice
             return;
         }
 
-        echo '<p class="description" style="margin-bottom:8px">' . esc_html__('Different shipping days and cutoff times for a shipping method (e.g. parcel lockers until 15:00, courier until 13:00). Without own times the method uses the table above. Holidays, excluded dates and days without deliveries are shared.', 'wc-ship-today-notice') . '</p>';
+        echo '<p class="description" style="margin-bottom:8px">' . esc_html__('Different shipping days and cutoff times for a shipping method (e.g. parcel lockers until 15:00, courier until 13:00). Without own times the method uses the table in Settings. Holidays, excluded dates and days without deliveries are shared.', 'wc-ship-today-notice') . '</p>';
 
         foreach ($methods as $key => $label) {
             $entry   = $saved[$key] ?? [];

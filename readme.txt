@@ -23,7 +23,7 @@ Show customers how long they have to order so the parcel ships in the next slot:
 * Public holidays from the OpenHolidays API for the current and next year: nationwide holidays, optionally plus those of one region (e.g. DE-BY), with the option to ignore selected holidays, plus a manual list of excluded dates.
 * Tokens such as `{countdown}`, `{cutoff_when}`, `{ship_when}`, `{delivery_when}` with weekday forms in the shop language (e.g. Polish "do niedzieli 20:00", "we wtorek"; German "bis Sonntag 20:00", "am Dienstag").
 * Works with full-page cache: the next 42 days of slots are in the HTML and the browser switches slots itself. Optional cache purge (LiteSpeed Cache or your own hook) at each cutoff time.
-* "Style" tab: colors, border, font and alignment of the widget with a live preview, output as CSS variables.
+* "Style" section: colors, border, font and alignment of the widget with a live preview, output as CSS variables.
 * Preview of the next 5 slots in the settings and a test mode (`?stn_now=2026-12-20T19:59`) for shop managers.
 
 **Ship date at checkout (optional, off by default)**
@@ -45,17 +45,17 @@ All plugin texts are translatable (English source): the admin, weekday names and
 
 1. Upload the plugin folder to `/wp-content/plugins/` or install the ZIP via Plugins → Add New → Upload Plugin. WooCommerce must be active.
 2. Activate the plugin. It creates a table for public holidays and downloads them on the next WP-Cron run.
-3. Go to WooCommerce → Ship Today Notice. Set the shipping weekdays and cutoff times.
+3. Go to WooCommerce → Settings → Ship Today Notice. Set the shipping weekdays and cutoff times.
 4. Click "Fetch holidays now" at the bottom of the settings page to download holidays right away.
 5. Optionally set the delivery days, then save and check the "Next slots" preview.
 6. The widget already shows on product pages. Change it in "Automatic display" (product page, cart, checkout), or add `[ship_today_notice]` anywhere (e.g. the header or a popup).
-7. Optionally enable the ship date choice in the Checkout tab.
+7. Optionally enable the ship date choice in the Checkout section.
 
 == Frequently Asked Questions ==
 
 = I installed the plugin but see no message. =
 
-A new shop shows the widget on product pages, below the add to cart button. Shops updating from an earlier version keep it off until they turn it on: use WooCommerce → Ship Today Notice → "Automatic display" for the product page, cart or checkout, or add the `[ship_today_notice]` shortcode.
+A new shop shows the widget on product pages, below the add to cart button. Shops updating from an earlier version keep it off until they turn it on: use WooCommerce → Settings → Ship Today Notice → "Automatic display" for the product page, cart or checkout, or add the `[ship_today_notice]` shortcode.
 
 = Does it work with the block-based checkout? =
 
@@ -63,15 +63,15 @@ Yes, with WooCommerce 10.1 or newer. In both checkouts the customer picks a date
 
 = The block checkout does not show the ship date tiles. =
 
-Check WooCommerce → Ship Today Notice → Checkout: it tells you whether the "Ship date" block is on the checkout page. If the checkout is part of a block theme template (Site Editor) or you removed the block, add the "Ship date" block inside the checkout form in the editor. The block is shown only when the cart needs shipping and local pickup is not selected.
+Check WooCommerce → Settings → Ship Today Notice → Checkout: it tells you whether the "Ship date" block is on the checkout page. If the checkout is part of a block theme template (Site Editor) or you removed the block, add the "Ship date" block inside the checkout form in the editor. The block is shown only when the cart needs shipping and local pickup is not selected.
 
 = Can I change the texts on the date tiles and in the checkout messages? =
 
-Yes, in WooCommerce → Ship Today Notice → Checkout → "Texts": the large text and the second line of the tiles (with tokens such as `{delivery_short}`, `{ship_short}`, `{ship_when}`, `{cutoff_when}`; an empty second line hides it), the labels of the ship and delivery date rows in emails, and the four checkout messages (`{field}`, `{slot}`, `{next_slot}`). Empty fields use the default, translated texts.
+Yes, in WooCommerce → Settings → Ship Today Notice → Checkout → "Texts": the large text and the second line of the tiles (with tokens such as `{delivery_short}`, `{ship_short}`, `{ship_when}`, `{cutoff_when}`; an empty second line hides it), the labels of the ship and delivery date rows in emails, and the four checkout messages (`{field}`, `{slot}`, `{next_slot}`). Empty fields use the default, translated texts.
 
 = Can shipping methods have different cutoff times? =
 
-Yes. In WooCommerce → Ship Today Notice → "Shipping methods" every method of your WooCommerce shipping zones (including methods from other plugins, e.g. parcel lockers) can get its own shipping days, cutoff times and delivery days, e.g. parcel lockers until 15:00 and courier until 13:00. Both checkouts then show the dates of the selected method and recalculate them when the customer changes the method. Methods without own times use the main table. For the notice widget use `[ship_today_notice method="flat_rate:3"]`.
+Yes. In WooCommerce → Settings → Ship Today Notice → "Shipping methods" every method of your WooCommerce shipping zones (including methods from other plugins, e.g. parcel lockers) can get its own shipping days, cutoff times and delivery days, e.g. parcel lockers until 15:00 and courier until 13:00. Both checkouts then show the dates of the selected method and recalculate them when the customer changes the method. Methods without own times use the main table. For the notice widget use `[ship_today_notice method="flat_rate:3"]`.
 
 = The checkout module is enabled, but I don't see the date field. =
 
@@ -115,10 +115,10 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 2. The "next slot" mode with the delivery date.
 3. Ship date tiles in the classic checkout.
 4. Shipping weekdays, cutoff times and the next slots preview in the settings.
-5. The "Style" tab with the live preview.
+5. The "Style" section with the live preview.
 6. Ship date column and filter in the orders list.
 7. Automatic display of the widget: page, position and priority.
-8. The Checkout tab: tiles, texts and dates in orders.
+8. The Checkout section: tiles, texts and dates in orders.
 
 == Changelog ==
 

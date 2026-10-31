@@ -45,18 +45,18 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
   </tr>
 </table>
 
-**Zakładka „Styl”** - wygląd widgetu wyklikany w panelu, podgląd zmienia się na żywo:
+**Sekcja „Styl”** - wygląd widgetu wyklikany w panelu, podgląd zmienia się na żywo:
 
-<p align="center"><img src=".wordpress-org/pl/screenshot-5.png" alt="Zakładka Styl z podglądem na żywo" width="820"></p>
+<p align="center"><img src=".wordpress-org/pl/screenshot-5.png" alt="Sekcja Styl z podglądem na żywo" width="820"></p>
 
 <details>
-<summary>Ustawienia: dni wysyłki, automatyczne wyświetlanie i zakładka Checkout</summary>
+<summary>Ustawienia: dni wysyłki, automatyczne wyświetlanie i sekcja Checkout</summary>
 
 <p align="center"><img src=".wordpress-org/pl/screenshot-4.png" alt="Ustawienia dni wysyłki i najbliższe terminy" width="820"></p>
 
 <p align="center"><img src=".wordpress-org/pl/screenshot-7.png" alt="Automatyczne wyświetlanie widgetu: strona, miejsce i priorytet" width="820"></p>
 
-<p align="center"><img src=".wordpress-org/pl/screenshot-8.png" alt="Zakładka Checkout z kafelkami, tekstami i datami w zamówieniach" width="820"></p>
+<p align="center"><img src=".wordpress-org/pl/screenshot-8.png" alt="Sekcja Checkout z kafelkami, tekstami i datami w zamówieniach" width="820"></p>
 
 </details>
 
@@ -67,7 +67,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 - Teksty z tokenami i poprawną odmianą dni: „do niedzieli 20:00”, „we wtorek”, „bis Sonntag”, „am Dienstag”.
 - Lista kilku kolejnych terminów (`count="3"`), własny tekst i klasa CSS w shortcode.
 - **Działa ze stron w cache** - harmonogram na 42 dni jest w HTML, przeglądarka sama liczy stan. LiteSpeed Cache czyszczony o godzinie granicznej.
-- **Zakładka „Styl”** - kolory, ramka, czcionka i wyrównanie wyklikane w panelu, z podglądem na żywo, bez pisania CSS.
+- **Sekcja „Styl”** - kolory, ramka, czcionka i wyrównanie wyklikane w panelu, z podglądem na żywo, bez pisania CSS.
 
 **Harmonogram**
 - Dni wysyłki i godzina graniczna dla każdego dnia, także wypadająca wcześniej (wysyłka w poniedziałek, zamówienia do niedzieli 20:00).
@@ -92,7 +92,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 ## Szybki start
 
 1. Wgraj wtyczkę do `wp-content/plugins/wc-ship-today-notice/` i aktywuj ją (wymaga aktywnego WooCommerce).
-2. **WooCommerce → Ship Today Notice**: zaznacz dni wysyłki i ustaw godziny graniczne.
+2. **WooCommerce → Ustawienia → Ship Today Notice**: zaznacz dni wysyłki i ustaw godziny graniczne.
 3. Opcjonalnie ustaw **Dostawę** (ile dni doręczeń po wysyłce) i sprawdź tabelę **Najbliższe terminy**.
 4. Widget od razu pokazuje się na stronach produktów, pod przyciskiem „Dodaj do koszyka”. Zmienisz to w **Automatycznym wyświetlaniu** (strona produktu, koszyk, checkout), możesz też wstawić shortcode w dowolnym miejscu:
 
@@ -101,7 +101,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
    [ship_today_notice mode="next_slot" text="Zamów {cutoff_when}, dostarczymy {delivery_when}. Zostało: {countdown}"]
    ```
 
-5. Opcjonalnie włącz wybór terminu w zakładce **Checkout** i otwórz zakładkę **Styl**.
+5. Opcjonalnie włącz wybór terminu w sekcji **Checkout** i otwórz sekcję **Styl**.
 
 Święta pobierają się same zaraz po aktywacji (WP-Cron). Od razu: przycisk „Fetch holidays now” na dole ustawień.
 
@@ -132,9 +132,9 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 | Daty wykluczone | brak | Excluded dates | |
 | Tekst po godzinie granicznej / w dzień bez wysyłki | tak | checkboxy przy tekstach | Dotyczy trybu „wysyłka dziś”. |
 | Sekundy w odliczaniu | tak | Countdown format | |
-| Własny wygląd widgetu | nie (style z `notice.css`) | zakładka **Styl** | Puste pole = domyślny wygląd. |
-| Wybór terminu w checkoucie | **nie** | Zakładka **Checkout** → Moduł | Domyślne miejsce: tylko shortcode `[ship_today_checkout]`. |
-| Wiersz z terminem w podsumowaniu zamówienia (checkout) | tak, z modułem | Zakładka Checkout → Daty w zamówieniach | Oba checkouty. |
+| Własny wygląd widgetu | nie (style z `notice.css`) | sekcja **Styl** | Puste pole = domyślny wygląd. |
+| Wybór terminu w checkoucie | **nie** | Sekcja **Checkout** → Moduł | Domyślne miejsce: tylko shortcode `[ship_today_checkout]`. |
+| Wiersz z terminem w podsumowaniu zamówienia (checkout) | tak, z modułem | Sekcja Checkout → Daty w zamówieniach | Oba checkouty. |
 | Wiersze „Data wysyłki” / „Planowana dostawa”: maile, strona podziękowania, Moje konto | tak, z modułem | j.w. | |
 | Panel zamówienia: daty | z modułem | automatycznie | Box tylko, gdy zamówienie ma daty albo można je zmienić. |
 | Panel zamówienia: zmiana daty wysyłki | tak, z modułem | Daty w zamówieniach | Wyłączone: daty tylko do odczytu. |
@@ -259,9 +259,9 @@ ustawienia z tymi tekstami, mają je dalej i mogą je zmienić ręcznie.
 </details>
 
 <details>
-<summary><b>Wygląd i zakładka „Styl”</b></summary>
+<summary><b>Wygląd i sekcja „Styl”</b></summary>
 
-WooCommerce → Ship Today Notice → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
+WooCommerce → Ustawienia → Ship Today Notice → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
 „przed” i „po” godzinie granicznej.
 
 | Opcja | Opis |
@@ -287,7 +287,7 @@ Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-b
 <details>
 <summary><b>Wybór terminu w checkoucie (klasyczny, blokowy)</b></summary>
 
-Włączenie: **WooCommerce → Ship Today Notice → Checkout → Moduł**. Przy wyłączonym module zakładka pokazuje tylko ten checkbox i opcję
+Włączenie: **WooCommerce → Ustawienia → Ship Today Notice → Checkout → Moduł**. Przy wyłączonym module sekcja pokazuje tylko ten checkbox i opcję
 pokazywania dat istniejących zamówień (z przełącznikami, od których zależy). Pozostałe pola pojawiają się od razu po zaznaczeniu checkboxa,
 bez zapisu, a ukryte zachowują wartości.
 
@@ -352,7 +352,7 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
 - **Wstawienie:** przy pierwszej wizycie w panelu po włączeniu modułu wtyczka raz wstawia blok do strony zamówienia
   (pod „Metody wysyłki”, a gdy ich nie ma - przed „Płatnością”). Potem blok należy do sklepu: można go **przesunąć** w edytorze
   strony zamówienia, **usunąć** i dodać ponownie z insertera (szukaj „Termin wysyłki”, w angielskim panelu „Ship date”). Usuniętego wtyczka nie wstawia drugi raz.
-  Zakładka **Checkout** pokazuje, czy blok jest na stronie zamówienia. Checkout w szablonie motywu
+  Sekcja **Checkout** pokazuje, czy blok jest na stronie zamówienia. Checkout w szablonie motywu
   (Edytor witryny) nie jest zmieniany automatycznie - tam blok trzeba dodać ręcznie.
 - **Bez bloku** klient nie wybiera terminu, a zamówienia przechodzą bez daty (bez blokowania sprzedaży). Panel pokazuje wtedy
   powiadomienie (użytkownikom z `manage_woocommerce`, do zamknięcia - wraca, jeśli zmieni się strona zamówienia).
@@ -391,7 +391,7 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
 <details>
 <summary><b>Godziny graniczne dla metod wysyłki</b></summary>
 
-WooCommerce → Ship Today Notice → **Metody wysyłki** (pod „Najbliższe terminy”): lista wszystkich metod ze stref wysyłki
+WooCommerce → Ustawienia → Ship Today Notice → sekcja **Metody wysyłki**: lista wszystkich metod ze stref wysyłki
 WooCommerce (także „Pozostałe regiony” i metody z wtyczek, np. paczkomaty), każda jako instancja `metoda:instancja`
 (np. `flat_rate:3`), więc różne strefy/kraje mogą mieć różne godziny.
 
@@ -470,7 +470,7 @@ JS i CSS widgetu ładują się tylko tam, gdzie jest widget:
   → CSS w `<head>`, JS w stopce;
 - w każdym innym miejscu, które renderuje shortcode po stronie serwera (widget sidebara, szablon, page builder) → przy renderze:
   CSS wypisany tuż przed widgetem (bez chwili bez stylu), JS w stopce;
-- styl z zakładki „Styl” zawsze idzie razem z `notice.css`.
+- styl z sekcji „Styl” zawsze idzie razem z `notice.css`.
 
 Wykrycie patrzy na wpisy z głównego zapytania, więc np. lista produktów, z których któryś ma shortcode w krótkim opisie, też
 załaduje assety, nawet jeśli lista go nie wyświetla.
@@ -524,7 +524,7 @@ zmienia się wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jes
 <summary><b>Dane w bazie i deinstalacja</b></summary>
 
 - Opcja `wc_ship_today_notice_options` - wszystkie ustawienia (tablica).
-- Opcja `wc_ship_today_notice_style` - ustawienia zakładki „Styl” (tablica, puste wartości = domyślne).
+- Opcja `wc_ship_today_notice_style` - ustawienia sekcji „Styl” (tablica, puste wartości = domyślne).
 - Opcja `wc_ship_today_notice_version` - wersja do migracji (1.x → 2.0: ignorowane święta z ID na daty).
 - Opcja `wc_ship_today_notice_method_schedules` - godziny graniczne dla metod wysyłki (klucz: ID instancji metody).
 - Tabela `{prefix}wc_ship_today_notice_holidays` - pobrane święta.
@@ -570,8 +570,8 @@ wc-ship-today-notice/
 │   ├── css/checkout.css            # Kafelki w checkoucie
 │   ├── js/notice.js                # Widget: stany, odliczanie, przełączanie terminów
 │   ├── js/checkout.js              # Kafelki: wybór, upływ godziny granicznej
-│   ├── js/style-preview.js         # Podgląd na żywo w zakładce "Styl"
-│   ├── js/checkout-settings.js     # Zakładka Checkout: pokazywanie i ukrywanie pól modułu
+│   ├── js/style-preview.js         # Podgląd na żywo w sekcji "Styl"
+│   ├── js/checkout-settings.js     # Sekcja Checkout: pokazywanie i ukrywanie pól modułu
 │   ├── blocks/ship-date/           # Bloki checkoutu blokowego: kafelki i wiersz podsumowania (editor.js, frontend.js; bez kroku build)
 │   └── blocks/ship-date-row/       # block.json wiersza w podsumowaniu zamówienia
 ├── languages/                      # .pot, pl_PL i de_DE (.po + .mo)
@@ -586,6 +586,12 @@ wc-ship-today-notice/
 </details>
 
 ## Changelog
+
+### Niewydane
+
+- Ustawienia wtyczki przeniesione do zakładki **Ship Today Notice** w WooCommerce → Ustawienia, tuż przed „Zaawansowane”, z sekcjami Ustawienia, Metody wysyłki, Checkout i Styl.
+  Pozycji w bocznym menu WooCommerce już nie ma, stare adresy przekierowują w nowe miejsce. Na liście wtyczek doszedł link „Ustawienia”.
+- Godziny graniczne dla metod wysyłki przeniesione do osobnej sekcji **Metody wysyłki**.
 
 ### 2.5.0 (31.10.2026)
 
