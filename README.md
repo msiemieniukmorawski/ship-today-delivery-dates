@@ -98,7 +98,7 @@ A customer who doesn't know when the parcel will arrive puts off buying. This pl
    [ship_today_notice mode="next_slot" text="Order {cutoff_when}, we will deliver {delivery_when}. Time left: {countdown}"]
    ```
 
-5. Optionally enable **Ship date choice at checkout** and open the **Style** tab.
+5. Optionally enable the ship date choice in the **Checkout** tab and open the **Style** tab.
 
 Holidays download by themselves right after activation (WP-Cron). To get them immediately, use "Fetch holidays now" at the bottom of the settings.
 
@@ -129,8 +129,8 @@ and supports both the HPOS orders list and the legacy posts table.
 | Text after the cutoff / on non-shipping days | yes | checkboxes next to the texts | Applies to "ship today" mode. |
 | Seconds in the countdown | yes | Countdown format | |
 | Custom widget look | no (styles from `notice.css`) | **Style** tab | Empty field = default look. |
-| Ship date choice at checkout | **no** | Ship date choice at checkout → Module | Default position: `[ship_today_checkout]` shortcode only. |
-| Date row in the checkout order summary | yes, with the module | Ship date choice at checkout → Dates in orders | Both checkouts. |
+| Ship date choice at checkout | **no** | **Checkout** tab → Module | Default position: `[ship_today_checkout]` shortcode only. |
+| Date row in the checkout order summary | yes, with the module | Checkout tab → Dates in orders | Both checkouts. |
 | "Ship date" / "Planned delivery" rows: emails, thank-you page, My Account | yes, with the module | same | |
 | Order admin: dates | with the module | automatic | The box appears only when the order has dates or they can be changed. |
 | Order admin: changing the ship date | yes, with the module | Dates in orders | Off: the dates are read-only. |
@@ -260,7 +260,9 @@ CSS variables: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `
 <details>
 <summary><b>Ship date choice at checkout (classic, block, Iconic)</b></summary>
 
-Enable it in **WooCommerce → Ship Today Notice → Ship date choice at checkout → Module**.
+Enable it in **WooCommerce → Ship Today Notice → Checkout → Module**. While the module is off the tab shows only this checkbox and the
+option to keep showing dates of existing orders (with the options it depends on). The other fields appear as soon as you tick the checkbox,
+without saving; hidden fields keep their values.
 
 | Setting | Default | Description |
 |---|---|---|
@@ -324,7 +326,7 @@ an inner block of the checkout form, parent `woocommerce/checkout-fields-block`)
 - **Insertion:** on the first admin visit after enabling the module, the plugin adds the block to the checkout page once
   (below "Shipping options", or before "Payment" if there are none). After that the block is yours: you can **move** it in the checkout page
   editor, **remove** it and add it again from the inserter (search for "Ship date"). A removed block isn't added back.
-  Settings → "Ship date choice at checkout" shows whether the block is on the checkout page. A checkout in a theme template
+  The **Checkout** tab shows whether the block is on the checkout page. A checkout in a theme template
   (Site Editor) isn't changed automatically - add the block there by hand.
 - **Without the block** the customer doesn't pick a date and orders go through without one (sales aren't blocked). The admin then shows a
   notice (to `manage_woocommerce` users, dismissible; it comes back if the checkout page changes).
@@ -555,6 +557,7 @@ wc-ship-today-notice/
 │   ├── js/notice.js                # Widget: states, countdown, switching dates
 │   ├── js/checkout.js              # Tiles: selection, cutoff passing
 │   ├── js/style-preview.js         # Live preview in the Style tab
+│   ├── js/checkout-settings.js     # Checkout tab: show/hide the module fields
 │   ├── blocks/ship-date/           # Block checkout: tiles and summary row (editor.js, frontend.js; no build step)
 │   └── blocks/ship-date-row/       # block.json of the order summary row
 ├── languages/                      # .pot, pl_PL and de_DE (.po + .mo)
@@ -568,6 +571,14 @@ wc-ship-today-notice/
 </details>
 
 ## Changelog
+
+### Unreleased
+
+- New **Checkout** tab next to Settings and Style with the whole "Ship date choice at checkout" section. With the module off only the
+  module checkbox and the "dates of existing orders" option are shown; the other fields appear right after ticking the checkbox, without saving.
+- Saving one tab doesn't change the fields of the other. Saving the options from code changes only the keys it passes.
+- The `disable_iconic` setting keeps its value while Iconic isn't active.
+- The "no Ship date block" notice now also shows on the Settings and Style tabs (only the Checkout tab has the block status).
 
 ### 2.4.1 (2026-10-31)
 
@@ -594,7 +605,7 @@ Without schedules for shipping methods everything works as in 2.3.0.
 > to add the block by hand. Orders placed with the select field keep their dates.
 
 **New**
-- **Tile, row and message texts in the settings** (Ship date choice at checkout → Texts): large text and second line with tokens, including
+- **Tile, row and message texts in the settings** (Checkout tab → Texts): large text and second line with tokens, including
   `{ship_short}` and `{delivery_short}` (an empty second line hides it), custom row labels and four checkout messages. Both checkouts, emails, WPML.
 - Block checkout: **tiles** as in the classic checkout, in a "Ship date" block you can move, remove and add again in the checkout page editor.
 - A dismissible admin notice when block checkout has no date block; block status in the settings.

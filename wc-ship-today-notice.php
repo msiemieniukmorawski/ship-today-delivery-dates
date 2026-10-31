@@ -57,6 +57,30 @@ final class WC_Ship_Today_Notice
         'checkout_msg_method',
     ];
 
+    /**
+     * Klucze opcji z zakładki "Checkout" (oprócz CHECKOUT_TEXTS). Reszta opcji należy do zakładki "Ustawienia".
+     * Obie zakładki zapisują tę samą opcję, a każdy formularz ma tylko swoje pola - patrz limit_to_tab().
+     */
+    const CHECKOUT_TAB_KEYS = [
+        'checkout_enabled',
+        'checkout_count',
+        'checkout_preselect',
+        'checkout_label',
+        'checkout_primary',
+        'checkout_position',
+        'checkout_accent',
+        'disable_iconic',
+        'checkout_tile_sub',
+        'checkout_review_row',
+        'checkout_order_rows',
+        'checkout_admin_edit',
+        'checkout_list_column',
+        'checkout_dates_when_disabled',
+    ];
+
+    /** Strona Settings API zakładki "Checkout" (zakładka "Ustawienia": slug strony wtyczki). */
+    const CHECKOUT_PAGE = 'wc-ship-today-notice-checkout';
+
     const TOGGLES = [
         'checkout_review_row',
         'checkout_order_rows',
@@ -583,19 +607,22 @@ final class WC_Ship_Today_Notice
         add_settings_field('preview', __('Upcoming dates', 'wc-ship-today-notice'), [$this, 'field_preview'], 'wc-ship-today-notice', 'wc_ship_today_main');
         add_settings_field('method_schedules', __('Shipping methods', 'wc-ship-today-notice'), [$this, 'field_method_schedules'], 'wc-ship-today-notice', 'wc_ship_today_main');
 
-        // --- Sekcja: wybór terminu w checkoucie ---
+        // --- Zakładka Checkout: pola modułu ukryte przy wyłączonym module (assets/js/checkout-settings.js) ---
         add_settings_section(
             'wc_ship_today_checkout',
             __('Ship date choice at checkout', 'wc-ship-today-notice'),
             [$this, 'section_checkout_info'],
-            'wc-ship-today-notice'
+            self::CHECKOUT_PAGE
         );
-        add_settings_field('checkout_enabled', __('Module', 'wc-ship-today-notice'), [$this, 'field_checkout_enabled'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
-        add_settings_field('checkout_tiles', __('Tiles', 'wc-ship-today-notice'), [$this, 'field_checkout_tiles'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
-        add_settings_field('checkout_texts', __('Texts', 'wc-ship-today-notice'), [$this, 'field_checkout_texts'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
-        add_settings_field('checkout_display', __('Dates in orders', 'wc-ship-today-notice'), [$this, 'field_checkout_display'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
+        $module_row = ['class' => 'wc-stn-if-module' . (empty($this->get_options()['checkout_enabled']) ? ' hidden' : '')];
+        add_settings_field('checkout_enabled', __('Module', 'wc-ship-today-notice'), [$this, 'field_checkout_enabled'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout');
+        add_settings_field('checkout_placement', __('Position', 'wc-ship-today-notice'), [$this, 'field_checkout_placement'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
+        add_settings_field('checkout_tiles', __('Tiles', 'wc-ship-today-notice'), [$this, 'field_checkout_tiles'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
+        add_settings_field('checkout_texts', __('Texts', 'wc-ship-today-notice'), [$this, 'field_checkout_texts'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
+        // Bez klasy: przełącznik "daty przy wyłączonym module" działa właśnie wtedy
+        add_settings_field('checkout_display', __('Dates in orders', 'wc-ship-today-notice'), [$this, 'field_checkout_display'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout');
         if (WC_STN_Checkout::iconic_active()) {
-            add_settings_field('disable_iconic', 'Iconic Delivery Slots', [$this, 'field_disable_iconic'], 'wc-ship-today-notice', 'wc_ship_today_checkout');
+            add_settings_field('disable_iconic', 'Iconic Delivery Slots', [$this, 'field_disable_iconic'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
         }
 
         // --- Sekcja: Visibility ---
@@ -763,7 +790,10 @@ final class WC_Ship_Today_Notice
         $options['checkout_primary']   = in_array($input['checkout_primary'] ?? '', ['delivery', 'ship'], true) ? $input['checkout_primary'] : 'delivery';
         $options['checkout_position']  = in_array($input['checkout_position'] ?? '', ['shortcode', 'after_order_notes', 'before_order_review'], true) ? $input['checkout_position'] : 'shortcode';
         $options['checkout_accent']    = (string) sanitize_hex_color($input['checkout_accent'] ?? '');
-        $options['disable_iconic']     = !empty($input['disable_iconic']);
+        // Pole jest tylko przy aktywnym Iconic: bez niego zostaje zapisana wartość
+        if (WC_STN_Checkout::iconic_active()) {
+            $options['disable_iconic'] = !empty($input['disable_iconic']);
+        }
 
         // Teksty kafelka, wierszy zamówienia i komunikatów: puste = domyślny przetłumaczony tekst; brak w wejściu (zapis z kodu) = bez zmian
         foreach (self::CHECKOUT_TEXTS as $key) {
@@ -791,6 +821,35 @@ final class WC_Ship_Today_Notice
         }
 
         unset($options['excluded_holidays']);
+
+        return $this->limit_to_tab($options, $input);
+    }
+
+    /**
+     * Obie zakładki zapisują tę samą opcję, a nieobecny w POST checkbox czytamy jako false, więc zmieniamy tylko klucze
+     * z tego formularza (znacznik _tab), reszta zostaje z zapisanej opcji. Bez znacznika (zapis z kodu, drugie wywołanie
+     * sanityzacji przy add_option) zmieniają się tylko klucze obecne w wejściu.
+     */
+    private function limit_to_tab(array $options, array $input)
+    {
+        $saved    = $this->get_options();
+        $tab      = $input['_tab'] ?? '';
+        $checkout = array_merge(self::CHECKOUT_TAB_KEYS, self::CHECKOUT_TEXTS);
+
+        foreach (array_keys($options) as $key) {
+            $in_checkout = in_array($key, $checkout, true);
+
+            if ('checkout' === $tab || 'settings' === $tab) {
+                $keep = ('checkout' === $tab) !== $in_checkout;
+            } else {
+                // Przełączniki z formularza sprzed podziału na zakładki: nieobecny = odznaczony
+                $keep = !array_key_exists($key, $input) && !(!empty($input['_toggles']) && in_array($key, self::TOGGLES, true));
+            }
+
+            if ($keep && array_key_exists($key, $saved)) {
+                $options[$key] = $saved[$key];
+            }
+        }
 
         return $options;
     }
@@ -826,16 +885,29 @@ final class WC_Ship_Today_Notice
 
             <nav class="nav-tab-wrapper" style="margin-bottom:16px;">
                 <a href="<?php echo esc_url($page_url); ?>" class="nav-tab<?php echo 'settings' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e('Settings', 'wc-ship-today-notice'); ?></a>
+                <a href="<?php echo esc_url(add_query_arg('tab', 'checkout', $page_url)); ?>" class="nav-tab<?php echo 'checkout' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e('Checkout', 'wc-ship-today-notice'); ?></a>
                 <a href="<?php echo esc_url(add_query_arg('tab', 'style', $page_url)); ?>" class="nav-tab<?php echo 'style' === $tab ? ' nav-tab-active' : ''; ?>"><?php esc_html_e('Style', 'wc-ship-today-notice'); ?></a>
             </nav>
 
             <?php if ('style' === $tab) : ?>
                 <?php $this->render_style_tab(); ?>
+            <?php elseif ('checkout' === $tab) : ?>
+
+            <form method="post" action="options.php" id="wc-stn-checkout-settings">
+                <?php
+                settings_fields(self::OPTION_KEY);
+                printf('<input type="hidden" name="%s[_tab]" value="checkout" />', esc_attr(self::OPTION_KEY));
+                do_settings_sections(self::CHECKOUT_PAGE);
+                submit_button();
+                ?>
+            </form>
+
             <?php else : ?>
 
             <form method="post" action="options.php">
                 <?php
                 settings_fields(self::OPTION_KEY);
+                printf('<input type="hidden" name="%s[_tab]" value="settings" />', esc_attr(self::OPTION_KEY));
                 do_settings_sections('wc-ship-today-notice');
                 submit_button();
                 ?>
@@ -1018,12 +1090,29 @@ final class WC_Ship_Today_Notice
 
     private function current_tab()
     {
-        return (isset($_GET['tab']) && 'style' === $_GET['tab']) ? 'style' : 'settings'; // phpcs:ignore WordPress.Security.NonceVerification
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+
+        return in_array($tab, ['style', 'checkout'], true) ? $tab : 'settings';
     }
 
     public function admin_assets($hook)
     {
-        if (!$this->page_hook || $hook !== $this->page_hook || 'style' !== $this->current_tab()) {
+        if (!$this->page_hook || $hook !== $this->page_hook) {
+            return;
+        }
+
+        if ('checkout' === $this->current_tab()) {
+            wp_enqueue_script(
+                'wc-ship-today-notice-checkout-settings',
+                plugins_url('assets/js/checkout-settings.js', __FILE__),
+                [],
+                WC_STN_VERSION,
+                true
+            );
+            return;
+        }
+
+        if ('style' !== $this->current_tab()) {
             return;
         }
 
@@ -1302,7 +1391,14 @@ final class WC_Ship_Today_Notice
             <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_enabled]" value="1" <?php checked(!empty($o['checkout_enabled'])); ?> />
             <?php esc_html_e('Enable the ship date choice at checkout (required for products that need shipping)', 'wc-ship-today-notice'); ?>
         </label>
-        <p style="margin-top:8px">
+        <?php
+    }
+
+    public function field_checkout_placement()
+    {
+        $o = $this->get_options();
+        ?>
+        <p style="margin-top:0">
             <label>
                 <?php esc_html_e('Position:', 'wc-ship-today-notice'); ?>
                 <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_position]">
@@ -1425,10 +1521,28 @@ final class WC_Ship_Today_Notice
 
     public function field_checkout_display()
     {
-        $this->toggle_checkbox('checkout_review_row', __('Row with the date in the order summary at checkout', 'wc-ship-today-notice'), __('The selected date as a row in the order summary: in the classic checkout in the order review table, in the block checkout as the "Ship date summary row" block.', 'wc-ship-today-notice'));
-        $this->toggle_checkbox('checkout_order_rows', __('"Ship date" and "Planned delivery" rows after the order is placed', 'wc-ship-today-notice'), __('Thank-you page, order emails (customer and admin) and My Account.', 'wc-ship-today-notice'));
-        $this->toggle_checkbox('checkout_admin_edit', __('Change the ship date in the order edit screen', 'wc-ship-today-notice'), __('Date field in the order admin; the delivery date is recalculated and an order note is added. Off: the dates are shown read-only.', 'wc-ship-today-notice'));
-        $this->toggle_checkbox('checkout_list_column', __('"Shipping" column in the orders list', 'wc-ship-today-notice'), __('Column with sorting and a ship date filter in WooCommerce → Orders.', 'wc-ship-today-notice'));
+        $o       = $this->get_options();
+        $enabled = !empty($o['checkout_enabled']);
+        // Klasy dla checkout-settings.js. Przy wyłączonym module działają tylko wiersze i lista (przy włączonym "daty przy wyłączonym module")
+        $part    = function ($class, $visible, callable $toggle) {
+            printf('<div class="%s%s">', esc_attr($class), $visible ? '' : ' hidden');
+            $toggle();
+            echo '</div>';
+        };
+        $dates   = $enabled || !empty($o['checkout_dates_when_disabled']);
+
+        $part('wc-stn-if-module', $enabled, function () {
+            $this->toggle_checkbox('checkout_review_row', __('Row with the date in the order summary at checkout', 'wc-ship-today-notice'), __('The selected date as a row in the order summary: in the classic checkout in the order review table, in the block checkout as the "Ship date summary row" block.', 'wc-ship-today-notice'));
+        });
+        $part('wc-stn-if-dates', $dates, function () {
+            $this->toggle_checkbox('checkout_order_rows', __('"Ship date" and "Planned delivery" rows after the order is placed', 'wc-ship-today-notice'), __('Thank-you page, order emails (customer and admin) and My Account.', 'wc-ship-today-notice'));
+        });
+        $part('wc-stn-if-module', $enabled, function () {
+            $this->toggle_checkbox('checkout_admin_edit', __('Change the ship date in the order edit screen', 'wc-ship-today-notice'), __('Date field in the order admin; the delivery date is recalculated and an order note is added. Off: the dates are shown read-only.', 'wc-ship-today-notice'));
+        });
+        $part('wc-stn-if-dates', $dates, function () {
+            $this->toggle_checkbox('checkout_list_column', __('"Shipping" column in the orders list', 'wc-ship-today-notice'), __('Column with sorting and a ship date filter in WooCommerce → Orders.', 'wc-ship-today-notice'));
+        });
         $this->toggle_checkbox('checkout_dates_when_disabled', __('Show dates of existing orders also when the module is disabled', 'wc-ship-today-notice'), __('Orders keep their dates when you turn the module off. On: they are still shown in emails, on the thank-you page, in My Account, in the order admin (read-only) and in the orders list, according to the options above. Off: they are hidden until the module is enabled again.', 'wc-ship-today-notice'));
     }
 

@@ -98,7 +98,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
    [ship_today_notice mode="next_slot" text="Zamów {cutoff_when}, dostarczymy {delivery_when}. Zostało: {countdown}"]
    ```
 
-5. Opcjonalnie włącz **Wybór terminu w checkoucie** i zakładkę **Styl**.
+5. Opcjonalnie włącz wybór terminu w zakładce **Checkout** i otwórz zakładkę **Styl**.
 
 Święta pobierają się same zaraz po aktywacji (WP-Cron). Od razu: przycisk „Fetch holidays now” na dole ustawień.
 
@@ -129,8 +129,8 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 | Tekst po godzinie granicznej / w dzień bez wysyłki | tak | checkboxy przy tekstach | Dotyczy trybu „wysyłka dziś”. |
 | Sekundy w odliczaniu | tak | Countdown format | |
 | Własny wygląd widgetu | nie (style z `notice.css`) | zakładka **Styl** | Puste pole = domyślny wygląd. |
-| Wybór terminu w checkoucie | **nie** | Wybór terminu w checkoucie → Moduł | Domyślne miejsce: tylko shortcode `[ship_today_checkout]`. |
-| Wiersz z terminem w podsumowaniu zamówienia (checkout) | tak, z modułem | Wybór terminu w checkoucie → Daty w zamówieniach | Oba checkouty. |
+| Wybór terminu w checkoucie | **nie** | Zakładka **Checkout** → Moduł | Domyślne miejsce: tylko shortcode `[ship_today_checkout]`. |
+| Wiersz z terminem w podsumowaniu zamówienia (checkout) | tak, z modułem | Zakładka Checkout → Daty w zamówieniach | Oba checkouty. |
 | Wiersze „Data wysyłki” / „Planowana dostawa”: maile, strona podziękowania, Moje konto | tak, z modułem | j.w. | |
 | Panel zamówienia: daty | z modułem | automatycznie | Box tylko, gdy zamówienie ma daty albo można je zmienić. |
 | Panel zamówienia: zmiana daty wysyłki | tak, z modułem | Daty w zamówieniach | Wyłączone: daty tylko do odczytu. |
@@ -262,7 +262,9 @@ Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-b
 <details>
 <summary><b>Wybór terminu w checkoucie (klasyczny, blokowy, Iconic)</b></summary>
 
-Włączenie: **WooCommerce → Ship Today Notice → Wybór terminu w checkoucie → Moduł**.
+Włączenie: **WooCommerce → Ship Today Notice → Checkout → Moduł**. Przy wyłączonym module zakładka pokazuje tylko ten checkbox i opcję
+pokazywania dat istniejących zamówień (z przełącznikami, od których zależy). Pozostałe pola pojawiają się od razu po zaznaczeniu checkboxa,
+bez zapisu, a ukryte zachowują wartości.
 
 | Ustawienie | Domyślnie | Opis |
 |---|---|---|
@@ -327,7 +329,7 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
 - **Wstawienie:** przy pierwszej wizycie w panelu po włączeniu modułu wtyczka raz wstawia blok do strony zamówienia
   (pod „Metody wysyłki”, a gdy ich nie ma - przed „Płatnością”). Potem blok należy do sklepu: można go **przesunąć** w edytorze
   strony zamówienia, **usunąć** i dodać ponownie z insertera (szukaj „Termin wysyłki”, w angielskim panelu „Ship date”). Usuniętego wtyczka nie wstawia drugi raz.
-  Ustawienia → „Wybór terminu w checkoucie” pokazuje, czy blok jest na stronie zamówienia. Checkout w szablonie motywu
+  Zakładka **Checkout** pokazuje, czy blok jest na stronie zamówienia. Checkout w szablonie motywu
   (Edytor witryny) nie jest zmieniany automatycznie - tam blok trzeba dodać ręcznie.
 - **Bez bloku** klient nie wybiera terminu, a zamówienia przechodzą bez daty (bez blokowania sprzedaży). Panel pokazuje wtedy
   powiadomienie (użytkownikom z `manage_woocommerce`, do zamknięcia - wraca, jeśli zmieni się strona zamówienia).
@@ -561,6 +563,7 @@ wc-ship-today-notice/
 │   ├── js/notice.js                # Widget: stany, odliczanie, przełączanie terminów
 │   ├── js/checkout.js              # Kafelki: wybór, upływ godziny granicznej
 │   ├── js/style-preview.js         # Podgląd na żywo w zakładce "Styl"
+│   ├── js/checkout-settings.js     # Zakładka Checkout: pokazywanie i ukrywanie pól modułu
 │   ├── blocks/ship-date/           # Bloki checkoutu blokowego: kafelki i wiersz podsumowania (editor.js, frontend.js; bez kroku build)
 │   └── blocks/ship-date-row/       # block.json wiersza w podsumowaniu zamówienia
 ├── languages/                      # .pot, pl_PL i de_DE (.po + .mo)
@@ -575,6 +578,14 @@ wc-ship-today-notice/
 </details>
 
 ## Changelog
+
+### Niewydane
+
+- Nowa zakładka **Checkout** obok „Ustawień” i „Stylu” z całą sekcją „Wybór terminu w checkoucie”. Przy wyłączonym module widać tylko
+  checkbox modułu i opcję „daty istniejących zamówień”; pozostałe pola pojawiają się od razu po zaznaczeniu checkboxa, bez zapisu.
+- Zapis jednej zakładki nie zmienia pól drugiej. Zapis opcji z kodu zmienia tylko podane klucze.
+- Ustawienie `disable_iconic` zachowuje wartość, gdy Iconic nie jest aktywny.
+- Powiadomienie o braku bloku „Termin wysyłki” pojawia się też w zakładkach Ustawienia i Styl (status bloku jest tylko w zakładce Checkout).
 
 ### 2.4.1 (31.10.2026)
 
@@ -607,7 +618,7 @@ Bez ustawień dla metod wysyłki wszystko działa jak w 2.3.0.
 > trzeba dodać ręcznie. Zamówienia złożone z polem select mają te same daty w mailach, panelu i na liście zamówień.
 
 **Nowe**
-- **Teksty kafelków, wierszy i komunikatów w ustawieniach** (Wybór terminu w checkoucie → Teksty): duży napis i druga linia
+- **Teksty kafelków, wierszy i komunikatów w ustawieniach** (zakładka Checkout → Teksty): duży napis i druga linia
   kafelka z tokenami (dotychczasowe z widgetu + `{ship_short}`, `{delivery_short}`; pusta druga linia = ukryta), etykiety
   „Data wysyłki” / „Planowana dostawa”, cztery komunikaty checkoutu z `{field}` / `{slot}` / `{next_slot}`. Klasyczny i blokowy
   checkout, maile, WPML. Puste pola = dotychczasowe przetłumaczone teksty (bez zmian dla sklepów, które nic nie ustawią).

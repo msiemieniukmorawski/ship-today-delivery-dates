@@ -49,7 +49,7 @@ All plugin texts are translatable (English source): the admin, weekday names and
 4. Click "Fetch holidays now" at the bottom of the settings page to download holidays right away.
 5. Optionally set the delivery days, then save and check the "Next slots" preview.
 6. Add `[ship_today_notice]` to the product page, cart, header or a popup.
-7. Optionally enable the ship date choice at checkout.
+7. Optionally enable the ship date choice in the Checkout tab.
 
 == Frequently Asked Questions ==
 
@@ -59,11 +59,11 @@ Yes, with WooCommerce 10.1 or newer. In both checkouts the customer picks a date
 
 = The block checkout does not show the ship date tiles. =
 
-Check WooCommerce → Ship Today Notice → "Ship date choice at checkout": it tells you whether the "Ship date" block is on the checkout page. If the checkout is part of a block theme template (Site Editor) or you removed the block, add the "Ship date" block inside the checkout form in the editor. The block is shown only when the cart needs shipping and local pickup is not selected.
+Check WooCommerce → Ship Today Notice → Checkout: it tells you whether the "Ship date" block is on the checkout page. If the checkout is part of a block theme template (Site Editor) or you removed the block, add the "Ship date" block inside the checkout form in the editor. The block is shown only when the cart needs shipping and local pickup is not selected.
 
 = Can I change the texts on the date tiles and in the checkout messages? =
 
-Yes, in WooCommerce → Ship Today Notice → "Ship date choice at checkout" → "Texts": the large text and the second line of the tiles (with tokens such as `{delivery_short}`, `{ship_short}`, `{ship_when}`, `{cutoff_when}`; an empty second line hides it), the labels of the ship and delivery date rows in emails, and the four checkout messages (`{field}`, `{slot}`, `{next_slot}`). Empty fields use the default, translated texts.
+Yes, in WooCommerce → Ship Today Notice → Checkout → "Texts": the large text and the second line of the tiles (with tokens such as `{delivery_short}`, `{ship_short}`, `{ship_when}`, `{cutoff_when}`; an empty second line hides it), the labels of the ship and delivery date rows in emails, and the four checkout messages (`{field}`, `{slot}`, `{next_slot}`). Empty fields use the default, translated texts.
 
 = Can shipping methods have different cutoff times? =
 
