@@ -71,7 +71,9 @@ msgstr "Zeigt den im Block „Versandtermin“ gewählten Termin."
 msgid ""
 "Hidden: the order summary row is turned off in WooCommerce → Settings → Ship "
 "Today & Delivery Dates → Checkout."
-msgstr "Ausgeblendet: Die Zeile in der Bestellübersicht ist unter WooCommerce → Einstellungen → Ship Today & Delivery Dates → Checkout deaktiviert."
+msgstr ""
+"Ausgeblendet: Die Zeile in der Bestellübersicht ist unter WooCommerce → "
+"Einstellungen → Ship Today & Delivery Dates → Checkout deaktiviert."
 
 #: includes/class-wc-stn-checkout-blocks.php:419
 msgid "Ship Today & Delivery Dates:"
@@ -645,8 +647,8 @@ msgid "Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}"
 msgstr "Bestelle {cutoff_when}, wir versenden {ship_when}. Noch: {countdown}"
 
 #: wc-ship-today-notice.php:1053 wc-ship-today-notice.php:1275
-msgid "Order within: {countdown} — we will ship today!"
-msgstr "Bestelle innerhalb von: {countdown} — wir versenden noch heute!"
+msgid "Order within {countdown} and we will ship today!"
+msgstr "Bestelle innerhalb von {countdown}, dann versenden wir noch heute!"
 
 #: wc-ship-today-notice.php:1055 wc-ship-today-notice.php:1056
 #: wc-ship-today-notice.php:1369
@@ -971,7 +973,7 @@ msgid ""
 "summary, so the selected date is not shown there. Add it in the checkout "
 "page editor (inside the order summary)."
 msgstr ""
-"Block-Checkout: Der Block „Versandtermin – Zeile in der Übersicht“ ist nicht "
+"Block-Checkout: Der Block „Versandtermin: Zeile in der Übersicht“ ist nicht "
 "in der Bestellübersicht, der gewählte Termin wird dort also nicht angezeigt. "
 "Füge ihn im Editor der Kassenseite hinzu (innerhalb der Bestellübersicht)."
 
@@ -1142,7 +1144,7 @@ msgid ""
 msgstr ""
 "Der gewählte Termin als Zeile in der Bestellübersicht: im klassischen "
 "Checkout in der Übersichtstabelle, im Block-Checkout als Block "
-"„Versandtermin – Zeile in der Übersicht“."
+"„Versandtermin: Zeile in der Übersicht“."
 
 #: wc-ship-today-notice.php:1716
 msgid "\"Ship date\" and \"Planned delivery\" rows after the order is placed"
@@ -1594,7 +1596,7 @@ msgstr[1] "%d Tage"
 #: assets/blocks/ship-date-row/block.json
 msgctxt "block title"
 msgid "Ship date summary row"
-msgstr "Versandtermin – Zeile in der Übersicht"
+msgstr "Versandtermin: Zeile in der Übersicht"
 
 #: assets/blocks/ship-date-row/block.json
 msgctxt "block description"

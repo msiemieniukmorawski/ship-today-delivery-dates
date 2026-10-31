@@ -72,7 +72,9 @@ msgstr "Pokazuje termin wybrany w bloku „Termin wysyłki”."
 msgid ""
 "Hidden: the order summary row is turned off in WooCommerce → Settings → Ship "
 "Today & Delivery Dates → Checkout."
-msgstr "Ukryty: wiersz w podsumowaniu zamówienia jest wyłączony w WooCommerce → Ustawienia → Ship Today & Delivery Dates → Checkout."
+msgstr ""
+"Ukryty: wiersz w podsumowaniu zamówienia jest wyłączony w WooCommerce → "
+"Ustawienia → Ship Today & Delivery Dates → Checkout."
 
 #: includes/class-wc-stn-checkout-blocks.php:419
 msgid "Ship Today & Delivery Dates:"
@@ -643,8 +645,8 @@ msgid "Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}"
 msgstr "Zamów {cutoff_when}, wyślemy {ship_when}. Zostało: {countdown}"
 
 #: wc-ship-today-notice.php:1053 wc-ship-today-notice.php:1275
-msgid "Order within: {countdown} — we will ship today!"
-msgstr "Zamów w ciągu: {countdown} — wyślemy dziś!"
+msgid "Order within {countdown} and we will ship today!"
+msgstr "Zamów w ciągu {countdown}, a wyślemy dziś!"
 
 #: wc-ship-today-notice.php:1055 wc-ship-today-notice.php:1056
 #: wc-ship-today-notice.php:1369
@@ -963,7 +965,7 @@ msgid ""
 "summary, so the selected date is not shown there. Add it in the checkout "
 "page editor (inside the order summary)."
 msgstr ""
-"Checkout blokowy: bloku „Termin wysyłki – wiersz podsumowania” nie ma w "
+"Checkout blokowy: bloku „Termin wysyłki: wiersz podsumowania” nie ma w "
 "podsumowaniu zamówienia, więc wybrany termin się tam nie pokazuje. Dodaj go "
 "w edytorze strony zamówienia (wewnątrz podsumowania)."
 
@@ -1134,7 +1136,7 @@ msgid ""
 "\" block."
 msgstr ""
 "Wybrany termin jako wiersz w podsumowaniu zamówienia: w klasycznym "
-"checkoucie w tabeli podsumowania, w blokowym jako blok „Termin wysyłki – "
+"checkoucie w tabeli podsumowania, w blokowym jako blok „Termin wysyłki: "
 "wiersz podsumowania”."
 
 #: wc-ship-today-notice.php:1716
@@ -1583,7 +1585,7 @@ msgstr[2] "%d dni"
 #: assets/blocks/ship-date-row/block.json
 msgctxt "block title"
 msgid "Ship date summary row"
-msgstr "Termin wysyłki – wiersz podsumowania"
+msgstr "Termin wysyłki: wiersz podsumowania"
 
 #: assets/blocks/ship-date-row/block.json
 msgctxt "block description"

@@ -249,7 +249,7 @@ Domyślne teksty (źródło po angielsku, tłumaczenie z `.po`; tekst zapisany w
 | Tekst | Źródło | pl_PL |
 |---|---|---|
 | Najbliższy termin | `Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}` | `Zamów {cutoff_when}, wyślemy {ship_when}. Zostało: {countdown}` |
-| Przed godziną graniczną | `Order within: {countdown} — we will ship today!` | `Zamów w ciągu: {countdown} — wyślemy dziś!` |
+| Przed godziną graniczną | `Order within {countdown} and we will ship today!` | `Zamów w ciągu {countdown}, a wyślemy dziś!` |
 | Po godzinie granicznej | `We will ship {ship_when}.` | `Wyślemy {ship_when}.` |
 | Dzień bez wysyłki | `We will ship {ship_when}.` | `Wyślemy {ship_when}.` |
 
@@ -368,7 +368,7 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
   daty („Wybierz termin dostawy.”) i termin spoza aktualnych („Przyjmowanie zamówień na wysyłkę … już się zakończyło. …”)
   i zapisuje te same meta co klasyczny checkout, więc maile, strona podziękowania, panel i lista zamówień działają tak samo.
 - JS bez kroku build (`assets/blocks/ship-date/`: `block.json`, `editor.js`, `frontend.js`), wygląd z `checkout.css`.
-- **Wiersz w podsumowaniu zamówienia** - blok „Termin wysyłki – wiersz podsumowania” (`wc-stn/ship-date-row`, w podsumowaniu sum,
+- **Wiersz w podsumowaniu zamówienia** - blok „Termin wysyłki: wiersz podsumowania” (`wc-stn/ship-date-row`, w podsumowaniu sum,
   rodzic `woocommerce/checkout-order-summary-totals-block`) pokazuje wybrany termin tak jak wiersz w klasycznym checkoucie
   („Termin dostawy: Wysyłka pn 02.11 / dostawa wt 03.11”, etykieta = „Nazwa pola”). Zmienia się od razu po wyborze kafelka
   i po upływie godziny granicznej. Wtyczka wstawia go raz pod wierszem wysyłki (jak blok kafelków, osobny znacznik
@@ -595,6 +595,10 @@ wc-ship-today-notice/
 
 ## Changelog
 
+### Niewydane
+
+- Domyślne teksty i etykiety panelu nie mają już półpauz ani pauz. Domyślny tekst przed godziną graniczną to teraz „Zamów w ciągu {countdown}, a wyślemy dziś!”.
+
 ### 2.6.1 (31.10.2026)
 
 - Nowa nazwa: **Ship Today & Delivery Dates for WooCommerce** (w panelu: Ship Today & Delivery Dates). Text domain, nazwy opcji, hooki i shortcode'y bez zmian.
@@ -629,7 +633,7 @@ wc-ship-today-notice/
   z nowym komunikatem). Panel zamówienia liczy dostawę wg metody zamówienia. Widget: atrybut `method`.
 - API: `wc_stn_get_slots()`, `wc_stn_delivery_for_ship_date()`, `wc_stn_is_shipping_day()` z opcjonalnym `$method`; filtry
   terminów i tekstu dostają ID metody jako ostatni argument (zgodnie wstecz).
-- Checkout blokowy: wiersz z wybranym terminem w **podsumowaniu zamówienia** (blok „Termin wysyłki – wiersz podsumowania”),
+- Checkout blokowy: wiersz z wybranym terminem w **podsumowaniu zamówienia** (blok „Termin wysyłki: wiersz podsumowania”),
   jak w klasycznym checkoucie, aktualizowany na żywo. Wstawiany raz pod wierszem wysyłki (przy wejściu do panelu albo aktualizacji),
   przesuwalny i usuwalny w edytorze. Działa z przełącznikiem „Wiersz z terminem w podsumowaniu zamówienia”.
   Na stronach zamówienia ze starszym układem podsumowania (bez bloku sum `checkout-order-summary-totals-block`, z wcześniejszych

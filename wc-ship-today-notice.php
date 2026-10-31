@@ -1050,7 +1050,7 @@ final class WC_Ship_Today_Notice
             'language_code' => 'PL',
             'holiday_subdivision' => '', // region ISO 3166-2 (np. DE-BY), puste = tylko święta ogólnokrajowe
             'text_next_slot' => __('Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}', 'wc-ship-today-notice'),
-            'text_before_cutoff' => __('Order within: {countdown} — we will ship today!', 'wc-ship-today-notice'),
+            'text_before_cutoff' => __('Order within {countdown} and we will ship today!', 'wc-ship-today-notice'),
             // {ship_when}: "jutro" albo dzień tygodnia (w piątek po godzinie granicznej następna wysyłka to poniedziałek)
             'text_after_cutoff' => __('We will ship {ship_when}.', 'wc-ship-today-notice'),
             'text_not_shipping_day' => __('We will ship {ship_when}.', 'wc-ship-today-notice'),
@@ -1272,7 +1272,7 @@ final class WC_Ship_Today_Notice
         $before_html = str_replace(
             '{countdown}',
             '<span class="wc-ship-today-countdown">' . esc_html($countdown) . '</span>',
-            esc_html__('Order within: {countdown} — we will ship today!', 'wc-ship-today-notice')
+            esc_html__('Order within {countdown} and we will ship today!', 'wc-ship-today-notice')
         );
 
         $colors = [
@@ -1426,7 +1426,7 @@ final class WC_Ship_Today_Notice
                 }
                 echo '</select>';
                 printf('<input type="hidden" name="%s" value="%s" />', esc_attr($field . '[hook]'), esc_attr($set['hook']));
-                printf('</td><td>&ndash;<input type="hidden" name="%s" value="%s" />', esc_attr($field . '[priority]'), esc_attr($set['priority']));
+                printf('</td><td>-<input type="hidden" name="%s" value="%s" />', esc_attr($field . '[priority]'), esc_attr($set['priority']));
             } else {
                 printf('<select name="%s">', esc_attr($field . '[hook]'));
                 foreach (WC_STN_Auto_Placement::HOOKS[$row] as $hook => $default) {
@@ -1900,7 +1900,7 @@ final class WC_Ship_Today_Notice
                 esc_html($slot['cutoff']->format('d.m.Y H:i')),
                 esc_html(WC_STN_Schedule::day_label((int) $slot['ship']->format('N'), 'name')),
                 esc_html($slot['ship']->format('d.m.Y')),
-                $slot['delivery'] ? esc_html(WC_STN_Schedule::day_label((int) $slot['delivery']->format('N'), 'name') . ', ' . $slot['delivery']->format('d.m.Y')) : '&ndash;'
+                $slot['delivery'] ? esc_html(WC_STN_Schedule::day_label((int) $slot['delivery']->format('N'), 'name') . ', ' . $slot['delivery']->format('d.m.Y')) : '-'
             );
         }
         echo '</tbody></table>';
@@ -1938,7 +1938,7 @@ final class WC_Ship_Today_Notice
                 $enabled ? ' open' : '',
                 esc_html($label),
                 esc_html($key),
-                $enabled ? ' &mdash; ' . esc_html__('own times', 'wc-ship-today-notice') : ''
+                $enabled ? ' - ' . esc_html__('own times', 'wc-ship-today-notice') : ''
             );
             printf(
                 '<p><label><input type="checkbox" name="%s[enabled]" value="1" %s /> %s</label></p>',

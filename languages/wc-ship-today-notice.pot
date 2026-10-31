@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Ship Today & Delivery Dates for WooCommerce 2.6.0\n"
+"Project-Id-Version: Ship Today & Delivery Dates for WooCommerce 2.6.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-ship-today-notice\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-31T22:09:05+00:00\n"
+"POT-Creation-Date: 2026-10-31T22:30:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wc-ship-today-notice\n"
@@ -595,7 +595,7 @@ msgstr ""
 
 #: wc-ship-today-notice.php:1053
 #: wc-ship-today-notice.php:1275
-msgid "Order within: {countdown} — we will ship today!"
+msgid "Order within {countdown} and we will ship today!"
 msgstr ""
 
 #: wc-ship-today-notice.php:1055

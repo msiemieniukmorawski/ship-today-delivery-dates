@@ -248,7 +248,7 @@ Default texts (a text saved in the settings takes priority):
 | Text | Source |
 |---|---|
 | Next date | `Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}` |
-| Before the cutoff | `Order within: {countdown} — we will ship today!` |
+| Before the cutoff | `Order within {countdown} and we will ship today!` |
 | After the cutoff | `We will ship {ship_when}.` |
 | Non-shipping day | `We will ship {ship_when}.` |
 
@@ -588,6 +588,10 @@ wc-ship-today-notice/
 - **Paid:** configuration for your store, matching your theme, carrier integrations and custom changes: [ms-m.pl](https://ms-m.pl).
 
 ## Changelog
+
+### Unreleased
+
+- Default texts and admin labels no longer use em or en dashes. The default text before the cutoff is now "Order within {countdown} and we will ship today!".
 
 ### 2.6.1 (2026-10-31)
 
