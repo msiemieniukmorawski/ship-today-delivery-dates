@@ -1,4 +1,4 @@
-=== Powiadomienie o wysyłce dziś ===
+=== WooCommerce Ship Today Notice ===
 Contributors: TODO
 Tags: woocommerce, shipping, countdown, delivery date, cutoff time
 Requires at least: 6.8

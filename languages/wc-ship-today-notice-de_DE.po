@@ -1,8 +1,8 @@
 # Copyright (C) 2026 MS-M.pl
-# This file is distributed under the same license as the Powiadomienie o wysyłce dziś plugin.
+# This file is distributed under the same license as the WooCommerce Ship Today Notice plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: Powiadomienie o wysyłce dziś 1.2.0\n"
+"Project-Id-Version: WooCommerce Ship Today Notice 1.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-ship-today-"
 "notice\n"
 "POT-Creation-Date: 2026-10-30T21:10:33+00:00\n"
@@ -19,8 +19,8 @@ msgstr ""
 
 #. Plugin Name of the plugin
 #: wc-ship-today-notice.php
-msgid "Powiadomienie o wysyłce dziś"
-msgstr "Benachrichtigung über heutigen Versand"
+msgid "WooCommerce Ship Today Notice"
+msgstr "WooCommerce Ship Today Notice"
 
 #. Description of the plugin
 #: wc-ship-today-notice.php

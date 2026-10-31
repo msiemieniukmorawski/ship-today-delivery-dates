@@ -20,8 +20,8 @@ msgstr ""
 
 #. Plugin Name of the plugin
 #: wc-ship-today-notice.php
-msgid "Powiadomienie o wysyłce dziś"
-msgstr "Powiadomienie o wysyłce dziś"
+msgid "WooCommerce Ship Today Notice"
+msgstr "WooCommerce Ship Today Notice"
 
 #. Description of the plugin
 #: wc-ship-today-notice.php
@@ -74,11 +74,11 @@ msgid ""
 "Notice."
 msgstr ""
 "Ukryty: wiersz w podsumowaniu zamówienia jest wyłączony w WooCommerce → "
-"Powiadomienie o wysyłce dziś."
+"Ship Today Notice."
 
 #: includes/class-wc-stn-checkout-blocks.php:416
 msgid "Ship Today Notice:"
-msgstr "Powiadomienie o wysyłce dziś:"
+msgstr "Ship Today Notice:"
 
 #: includes/class-wc-stn-checkout-blocks.php:417
 msgid ""
@@ -449,7 +449,7 @@ msgstr "Nie udało się zaktualizować świąt."
 
 #: wc-ship-today-notice.php:548 wc-ship-today-notice.php:549
 msgid "Ship Today Notice"
-msgstr "Powiadomienie o wysyłce dziś"
+msgstr "Ship Today Notice"
 
 #: wc-ship-today-notice.php:566
 msgid "Shortcode"

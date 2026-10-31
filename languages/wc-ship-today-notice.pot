@@ -2,7 +2,7 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Powiadomienie o wysyłce dziś 2.3.0\n"
+"Project-Id-Version: WooCommerce Ship Today Notice 2.3.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-ship-today-notice\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,7 +16,7 @@ msgstr ""
 
 #. Plugin Name of the plugin
 #: wc-ship-today-notice.php
-msgid "Powiadomienie o wysyłce dziś"
+msgid "WooCommerce Ship Today Notice"
 msgstr ""
 
 #. Description of the plugin

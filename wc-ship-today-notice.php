@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: Powiadomienie o wysyłce dziś
+ * Plugin Name: WooCommerce Ship Today Notice
  * Description: Countdown to the order cutoff time with the next ship and delivery dates (shortcode [ship_today_notice]), plus an optional ship date choice at checkout.
  * Version: 2.4.0
  * Requires at least: 6.8

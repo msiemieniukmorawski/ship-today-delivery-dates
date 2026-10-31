@@ -14,7 +14,10 @@ trap 'rm -rf "$STAGE"' EXIT
 grep -v '^\s*#' "$ROOT/.distignore" | grep -v '^\s*$' > "$STAGE/exclude"
 
 mkdir -p "$STAGE/$SLUG" "$OUT"
-rsync -a --exclude-from="$STAGE/exclude" "$ROOT/" "$STAGE/$SLUG/"
+# Tylko pliki śledzone przez Git (ostatni commit): lokalne narzędzia poza repo nie trafiają do paczki
+mkdir "$STAGE/src"
+git -C "$ROOT" archive HEAD | tar -x -C "$STAGE/src"
+rsync -a --exclude-from="$STAGE/exclude" "$STAGE/src/" "$STAGE/$SLUG/"
 
 rm -f "$OUT/$SLUG.zip"
 (cd "$STAGE" && python3 -m zipfile -c "$OUT/$SLUG.zip" "$SLUG")

@@ -574,6 +574,10 @@ wc-ship-today-notice/
 
 ## Changelog
 
+### Niewydane
+
+- Nazwa wtyczki w nagłówku, `readme.txt` i panelu po polsku: „WooCommerce Ship Today Notice” / „Ship Today Notice” (wcześniej „Powiadomienie o wysyłce dziś”).
+
 ### 2.4.0 (30.10.2026)
 
 **Nowe**
