@@ -9,14 +9,14 @@
  * - delivery: the Nth delivery day after shipping, skipping no-delivery days and holidays (0 = no date).
  *
  * A method schedule is the same options with overridden days, cutoffs, offsets and optionally delivery days,
- * see WC_Ship_Today_Notice::schedule($method). Holidays, excluded dates and no-delivery days are shared.
+ * see STDD_Plugin::schedule($method). Holidays, excluded dates and no-delivery days are shared.
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-final class WC_STN_Schedule
+final class STDD_Schedule
 {
     /** How many days ahead to look for slots. */
     const HORIZON_DAYS = 60;
@@ -59,46 +59,46 @@ final class WC_STN_Schedule
         switch ($form) {
             case 'until':
                 $days = [
-                    1 => _x('Monday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
-                    2 => _x('Tuesday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
-                    3 => _x('Wednesday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
-                    4 => _x('Thursday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
-                    5 => _x('Friday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
-                    6 => _x('Saturday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
-                    7 => _x('Sunday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'wc-ship-today-notice'),
+                    1 => _x('Monday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'ship-today-delivery-dates'),
+                    2 => _x('Tuesday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'ship-today-delivery-dates'),
+                    3 => _x('Wednesday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'ship-today-delivery-dates'),
+                    4 => _x('Thursday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'ship-today-delivery-dates'),
+                    5 => _x('Friday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'ship-today-delivery-dates'),
+                    6 => _x('Saturday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'ship-today-delivery-dates'),
+                    7 => _x('Sunday', 'weekday after "until", e.g. "until Monday 20:00" (Polish: genitive)', 'ship-today-delivery-dates'),
                 ];
                 break;
             case 'on':
                 $days = [
-                    1 => _x('on Monday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
-                    2 => _x('on Tuesday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
-                    3 => _x('on Wednesday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
-                    4 => _x('on Thursday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
-                    5 => _x('on Friday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
-                    6 => _x('on Saturday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
-                    7 => _x('on Sunday', 'weekday with preposition, e.g. "we will ship on Monday"', 'wc-ship-today-notice'),
+                    1 => _x('on Monday', 'weekday with preposition, e.g. "we will ship on Monday"', 'ship-today-delivery-dates'),
+                    2 => _x('on Tuesday', 'weekday with preposition, e.g. "we will ship on Monday"', 'ship-today-delivery-dates'),
+                    3 => _x('on Wednesday', 'weekday with preposition, e.g. "we will ship on Monday"', 'ship-today-delivery-dates'),
+                    4 => _x('on Thursday', 'weekday with preposition, e.g. "we will ship on Monday"', 'ship-today-delivery-dates'),
+                    5 => _x('on Friday', 'weekday with preposition, e.g. "we will ship on Monday"', 'ship-today-delivery-dates'),
+                    6 => _x('on Saturday', 'weekday with preposition, e.g. "we will ship on Monday"', 'ship-today-delivery-dates'),
+                    7 => _x('on Sunday', 'weekday with preposition, e.g. "we will ship on Monday"', 'ship-today-delivery-dates'),
                 ];
                 break;
             case 'short':
                 $days = [
-                    1 => _x('Mon', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
-                    2 => _x('Tue', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
-                    3 => _x('Wed', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
-                    4 => _x('Thu', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
-                    5 => _x('Fri', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
-                    6 => _x('Sat', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
-                    7 => _x('Sun', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'wc-ship-today-notice'),
+                    1 => _x('Mon', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'ship-today-delivery-dates'),
+                    2 => _x('Tue', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'ship-today-delivery-dates'),
+                    3 => _x('Wed', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'ship-today-delivery-dates'),
+                    4 => _x('Thu', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'ship-today-delivery-dates'),
+                    5 => _x('Fri', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'ship-today-delivery-dates'),
+                    6 => _x('Sat', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'ship-today-delivery-dates'),
+                    7 => _x('Sun', 'short weekday name, e.g. on checkout tiles "Mon 09.11"', 'ship-today-delivery-dates'),
                 ];
                 break;
             default:
                 $days = [
-                    1 => _x('Monday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
-                    2 => _x('Tuesday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
-                    3 => _x('Wednesday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
-                    4 => _x('Thursday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
-                    5 => _x('Friday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
-                    6 => _x('Saturday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
-                    7 => _x('Sunday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'wc-ship-today-notice'),
+                    1 => _x('Monday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'ship-today-delivery-dates'),
+                    2 => _x('Tuesday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'ship-today-delivery-dates'),
+                    3 => _x('Wednesday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'ship-today-delivery-dates'),
+                    4 => _x('Thursday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'ship-today-delivery-dates'),
+                    5 => _x('Friday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'ship-today-delivery-dates'),
+                    6 => _x('Saturday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'ship-today-delivery-dates'),
+                    7 => _x('Sunday', 'weekday name inside a sentence, e.g. "Ship date: Monday, 09.11.2026" (Polish: lowercase nominative)', 'ship-today-delivery-dates'),
                 ];
         }
 
@@ -111,12 +111,12 @@ final class WC_STN_Schedule
     public static function words(): array
     {
         return [
-            'today'    => _x('today', 'relative day, e.g. "we will ship today"', 'wc-ship-today-notice'),
-            'tomorrow' => _x('tomorrow', 'relative day, e.g. "we will ship tomorrow"', 'wc-ship-today-notice'),
+            'today'    => _x('today', 'relative day, e.g. "we will ship today"', 'ship-today-delivery-dates'),
+            'tomorrow' => _x('tomorrow', 'relative day, e.g. "we will ship tomorrow"', 'ship-today-delivery-dates'),
             /* translators: {cutoff_when} for today/tomorrow. %1$s: "today" or "tomorrow", %2$s: time, e.g. "today until 14:00" */
-            'relative' => __('%1$s until %2$s', 'wc-ship-today-notice'),
+            'relative' => __('%1$s until %2$s', 'ship-today-delivery-dates'),
             /* translators: {cutoff_when} for later days. %1$s: weekday (until form), %2$s: time, e.g. "until Sunday 20:00" */
-            'until'    => __('until %1$s %2$s', 'wc-ship-today-notice'),
+            'until'    => __('until %1$s %2$s', 'ship-today-delivery-dates'),
         ];
     }
 
@@ -130,7 +130,7 @@ final class WC_STN_Schedule
      */
     public function now(): DateTimeImmutable
     {
-        $now = apply_filters('wc_ship_today_notice_now', new DateTimeImmutable('now', $this->tz));
+        $now = apply_filters('stdd_now', new DateTimeImmutable('now', $this->tz));
 
         return $now instanceof DateTimeImmutable ? $now->setTimezone($this->tz) : new DateTimeImmutable('now', $this->tz);
     }
@@ -166,7 +166,7 @@ final class WC_STN_Schedule
         $ymd    = $day->format('Y-m-d');
         $result = $this->is_shipping_weekday($day) && !$this->is_blocked($ymd);
 
-        return (bool) apply_filters('wc_ship_today_notice_is_shipping_day', $result, $ymd, $this->method);
+        return (bool) apply_filters('stdd_is_shipping_day', $result, $ymd, $this->method);
     }
 
     /**
@@ -175,7 +175,7 @@ final class WC_STN_Schedule
     public function cutoff_for(DateTimeImmutable $ship_day): DateTimeImmutable
     {
         $weekday = (int) $ship_day->format('N');
-        $time    = (string) apply_filters('wc_ship_today_notice_cutoff_time', $this->cutoff_time($weekday), $weekday, $ship_day->format('Y-m-d'), $this->method);
+        $time    = (string) apply_filters('stdd_cutoff_time', $this->cutoff_time($weekday), $weekday, $ship_day->format('Y-m-d'), $this->method);
 
         if (!preg_match('/^(\d{2}):(\d{2})$/', $time, $m)) {
             $time = '14:00';
@@ -275,7 +275,7 @@ final class WC_STN_Schedule
             ];
         }
 
-        return apply_filters('wc_ship_today_notice_slots', $slots, $count, $now, $this->method);
+        return apply_filters('stdd_slots', $slots, $count, $now, $this->method);
     }
 
     /**
@@ -409,7 +409,7 @@ final class WC_STN_Schedule
         global $wpdb;
 
         $this->holidays = [];
-        $table          = $wpdb->prefix . WC_Ship_Today_Notice::TABLE_NAME;
+        $table          = $wpdb->prefix . STDD_Plugin::TABLE_NAME;
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own holiday table, no WP API, kept in $this->holidays for the request.
         $rows = $wpdb->get_results($wpdb->prepare('SELECT holiday_date, holiday_name FROM %i WHERE country_code = %s', $table, $this->options['country_code'] ?? 'PL'));

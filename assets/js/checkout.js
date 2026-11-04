@@ -3,7 +3,7 @@
  *
  * Selecting a tile refreshes the order review. When a cutoff passes on an open page the tile goes, the next slot joins
  * and the selection moves to the nearest slot with a notice. With method schedules, a method change rebuilds the tiles
- * from the #wc-stn-checkout-data fragment. The server has the final say when the order is placed.
+ * from the #stdd-checkout-data fragment. The server has the final say when the order is placed.
  */
 (function ($) {
   'use strict';
@@ -17,14 +17,14 @@
     var input = document.createElement('input');
     var main = document.createElement('span');
 
-    label.className = 'wc-stn-tile';
+    label.className = 'stdd-tile';
     input.type = 'radio';
-    input.className = 'wc-stn-tile__input';
-    input.name = 'wc_stn_ship_date';
+    input.className = 'stdd-tile__input';
+    input.name = 'stdd_ship_date';
     input.value = tile.value;
     input.setAttribute('data-cutoff', tile.cutoff);
     input.setAttribute('aria-label', tile.aria);
-    main.className = 'wc-stn-tile__main';
+    main.className = 'stdd-tile__main';
     main.textContent = tile.main;
 
     label.appendChild(input);
@@ -32,7 +32,7 @@
     // Empty second line = no element, same as the PHP markup
     if (tile.sub) {
       var sub = document.createElement('span');
-      sub.className = 'wc-stn-tile__sub';
+      sub.className = 'stdd-tile__sub';
       sub.textContent = tile.sub;
       label.appendChild(sub);
     }
@@ -41,8 +41,8 @@
   }
 
   function syncChecked($fs) {
-    $fs.find('.wc-stn-tile').each(function () {
-      $(this).toggleClass('is-checked', $(this).find('.wc-stn-tile__input').prop('checked'));
+    $fs.find('.stdd-tile').each(function () {
+      $(this).toggleClass('is-checked', $(this).find('.stdd-tile__input').prop('checked'));
     });
   }
 
@@ -53,14 +53,14 @@
   }
 
   function showNotice($fs, text) {
-    $fs.find('.wc-stn-checkout__notice').text(text).prop('hidden', !text);
+    $fs.find('.stdd-checkout__notice').text(text).prop('hidden', !text);
   }
 
-  // From #wc-stn-checkout-data (method schedules only), otherwise from the data-stn-checkout attribute
+  // From #stdd-checkout-data (method schedules only), otherwise from the data-stdd-checkout attribute
   function readConfig($fs) {
-    var $data = $fs.find('.wc-stn-checkout__data');
+    var $data = $fs.find('.stdd-checkout__data');
     try {
-      return JSON.parse($data.length ? $data.text() : $fs.attr('data-stn-checkout'));
+      return JSON.parse($data.length ? $data.text() : $fs.attr('data-stdd-checkout'));
     } catch (e) {
       return null;
     }
@@ -68,8 +68,8 @@
 
   function applyMethod($fs, cfg) {
     var prev = $fs.data('stnCfg');
-    var prevValue = $fs.find('.wc-stn-tile__input:checked').val();
-    var $tiles = $fs.find('.wc-stn-checkout__tiles');
+    var prevValue = $fs.find('.stdd-tile__input:checked').val();
+    var $tiles = $fs.find('.stdd-checkout__tiles');
     var now = nowS(cfg);
     var open = (cfg.tiles || []).filter(function (tile) { return tile.cutoff > now; }).slice(0, cfg.count);
 
@@ -90,12 +90,12 @@
       open.filter(function (tile) { return tile.value === prevValue; })[0];
     showNotice($fs, '');
     if (same) {
-      $tiles.find('.wc-stn-tile__input').filter(function () { return this.value === same.value; }).prop('checked', true);
+      $tiles.find('.stdd-tile__input').filter(function () { return this.value === same.value; }).prop('checked', true);
       if (same.value !== prevValue) {
         $(document.body).trigger('update_checkout');
       }
     } else if (prevValue) {
-      $tiles.find('.wc-stn-tile__input').first().prop('checked', true);
+      $tiles.find('.stdd-tile__input').first().prop('checked', true);
       showNotice($fs, (cfg.moved || '')
         .split('{slot}').join(prevLabel)
         .split('{next_slot}').join(open[0].label || open[0].main));
@@ -107,11 +107,11 @@
   function refresh($fs) {
     var cfg = $fs.data('stnCfg');
     var now = nowS(cfg);
-    var $tiles = $fs.find('.wc-stn-checkout__tiles');
+    var $tiles = $fs.find('.stdd-checkout__tiles');
     var closedValue = null;
 
-    $tiles.find('.wc-stn-tile').each(function () {
-      var $input = $(this).find('.wc-stn-tile__input');
+    $tiles.find('.stdd-tile').each(function () {
+      var $input = $(this).find('.stdd-tile__input');
       if (parseInt($input.attr('data-cutoff'), 10) <= now) {
         if ($input.prop('checked')) {
           closedValue = $input.val();
@@ -120,19 +120,19 @@
       }
     });
 
-    var present = $tiles.find('.wc-stn-tile__input').map(function () {
+    var present = $tiles.find('.stdd-tile__input').map(function () {
       return this.value;
     }).get();
 
     (cfg.tiles || []).forEach(function (tile) {
-      if ($tiles.children('.wc-stn-tile').length < cfg.count && tile.cutoff > now && present.indexOf(tile.value) === -1) {
+      if ($tiles.children('.stdd-tile').length < cfg.count && tile.cutoff > now && present.indexOf(tile.value) === -1) {
         $tiles.append(buildTile(tile));
         present.push(tile.value);
       }
     });
 
     if (closedValue !== null) {
-      var $first = $tiles.find('.wc-stn-tile__input').first();
+      var $first = $tiles.find('.stdd-tile__input').first();
       if ($first.length) {
         $first.prop('checked', true);
         showNotice($fs, cfg.closed
@@ -146,7 +146,7 @@
   }
 
   function init() {
-    $('.wc-stn-checkout[data-stn-checkout]').each(function () {
+    $('.stdd-checkout[data-stdd-checkout]').each(function () {
       var $fs = $(this);
       var cfg = readConfig($fs);
 
@@ -169,8 +169,8 @@
     });
   }
 
-  $(document).on('change', '.wc-stn-tile__input', function () {
-    var $fs = $(this).closest('.wc-stn-checkout');
+  $(document).on('change', '.stdd-tile__input', function () {
+    var $fs = $(this).closest('.stdd-checkout');
     syncChecked($fs);
     showNotice($fs, '');
     $(document.body).trigger('update_checkout');

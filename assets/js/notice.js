@@ -1,8 +1,8 @@
 /**
- * Ship Today & Delivery Dates for WooCommerce - widget [ship_today_notice]
+ * Ship Today & Delivery Dates for WooCommerce - widget [stdd_notice]
  *
- * No AJAX: slots come in the data-stn attribute as absolute timestamps, so the widget stays right on a page
- * cached for days. The states mirror WC_Ship_Today_Notice::initial_state() in PHP.
+ * No AJAX: slots come in the data-stdd attribute as absolute timestamps, so the widget stays right on a page
+ * cached for days. The states mirror STDD_Plugin::initial_state() in PHP.
  */
 (function () {
   'use strict';
@@ -57,7 +57,7 @@
     return parts.join(' ');
   }
 
-  /** sprintf with %1$s, %2$s (formats from WC_STN_Schedule::words()). */
+  /** sprintf with %1$s, %2$s (formats from STDD_Schedule::words()). */
   function format(fmt, a, b) {
     return fmt.replace('%1$s', a).replace('%2$s', b);
   }
@@ -73,7 +73,7 @@
       : format(w.until, slot.cutoff_day, slot.cutoff_time);
 
     var map = {
-      '{countdown}': '<span class="wc-ship-today-countdown"></span>',
+      '{countdown}': '<span class="stdd-countdown"></span>',
       '{cutoff_when}': cutoffWhen,
       '{cutoff_day}': slot.cutoff_day,
       '{cutoff_time}': slot.cutoff_time,
@@ -143,32 +143,32 @@
     var s = compute(cfg);
 
     el.classList.remove(
-      'wc-ship-today-notice--loading',
-      'wc-ship-today-notice--before',
-      'wc-ship-today-notice--after',
-      'wc-ship-today-notice--hidden'
+      'stdd-notice--loading',
+      'stdd-notice--before',
+      'stdd-notice--after',
+      'stdd-notice--hidden'
     );
 
     if (s.hide) {
       el.style.display = 'none';
-      el.classList.add('wc-ship-today-notice--hidden');
+      el.classList.add('stdd-notice--hidden');
       return s;
     }
 
     // Wrapped even for a single slot: the container is a flex box with a gap, so loose text and the
     // countdown would become separate items with a double space between them.
     el.innerHTML = s.items.map(function (item) {
-      return '<div class="wc-ship-today-notice__item">' + item.html + '</div>';
+      return '<div class="stdd-notice__item">' + item.html + '</div>';
     }).join('');
     el.style.display = '';
-    el.classList.add(s.state === 'before' || s.state === 'next' ? 'wc-ship-today-notice--before' : 'wc-ship-today-notice--after');
+    el.classList.add(s.state === 'before' || s.state === 'next' ? 'stdd-notice--before' : 'stdd-notice--after');
 
     return s;
   }
 
   function tick(el, cfg, s) {
     var nowS = Math.floor(nowMs(cfg) / 1000);
-    var spans = el.querySelectorAll('.wc-ship-today-countdown');
+    var spans = el.querySelectorAll('.stdd-countdown');
 
     for (var i = 0; i < spans.length && i < s.items.length; i++) {
       spans[i].textContent = formatCountdown(Math.max(0, s.items[i].cutoff - nowS), cfg.countdown);
@@ -180,7 +180,7 @@
 
     var cfg;
     try {
-      cfg = JSON.parse(el.getAttribute('data-stn'));
+      cfg = JSON.parse(el.getAttribute('data-stdd'));
     } catch (e) {
       return;
     }
@@ -210,14 +210,14 @@
   }
 
   function initAll(root) {
-    var nodes = (root || document).querySelectorAll('.wc-ship-today-notice[data-stn]');
+    var nodes = (root || document).querySelectorAll('.stdd-notice[data-stdd]');
     for (var i = 0; i < nodes.length; i++) {
       init(nodes[i]);
     }
   }
 
   // For content loaded with AJAX (popups, theme PJAX).
-  window.WcShipTodayNotice = { init: initAll };
+  window.StddNotice = { init: initAll };
 
   // The classic cart and checkout replace HTML fragments. These are jQuery events, addEventListener doesn't see them.
   function bindAjax() {

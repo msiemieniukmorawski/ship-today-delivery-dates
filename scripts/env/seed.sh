@@ -33,5 +33,5 @@ wp option update woocommerce_cod_settings '{"enabled":"yes","title":"Płatność
 wp rewrite structure '/%postname%/' --hard >/dev/null
 
 # Same code as the "Fetch holidays now" button: current and next year for the country from settings.
-wp eval 'do_action("wc_ship_today_notice_cron_sync_holidays");'
-wp eval 'global $wpdb; foreach ($wpdb->get_results("SELECT YEAR(holiday_date) y, COUNT(*) n FROM {$wpdb->prefix}wc_ship_today_notice_holidays GROUP BY y") as $r) { echo "Holidays {$r->y}: {$r->n}\n"; }'
+wp eval 'do_action("stdd_cron_sync_holidays");'
+wp eval 'global $wpdb; foreach ($wpdb->get_results("SELECT YEAR(holiday_date) y, COUNT(*) n FROM {$wpdb->prefix}stdd_holidays GROUP BY y") as $r) { echo "Holidays {$r->y}: {$r->n}\n"; }'

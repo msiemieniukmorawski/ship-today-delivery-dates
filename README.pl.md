@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/wersja-2.6.2-orange" alt="Wersja 2.6.2">
+  <img src="https://img.shields.io/badge/wersja-1.0.0-orange" alt="Wersja 1.0.0">
   <img src="https://img.shields.io/badge/WordPress-6.8%2B-21759b?logo=wordpress&logoColor=white" alt="WordPress 6.8+">
   <img src="https://img.shields.io/badge/WooCommerce-9.4%2B-96588a?logo=woocommerce&logoColor=white" alt="WooCommerce 9.4+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
@@ -64,7 +64,7 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 
 ## Funkcje
 
-**Widget `[ship_today_notice]`**
+**Widget `[stdd_notice]`**
 - Dwa tryby: **„wysyłka dziś”** (odliczanie do dzisiejszej godziny granicznej) i **„najbliższy termin”** (zawsze najbliższa wysyłka, np. 2 razy w tygodniu).
 - Teksty z tokenami i poprawną odmianą dni: „do niedzieli 20:00”, „we wtorek”, „bis Sonntag”, „am Dienstag”.
 - Lista kilku kolejnych terminów (`count="3"`), własny tekst i klasa CSS w shortcode.
@@ -87,20 +87,20 @@ Klient, który nie wie, kiedy dostanie paczkę, odkłada zakup. Ta wtyczka mówi
 - Odbiór osobisty nie wymaga daty. Zgodność z HPOS.
 
 **Dla programistów**
-- Funkcje `wc_stn_*`, filtry, akcja czyszczenia cache, `window.WcShipTodayNotice.init()`.
-- Tryb testowy `?stn_now=2026-12-20T19:59` - widget, kafelki i walidacja w dowolnej chwili.
+- Funkcje `stdd_*`, filtry, akcja czyszczenia cache, `window.StddNotice.init()`.
+- Tryb testowy `?stdd_now=2026-12-20T19:59` - widget, kafelki i walidacja w dowolnej chwili.
 - Wszystkie teksty do tłumaczenia, w paczce pl_PL i de_DE.
 
 ## Szybki start
 
-1. Wgraj wtyczkę do `wp-content/plugins/wc-ship-today-notice/` i aktywuj ją (wymaga aktywnego WooCommerce).
+1. Wgraj wtyczkę do `wp-content/plugins/ship-today-delivery-dates/` i aktywuj ją (wymaga aktywnego WooCommerce).
 2. **WooCommerce → Ustawienia → Terminy dostawy**: zaznacz dni wysyłki i ustaw godziny graniczne.
 3. Opcjonalnie ustaw **Dostawę** (ile dni doręczeń po wysyłce) i sprawdź tabelę **Najbliższe terminy**.
 4. Widget od razu pokazuje się na stronach produktów, pod przyciskiem „Dodaj do koszyka”. Zmienisz to w **Automatycznym wyświetlaniu** (strona produktu, koszyk, checkout), możesz też wstawić shortcode w dowolnym miejscu:
 
    ```
-   [ship_today_notice]
-   [ship_today_notice mode="next_slot" text="Zamów {cutoff_when}, dostarczymy {delivery_when}. Zostało: {countdown}"]
+   [stdd_notice]
+   [stdd_notice mode="next_slot" text="Zamów {cutoff_when}, dostarczymy {delivery_when}. Zostało: {countdown}"]
    ```
 
 5. Opcjonalnie włącz wybór terminu w sekcji **Checkout** i otwórz sekcję **Styl**.
@@ -123,8 +123,8 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 
 | Funkcja | Domyślnie | Gdzie się włącza | Uwagi |
 |---|---|---|---|
-| Widget `[ship_today_notice]` | tak, po wstawieniu shortcode | shortcode | „Wyświetlanie widgetu” = Zawsze. JS i CSS widgetu ładują się tylko na stronach z widgetem (wykrycie shortcode w treści/krótkim opisie albo render shortcode; filtr `wc_ship_today_notice_load_assets`). |
-| Automatyczne wyświetlanie (bez shortcode) | **strona produktu: tak** w nowym sklepie, pod przyciskiem „Dodaj do koszyka”; koszyk i checkout: nie | Automatyczne wyświetlanie | Każda strona osobno, z miejscem i priorytetem. Sklepy po aktualizacji z wcześniejszej wersji: wszystko wyłączone. |
+| Widget `[stdd_notice]` | tak, po wstawieniu shortcode | shortcode | „Wyświetlanie widgetu” = Zawsze. JS i CSS widgetu ładują się tylko na stronach z widgetem (wykrycie shortcode w treści/krótkim opisie albo render shortcode; filtr `stdd_load_assets`). |
+| Automatyczne wyświetlanie (bez shortcode) | **strona produktu: tak** w nowym sklepie, pod przyciskiem „Dodaj do koszyka”; koszyk i checkout: nie | Automatyczne wyświetlanie | Każda strona osobno, z miejscem i priorytetem. |
 | Tryb komunikatu | „Wysyłka dziś” | Tryb komunikatu / atrybut `mode` | |
 | Dni wysyłki | pn-pt, do 14:00 tego samego dnia | Delivery weekdays & cutoff times | sob/nd mają domyślnie 12:00, ale nie są zaznaczone. |
 | Data dostawy | nie (0 dni) | Dostawa | Dni bez doręczeń domyślnie: niedziela. |
@@ -135,16 +135,16 @@ WooCommerce i obsługuje listę zamówień HPOS oraz starą tabelę postów.
 | Tekst po godzinie granicznej / w dzień bez wysyłki | tak | checkboxy przy tekstach | Dotyczy trybu „wysyłka dziś”. |
 | Sekundy w odliczaniu | tak | Countdown format | |
 | Własny wygląd widgetu | nie (style z `notice.css`) | sekcja **Styl** | Puste pole = domyślny wygląd. |
-| Wybór terminu w checkoucie | **nie** | Sekcja **Checkout** → Moduł | Domyślne miejsce: tylko shortcode `[ship_today_checkout]`. |
+| Wybór terminu w checkoucie | **nie** | Sekcja **Checkout** → Moduł | Domyślne miejsce: tylko shortcode `[stdd_checkout]`. |
 | Wiersz z terminem w podsumowaniu zamówienia (checkout) | tak, z modułem | Sekcja Checkout → Daty w zamówieniach | Oba checkouty. |
 | Wiersze „Data wysyłki” / „Planowana dostawa”: maile, strona podziękowania, Moje konto | tak, z modułem | j.w. | |
 | Panel zamówienia: daty | z modułem | automatycznie | Box tylko, gdy zamówienie ma daty albo można je zmienić. |
 | Panel zamówienia: zmiana daty wysyłki | tak, z modułem | Daty w zamówieniach | Wyłączone: daty tylko do odczytu. |
 | Kolumna „Wysyłka”, sortowanie, filtr na liście zamówień | tak, z modułem | Daty w zamówieniach | HPOS i stara tabela postów. |
 | Daty istniejących zamówień przy wyłączonym module | **nie** | Daty w zamówieniach | Włączone: wiersze w mailach/podziękowaniu/Moim koncie, panel (tylko odczyt) i lista działają bez modułu, wg przełączników wyżej. |
-| Czyszczenie cache o godzinie granicznej | tak, gdy aktywny LiteSpeed Cache albo podpięta akcja `wc_ship_today_notice_purge_cache` | Zaawansowane → Funkcje opcjonalne | Po zapisie ustawień cache jest czyszczony zawsze. |
+| Czyszczenie cache o godzinie granicznej | tak, gdy aktywny LiteSpeed Cache albo podpięta akcja `stdd_purge_cache` | Zaawansowane → Funkcje opcjonalne | Po zapisie ustawień cache jest czyszczony zawsze. |
 | WPML | tak, gdy aktywny WPML | Zaawansowane → Funkcje opcjonalne | Cztery teksty widgetu rejestrowane przy zapisie ustawień i pokazywane w tłumaczeniu. |
-| Tryb testowy `?stn_now=` | tak | Zaawansowane → Funkcje opcjonalne | Tylko dla `manage_woocommerce`. |
+| Tryb testowy `?stdd_now=` | tak | Zaawansowane → Funkcje opcjonalne | Tylko dla `manage_woocommerce`. |
 | Funkcje, filtry, JS API | tak | kod | |
 
 Każdy przełącznik ma domyślnie dotychczasowe zachowanie, a wyłączony nie rejestruje swoich hooków (cron: zdarzenie nie jest
@@ -154,7 +154,7 @@ wyłączonym module”.
 
 ## Automatyczne wyświetlanie
 
-**Ustawienia → Automatyczne wyświetlanie** pokazuje widget bez shortcode. Strona produktu, Koszyk i Checkout to niezależne wiersze: checkbox, miejsce i priorytet. W nowym sklepie widget pokazuje się na stronie produktu pod przyciskiem „Dodaj do koszyka” zaraz po aktywacji, Koszyk i Checkout są wyłączone. Sklepy aktualizujące wtyczkę z wcześniejszej wersji mają wszystko wyłączone, dopóki same tego nie włączą. Widget nie zależy od wyboru terminu w checkoucie.
+**Ustawienia → Automatyczne wyświetlanie** pokazuje widget bez shortcode. Strona produktu, Koszyk i Checkout to niezależne wiersze: checkbox, miejsce i priorytet. W nowym sklepie widget pokazuje się na stronie produktu pod przyciskiem „Dodaj do koszyka” zaraz po aktywacji, Koszyk i Checkout są wyłączone. Widget nie zależy od wyboru terminu w checkoucie.
 
 | Strona | Miejsce (strony klasyczne) | Domyślny priorytet |
 |---|---|---|
@@ -171,7 +171,7 @@ wyłączonym module”.
 - **Priorytet** ustala kolejność wśród elementów w tym samym hooku: mniejsza liczba idzie pierwsza. Puste pole to wartość domyślna z tabeli. Zakres 0-999.
 - **Strony blokowe:** koszyk blokowy, checkout blokowy i szablon produktu z blokiem „Dodaj do koszyka” nie wywołują tych hooków. Panel je rozpoznaje i pokazuje wybór **nad albo pod blokiem**, bez priorytetu. Miejsca wewnątrz bloku WooCommerce nie są dostępne.
 - Motyw blokowy z szablonem produktu `legacy-template` wywołuje hooki klasyczne, więc ma opcje klasyczne.
-- Widget renderuje ten sam kod co shortcode: te same teksty, styl i widoczność. Strona, która ma też `[ship_today_notice]`, pokaże dwa widgety - to wybór sklepu.
+- Widget renderuje ten sam kod co shortcode: te same teksty, styl i widoczność. Strona, która ma też `[stdd_notice]`, pokaże dwa widgety - to wybór sklepu.
 - Klasyczny koszyk i checkout odświeżają fragmenty strony AJAX-em. Widget startuje ponownie po `updated_cart_totals`, `updated_wc_div` i `updated_checkout`, więc odliczanie działa dalej, a timery się nie mnożą.
 
 ## Dokumentacja
@@ -180,15 +180,15 @@ wyłączonym module”.
 <summary><b>Shortcode, tryby i widoczność</b></summary>
 
 ```
-[ship_today_notice]
-[ship_today_notice mode="next_slot"]
-[ship_today_notice count="2" text="Zamów do {cutoff_day} {cutoff_time}, a dostaniesz ją {delivery_day}."]
-[ship_today_notice class="moja-klasa"]
+[stdd_notice]
+[stdd_notice mode="next_slot"]
+[stdd_notice count="2" text="Zamów do {cutoff_day} {cutoff_time}, a dostaniesz ją {delivery_day}."]
+[stdd_notice class="moja-klasa"]
 ```
 
 | Atrybut | Domyślnie | Opis |
 |---|---|---|
-| `count` | `1` | Ile kolejnych terminów pokazać (1-10). Przy `count > 1` kontener ma klasę `wc-ship-today-notice--list`. Każdy termin (także pojedynczy) jest w `.wc-ship-today-notice__item`. |
+| `count` | `1` | Ile kolejnych terminów pokazać (1-10). Przy `count > 1` kontener ma klasę `stdd-notice--list`. Każdy termin (także pojedynczy) jest w `.stdd-notice__item`. |
 | `text` | z ustawień | Własny tekst z tokenami. Zastępuje wszystkie teksty z ustawień (przed / po godzinie granicznej / dzień bez wysyłki / najbliższy termin). HTML filtrowany przez `wp_kses_post`. |
 | `mode` | z ustawień | `today` albo `next_slot`. |
 | `class` | - | Dodatkowe klasy CSS kontenera (oddzielone spacją). |
@@ -255,15 +255,13 @@ Domyślne teksty (źródło po angielsku, tłumaczenie z `.po`; tekst zapisany w
 
 W tekstach „po godzinie granicznej” i „dzień bez wysyłki” warto używać `{ship_when}` zamiast stałego „jutro”: w piątek
 po godzinie granicznej albo przed świętem następna wysyłka nie jest jutro, a `{ship_when}` da „w poniedziałek”.
-Do wersji 2.1.0 domyślnie było „Wyślemy jutro.” / „Wyślemy w najbliższy dzień roboczy.” - sklepy, które zapisały
-ustawienia z tymi tekstami, mają je dalej i mogą je zmienić ręcznie.
 
 </details>
 
 <details>
 <summary><b>Wygląd i sekcja „Styl”</b></summary>
 
-WooCommerce → Ustawienia → Terminy dostawy → **Styl**: wygląd `[ship_today_notice]` bez pisania CSS, z podglądem na żywo stanów
+WooCommerce → Ustawienia → Terminy dostawy → **Styl**: wygląd `[stdd_notice]` bez pisania CSS, z podglądem na żywo stanów
 „przed” i „po” godzinie granicznej.
 
 | Opcja | Opis |
@@ -274,13 +272,13 @@ WooCommerce → Ustawienia → Terminy dostawy → **Styl**: wygląd `[ship_toda
 | **Grubość czcionki, wyrównanie** | 400-800; do lewej / do środka / do prawej. |
 
 Puste pole = domyślny wygląd. „Przywróć domyślne” czyści formularz, a zapis następuje dopiero po kliknięciu „Zapisz zmiany”. Styl jest
-zapisany w opcji `wc_ship_today_notice_style` i trafia na stronę jako zmienne CSS na `:root` (inline przy `notice.css`),
+zapisany w opcji `stdd_style` i trafia na stronę jako zmienne CSS na `:root` (inline przy `notice.css`),
 więc działa też ze stron w cache. Po zapisie cache jest czyszczony jak po zapisie ustawień.
 
-Klasy stanu kontenera: `wc-ship-today-notice--before` (przed godziną graniczną i tryb „najbliższy termin”),
-`--after` (po godzinie granicznej, dzień bez wysyłki), `--hidden`. Odliczanie: `.wc-ship-today-countdown`.
+Klasy stanu kontenera: `stdd-notice--before` (przed godziną graniczną i tryb „najbliższy termin”),
+`--after` (po godzinie granicznej, dzień bez wysyłki), `--hidden`. Odliczanie: `.stdd-countdown`.
 
-Zmienne CSS: `--wc-ship-today-notice-bg`, `-border`, `-color`, `-font-size`, `-before-bg`, `-before-border`, `-before-color`,
+Zmienne CSS: `--stdd-notice-bg`, `-border`, `-color`, `-font-size`, `-before-bg`, `-before-border`, `-before-color`,
 `-after-bg`, `-after-border`, `-after-color`, `-countdown-color`, `-border-width`, `-radius`, `-padding`, `-font-weight`,
 `-align`, `-justify`. Można je nadpisać własnym CSS, np. na klasie z atrybutu `class`.
 
@@ -296,12 +294,12 @@ bez zapisu, a ukryte zachowują wartości.
 | Ustawienie | Domyślnie | Opis |
 |---|---|---|
 | Moduł | wyłączony | Pole jest wymagane, gdy koszyk wymaga wysyłki, pole było w formularzu i wybrana metoda to nie odbiór osobisty. |
-| Miejsce | tylko shortcode | `[ship_today_checkout]` (musi być wewnątrz formularza checkoutu), pod uwagami do zamówienia (`woocommerce_after_order_notes`) albo nad podsumowaniem (`woocommerce_checkout_before_order_review`). |
+| Miejsce | tylko shortcode | `[stdd_checkout]` (musi być wewnątrz formularza checkoutu), pod uwagami do zamówienia (`woocommerce_after_order_notes`) albo nad podsumowaniem (`woocommerce_checkout_before_order_review`). |
 | Nazwa pola | `Termin dostawy` | Legenda pola, wiersz w podsumowaniu, komunikat walidacji. |
 | Liczba terminów | 6 | 1-12 kafelków. |
 | Zaznacz najbliższy termin | tak | |
 | Duży napis na kafelku | data dostawy | Albo data wysyłki. Bez ustawionej dostawy zawsze data wysyłki. Ustala **domyślne** teksty kafelka (pola „Teksty” niżej). |
-| Kolor zaznaczenia | ciemnoszary | HEX albo zmienna CSS `--wc-stn-accent`. |
+| Kolor zaznaczenia | ciemnoszary | HEX albo zmienna CSS `--stdd-accent`. |
 | Teksty → Kafelek | jak wyżej | „Duży napis” (puste = domyślny) i „Druga linia” (pole ma wpisaną domyślną; **puste = bez drugiej linii**, przycisk „Przywróć domyślną”). Tokeny niżej. |
 | Teksty → Wiersze po złożeniu zamówienia | `Data wysyłki:` / `Planowana dostawa:` | Etykiety w mailach, na stronie podziękowania i w Moim koncie. Puste = domyślne (przetłumaczone). Oba wiersze wyłącza przełącznik w „Daty w zamówieniach”. |
 | Teksty → Komunikaty | jak dotąd | „Nie wybrano terminu” (`{field}`), „Minęła godzina graniczna” i „Termin niedostępny” (`{slot}`), „Termin zamknął się przy otwartej stronie” (`{slot}`, `{next_slot}`). Puste = domyślny (pole pokazuje go w podpowiedzi). |
@@ -320,7 +318,7 @@ W komunikatach `{slot}` / `{next_slot}` to termin w formie domyślnego dużego n
 Własne teksty (kafelek, etykiety, komunikaty) przechodzą przez WPML jak teksty widgetu (przełącznik „WPML”). Puste pola biorą
 tekst z tłumaczeń wtyczki, więc sklep pl/de bez zmian dostaje tłumaczenie.
 
-> **Uwaga:** przy miejscu „tylko shortcode” trzeba wstawić `[ship_today_checkout]` do formularza checkoutu. Bez tego
+> **Uwaga:** przy miejscu „tylko shortcode” trzeba wstawić `[stdd_checkout]` do formularza checkoutu. Bez tego
 > (albo z shortcode poza formularzem) pole się nie pokaże, a zamówienia będą składane bez daty wysyłki. Panel pokazuje
 > przy tym ustawieniu ostrzeżenie.
 
@@ -331,7 +329,7 @@ tekst z tłumaczeń wtyczki, więc sklep pl/de bez zmian dostaje tłumaczenie.
 - Wiersz z terminem w tabeli podsumowania zamówienia.
 - Przy składaniu zamówienia serwer sprawdza termin jeszcze raz (`woocommerce_after_checkout_validation`). Termin, którego
   godzina graniczna minęła, jest odrzucany z komunikatem.
-- Data jest wymagana tylko wtedy, gdy pole było w wysłanym formularzu (ukryte pole `wc_stn_rendered`). Brak shortcode
+- Data jest wymagana tylko wtedy, gdy pole było w wysłanym formularzu (ukryte pole `stdd_rendered`). Brak shortcode
   albo shortcode poza formularzem nie blokuje zamówień.
 - Odbiór osobisty: gdy wszystkie wybrane metody wysyłki to odbiór (`local_pickup`, `pickup_location`, filtr
   `woocommerce_local_pickup_methods`), data nie jest wymagana. Kafelki zostają: wybrany termin zapisze się w zamówieniu,
@@ -348,7 +346,7 @@ tekst z tłumaczeń wtyczki, więc sklep pl/de bez zmian dostaje tłumaczenie.
 
 Wymaga WooCommerce 10.1+ (sprawdzone na 11.3). Na starszej wersji blok się nie rejestruje.
 
-W checkoucie blokowym termin wybiera się z tych samych kafelków co w klasycznym, w bloku **„Ship date”** (`wc-stn/ship-date`,
+W checkoucie blokowym termin wybiera się z tych samych kafelków co w klasycznym, w bloku **„Ship date”** (`stdd/ship-date`,
 blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block`):
 
 - **Wstawienie:** przy pierwszej wizycie w panelu po włączeniu modułu wtyczka raz wstawia blok do strony zamówienia
@@ -358,35 +356,34 @@ blok wewnętrzny formularza checkoutu, rodzic `woocommerce/checkout-fields-block
   (Edytor witryny) nie jest zmieniany automatycznie - tam blok trzeba dodać ręcznie.
 - **Bez bloku** klient nie wybiera terminu, a zamówienia przechodzą bez daty (bez blokowania sprzedaży). Panel pokazuje wtedy
   powiadomienie (użytkownikom z `manage_woocommerce`, do zamknięcia - wraca, jeśli zmieni się strona zamówienia).
-- **Aktualizacja z 2.2.0** (tam był select): blok wstawia się też w `maybe_upgrade()`, przy pierwszym wejściu do panelu po aktualizacji.
 - Ustawienia „Liczba terminów”, „Zaznacz najbliższy termin”, „Duży napis na kafelku”, „Kolor zaznaczenia”, „Nazwa pola”
   i „Teksty” (kafelek, komunikaty) działają jak w klasycznym checkoucie. „Miejsce” dotyczy tylko klasycznego. Blok jest widoczny tylko, gdy koszyk wymaga wysyłki
   i nie wybrano odbioru osobistego.
 - Gdy godzina graniczna minie na otwartej stronie, kafelek znika, dochodzi kolejny, a zaznaczenie przechodzi na najbliższy z komunikatem.
-- Termin idzie do Store API jako `extensions.wc-stn.ship_date` (z `rendered: true`, gdy blok był widoczny). Przy składaniu
+- Termin idzie do Store API jako `extensions.stdd.ship_date` (z `rendered: true`, gdy blok był widoczny). Przy składaniu
   zamówienia (`woocommerce_store_api_checkout_update_order_from_request`) serwer wymaga daty tylko przy `rendered`, odrzuca brak
   daty („Wybierz termin dostawy.”) i termin spoza aktualnych („Przyjmowanie zamówień na wysyłkę … już się zakończyło. …”)
   i zapisuje te same meta co klasyczny checkout, więc maile, strona podziękowania, panel i lista zamówień działają tak samo.
 - JS bez kroku build (`assets/blocks/ship-date/`: `block.json`, `editor.js`, `frontend.js`), wygląd z `checkout.css`.
-- **Wiersz w podsumowaniu zamówienia** - blok „Termin wysyłki: wiersz podsumowania” (`wc-stn/ship-date-row`, w podsumowaniu sum,
+- **Wiersz w podsumowaniu zamówienia** - blok „Termin wysyłki: wiersz podsumowania” (`stdd/ship-date-row`, w podsumowaniu sum,
   rodzic `woocommerce/checkout-order-summary-totals-block`) pokazuje wybrany termin tak jak wiersz w klasycznym checkoucie
   („Termin dostawy: Wysyłka pn 02.11 / dostawa wt 03.11”, etykieta = „Nazwa pola”). Zmienia się od razu po wyborze kafelka
   i po upływie godziny granicznej. Wtyczka wstawia go raz pod wierszem wysyłki (jak blok kafelków, osobny znacznik
-  `wc_ship_today_notice_row_inserted`); można go przesunąć albo usunąć. Strona ze starszym układem podsumowania (wiersze sum
+  `stdd_row_inserted`); można go przesunąć albo usunąć. Strona ze starszym układem podsumowania (wiersze sum
   bezpośrednio w `checkout-order-summary-block`, bez `checkout-order-summary-totals-block`) jest przy tym migrowana do nowego
   układu: edytor WooCommerce robi to sam przy otwarciu strony i gubi przy tym nieznane bloki, więc wiersz musi być już w bloku sum.
   Gdy wstawienie się nie uda, ustawienia (sekcja checkoutu) pokazują status na czerwono, a wtyczka spróbuje ponownie przy
   kolejnym wejściu do panelu. Wiersza nie ma, gdy przełącznik „Wiersz z terminem
   w podsumowaniu zamówienia” jest wyłączony, gdy na stronie nie ma bloku kafelków albo gdy termin nie jest wybrany.
-  Oba bloki dzielą wybrany termin przez store `wp.data` `wc-stn/ship-date`.
+  Oba bloki dzielą wybrany termin przez store `wp.data` `stdd/ship-date`.
 
 **Meta zamówień**
 
 | Klucz | Wartość |
 |---|---|
-| `_wc_stn_ship_date` | data wysyłki `Y-m-d` |
-| `_wc_stn_delivery_date` | data dostawy `Y-m-d` albo pusty tekst |
-| `_wc_stn_cutoff` | znacznik czasu godziny granicznej wybranego terminu (usuwany przy ręcznej zmianie daty) |
+| `_stdd_ship_date` | data wysyłki `Y-m-d` |
+| `_stdd_delivery_date` | data dostawy `Y-m-d` albo pusty tekst |
+| `_stdd_cutoff` | znacznik czasu godziny granicznej wybranego terminu (usuwany przy ręcznej zmianie daty) |
 
 </details>
 
@@ -401,12 +398,12 @@ WooCommerce (także „Pozostałe regiony” i metody z wtyczek, np. paczkomaty)
   przesunięcie) i opcjonalnie liczba dni dostawy (puste = jak w „Dostawa”). Pod spodem podgląd 5 najbliższych terminów metody.
 - Metoda bez własnych godzin, z odznaczonym checkboxem albo usunięta w WooCommerce → harmonogram globalny.
 - Wspólne dla wszystkich metod: święta, daty wykluczone, dni bez doręczeń.
-- Zapis w opcji `wc_ship_today_notice_method_schedules` (`["flat_rate:3" => [enabled, delivery_days, cutoff_times,
+- Zapis w opcji `stdd_method_schedules` (`["flat_rate:3" => [enabled, delivery_days, cutoff_times,
   cutoff_offsets, delivery_offset]]`). Bez tej opcji wtyczka działa dokładnie jak wcześniej.
 
 Działanie:
 - **Klasyczny checkout:** kafelki dla wybranej metody (pierwsza paczka). Po zmianie metody `update_checkout` odsyła terminy
-  nowej metody (fragment `#wc-stn-checkout-data`), kafelki się przeliczają. Zaznaczenie zostaje, jeśli ten sam widoczny termin
+  nowej metody (fragment `#stdd-checkout-data`), kafelki się przeliczają. Zaznaczenie zostaje, jeśli ten sam widoczny termin
   (duży napis kafelka) albo ta sama data wysyłki istnieje dla nowej metody, inaczej przechodzi na najbliższy z komunikatem
   (Teksty → „Wybranego terminu nie ma dla nowo wybranej metody wysyłki”, tokeny `{slot}`, `{next_slot}`). Wiersz w podsumowaniu,
   walidacja i zapis w zamówieniu - wg wybranej metody.
@@ -416,7 +413,7 @@ Działanie:
 - **Panel zamówienia:** zmiana daty wysyłki liczy dostawę wg metody wysyłki zamówienia.
 - **Widget:** atrybut `method="flat_rate:3"` (jedna metoda). Czyszczenie cache (LiteSpeed / akcja) - o najbliższej godzinie
   granicznej ze wszystkich harmonogramów.
-- Tryb testowy `?stn_now=` działa przy otwarciu strony, ale nie w AJAX-ie przeliczania checkoutu (`update_order_review`) -
+- Tryb testowy `?stdd_now=` działa przy otwarciu strony, ale nie w AJAX-ie przeliczania checkoutu (`update_order_review`) -
   po zmianie metody kafelki liczą się od prawdziwego „teraz”.
 
 </details>
@@ -448,21 +445,21 @@ Do API idzie tylko kod kraju, kod języka i zakres dat - bez danych klientów (s
 
 | Funkcja | Zwraca |
 |---|---|
-| `wc_stn_get_slots( $count = 1, $now = null, $method = null )` | najbliższe terminy, których godzina graniczna jeszcze nie minęła: tablica `['cutoff' => DateTimeImmutable, 'ship' => DateTimeImmutable, 'delivery' => ?DateTimeImmutable]`. `$now` przyjmuje `DateTime` lub `DateTimeImmutable`. `$method` = ID instancji metody wysyłki (`flat_rate:3`), `null` = globalny. |
-| `wc_stn_delivery_for_ship_date( $ship_ymd, $method = null )` | data dostawy dla daty wysyłki (`Y-m-d` lub `Ymd`) albo `null`, gdy dostawa = 0 lub data jest błędna |
-| `wc_stn_is_blocked_date( $ymd )` | czy data to nieignorowane święto albo data wykluczona (bez względu na dzień tygodnia); `false` dla błędnej daty |
-| `wc_stn_is_shipping_day( $ymd, $method = null )` | czy to dzień wysyłki (dzień tygodnia z ustawień, nie święto, nie data wykluczona); `false` dla błędnej daty |
+| `stdd_get_slots( $count = 1, $now = null, $method = null )` | najbliższe terminy, których godzina graniczna jeszcze nie minęła: tablica `['cutoff' => DateTimeImmutable, 'ship' => DateTimeImmutable, 'delivery' => ?DateTimeImmutable]`. `$now` przyjmuje `DateTime` lub `DateTimeImmutable`. `$method` = ID instancji metody wysyłki (`flat_rate:3`), `null` = globalny. |
+| `stdd_delivery_for_ship_date( $ship_ymd, $method = null )` | data dostawy dla daty wysyłki (`Y-m-d` lub `Ymd`) albo `null`, gdy dostawa = 0 lub data jest błędna |
+| `stdd_is_blocked_date( $ymd )` | czy data to nieignorowane święto albo data wykluczona (bez względu na dzień tygodnia); `false` dla błędnej daty |
+| `stdd_is_shipping_day( $ymd, $method = null )` | czy to dzień wysyłki (dzień tygodnia z ustawień, nie święto, nie data wykluczona); `false` dla błędnej daty |
 
 **Filtry**
 
 | Filtr | Argumenty | Do czego |
 |---|---|---|
-| `wc_ship_today_notice_now` | `DateTimeImmutable $now` | Podmiana „teraz” (używa go tryb testowy). |
-| `wc_ship_today_notice_is_shipping_day` | `bool $is`, `string $ymd`, `?string $method` | Własne dni wysyłki / blokady. |
-| `wc_ship_today_notice_cutoff_time` | `string $time` (`H:i`), `int $weekday` (1 = pn), `string $ship_ymd`, `?string $method` | Inna godzina graniczna dla konkretnego dnia. |
-| `wc_ship_today_notice_slots` | `array $slots`, `int $count`, `DateTimeImmutable $now`, `?string $method` | Zmiana listy terminów (widget, checkout, walidacja). |
-| `wc_ship_today_notice_text` | `string $text`, `string $state` (`next`, `before`, `after`, `not_shipping`), `string $mode`, `?string $method` | Tekst widgetu przed wstawieniem tokenów. |
-| `wc_ship_today_notice_load_assets` | `bool $load` (wykryty shortcode albo Automatyczne wyświetlanie na tej stronie) | `true` = JS i CSS widgetu w `<head>` na tej stronie. Potrzebne, gdy widget przychodzi w treści doładowanej AJAX-em (popup, PJAX). |
+| `stdd_now` | `DateTimeImmutable $now` | Podmiana „teraz” (używa go tryb testowy). |
+| `stdd_is_shipping_day` | `bool $is`, `string $ymd`, `?string $method` | Własne dni wysyłki / blokady. |
+| `stdd_cutoff_time` | `string $time` (`H:i`), `int $weekday` (1 = pn), `string $ship_ymd`, `?string $method` | Inna godzina graniczna dla konkretnego dnia. |
+| `stdd_slots` | `array $slots`, `int $count`, `DateTimeImmutable $now`, `?string $method` | Zmiana listy terminów (widget, checkout, walidacja). |
+| `stdd_text` | `string $text`, `string $state` (`next`, `before`, `after`, `not_shipping`), `string $mode`, `?string $method` | Tekst widgetu przed wstawieniem tokenów. |
+| `stdd_load_assets` | `bool $load` (wykryty shortcode albo Automatyczne wyświetlanie na tej stronie) | `true` = JS i CSS widgetu w `<head>` na tej stronie. Potrzebne, gdy widget przychodzi w treści doładowanej AJAX-em (popup, PJAX). |
 
 `$method` (ostatni argument, opcjonalny - stare callbacki działają bez zmian) to ID instancji metody wysyłki (`flat_rate:3`),
 dla której liczony jest termin, także gdy metoda nie ma własnych godzin, albo `null` dla harmonogramu globalnego.
@@ -481,26 +478,26 @@ załaduje assety, nawet jeśli lista go nie wyświetla.
 
 | Akcja | Kiedy |
 |---|---|
-| `wc_ship_today_notice_purge_cache` | O godzinie granicznej (+5 s, WP-Cron) i po zapisie ustawień, razem z `litespeed_purge_all`. Podepnij czyszczenie innego cache. |
+| `stdd_purge_cache` | O godzinie granicznej (+5 s, WP-Cron) i po zapisie ustawień, razem z `litespeed_purge_all`. Podepnij czyszczenie innego cache. |
 
-Zdarzenia WP-Cron: `wc_ship_today_notice_cron_sync_holidays` (święta, co ok. 4 miesiące, plus pojedyncze zdarzenia po aktywacji
-i przy ponownej próbie) i `wc_ship_today_notice_cron_purge_cache` (pojedyncze zdarzenie na najbliższą godzinę graniczną, planowane
-tylko przy aktywnym LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_purge_cache`; bez nich zdejmowane).
+Zdarzenia WP-Cron: `stdd_cron_sync_holidays` (święta, co ok. 4 miesiące, plus pojedyncze zdarzenia po aktywacji
+i przy ponownej próbie) i `stdd_cron_purge_cache` (pojedyncze zdarzenie na najbliższą godzinę graniczną, planowane
+tylko przy aktywnym LiteSpeed Cache albo podpiętej akcji `stdd_purge_cache`; bez nich zdejmowane).
 
 **JS**
 
 ```js
-window.WcShipTodayNotice.init(root); // inicjuje widgety w treści doładowanej AJAX-em (popupy, PJAX); root domyślnie document
+window.StddNotice.init(root); // inicjuje widgety w treści doładowanej AJAX-em (popupy, PJAX); root domyślnie document
 ```
 
-Widget czyta konfigurację z atrybutu `data-stn`. Każdy element jest inicjowany tylko raz. Jeśli na stronie nie ma widgetu w HTML
+Widget czyta konfigurację z atrybutu `data-stdd`. Każdy element jest inicjowany tylko raz. Jeśli na stronie nie ma widgetu w HTML
 (cała treść przychodzi AJAX-em), `notice.js` się nie załaduje - włącz go filtrem:
 
 ```php
-add_filter('wc_ship_today_notice_load_assets', '__return_true'); // albo warunek, np. is_front_page()
+add_filter('stdd_load_assets', '__return_true'); // albo warunek, np. is_front_page()
 ```
 
-**Tryb testowy**: użytkownik z `manage_woocommerce` może dodać do adresu dowolnej strony `?stn_now=2026-12-20T19:59`. „Teraz”
+**Tryb testowy**: użytkownik z `manage_woocommerce` może dodać do adresu dowolnej strony `?stdd_now=2026-12-20T19:59`. „Teraz”
 zmienia się wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jest interpretowana w strefie czasowej sklepu.
 
 </details>
@@ -508,7 +505,7 @@ zmienia się wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jes
 <details>
 <summary><b>Tłumaczenia i WPML</b></summary>
 
-- Text domain: `wc-ship-today-notice`. Pliki `.pot`, `pl_PL` i `de_DE` w `languages/`. Plik z `wp-content/languages/plugins/`
+- Text domain: `ship-today-delivery-dates`. Pliki `.pot`, `pl_PL` i `de_DE` w `languages/`. Plik z `wp-content/languages/plugins/`
   ma pierwszeństwo.
 - Tłumaczone są wszystkie teksty wtyczki: panel, domyślne teksty widgetu, dni tygodnia w formach zależnych od miejsca
   w zdaniu (`_x()` z kontekstem: nazwa, „do ...”, „w/we ...”, skrót), „dziś”/„jutro”, kafelki, komunikaty walidacji,
@@ -518,21 +515,21 @@ zmienia się wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jes
 - Nazwa pola w komunikacie „Wybierz termin dostawy.” jest po polsku zamieniana na małe litery; tłumaczenie tekstu `yes`
   z kontekstem „Lowercase the field label...” na `no` to wyłącza (de_DE: „Bitte Liefertermin auswählen.”).
 - WPML: teksty widgetu (`text_next_slot`, `text_before_cutoff`, `text_after_cutoff`, `text_not_shipping_day`) są rejestrowane
-  jako stringi w domenie `wc-ship-today-notice` przy zapisie ustawień.
+  jako stringi w domenie `ship-today-delivery-dates` przy zapisie ustawień.
 
 </details>
 
 <details>
 <summary><b>Dane w bazie i deinstalacja</b></summary>
 
-- Opcja `wc_ship_today_notice_options` - wszystkie ustawienia (tablica).
-- Opcja `wc_ship_today_notice_style` - ustawienia sekcji „Styl” (tablica, puste wartości = domyślne).
-- Opcja `wc_ship_today_notice_version` - wersja do migracji (1.x → 2.0: ignorowane święta z ID na daty).
-- Opcja `wc_ship_today_notice_method_schedules` - godziny graniczne dla metod wysyłki (klucz: ID instancji metody).
-- Tabela `{prefix}wc_ship_today_notice_holidays` - pobrane święta.
+- Opcja `stdd_options` - wszystkie ustawienia (tablica).
+- Opcja `stdd_style` - ustawienia sekcji „Styl” (tablica, puste wartości = domyślne).
+- Opcja `stdd_version` - zainstalowana wersja (przy zmianie `maybe_upgrade()` aktualizuje tabelę świąt).
+- Opcja `stdd_method_schedules` - godziny graniczne dla metod wysyłki (klucz: ID instancji metody).
+- Tabela `{prefix}stdd_holidays` - pobrane święta.
 
 Dezaktywacja usuwa wszystkie zdarzenia cron wtyczki (`wp_clear_scheduled_hook`). Usunięcie wtyczki (`uninstall.php`) kasuje opcje wtyczki,
-tabelę świąt i zdarzenia cron (także na każdej stronie multisite). Meta zamówień (`_wc_stn_*`) zostają w zamówieniach.
+tabelę świąt i zdarzenia cron (także na każdej stronie multisite). Meta zamówień (`_stdd_*`) zostają w zamówieniach.
 
 </details>
 
@@ -555,18 +552,18 @@ teksty, API. Wymaga pobranych świąt PL na lata 2026-2027 (`env:seed`). Nie zmi
 <summary><b>Struktura plików</b></summary>
 
 ```
-wc-ship-today-notice/
-├── wc-ship-today-notice.php        # Główny plik: panel, shortcode widgetu, święta, cron, cache, tryb testowy, WPML
+ship-today-delivery-dates/
+├── ship-today-delivery-dates.php        # Główny plik: panel, shortcode widgetu, święta, cron, cache, tryb testowy, WPML
 ├── uninstall.php                   # Usuwanie: opcje, tabela świąt, cron (meta zamówień zostają)
 ├── readme.txt                      # Readme w formacie WordPress.org (po angielsku)
 ├── index.php
 ├── includes/
-│   ├── class-wc-stn-schedule.php   # Silnik terminów (dni wysyłki, godzina graniczna, dostawa, tokeny, odmiana dni)
-│   ├── class-wc-stn-checkout.php   # Klasyczny checkout, zamówienia, lista zamówień
-│   ├── class-wc-stn-checkout-blocks.php  # Checkout blokowy: blok "Ship date", wstawienie do strony, Store API
-│   ├── class-wc-stn-auto-placement.php  # Automatyczne wyświetlanie: hooki, miejsca przy blokach
-│   ├── class-wc-stn-blocks-integration.php  # Skrypt i dane bloku dla checkoutu blokowego (IntegrationInterface)
-│   └── functions.php               # Publiczne API wc_stn_*
+│   ├── class-stdd-schedule.php   # Silnik terminów (dni wysyłki, godzina graniczna, dostawa, tokeny, odmiana dni)
+│   ├── class-stdd-checkout.php   # Klasyczny checkout, zamówienia, lista zamówień
+│   ├── class-stdd-checkout-blocks.php  # Checkout blokowy: blok "Ship date", wstawienie do strony, Store API
+│   ├── class-stdd-auto-placement.php  # Automatyczne wyświetlanie: hooki, miejsca przy blokach
+│   ├── class-stdd-blocks-integration.php  # Skrypt i dane bloku dla checkoutu blokowego (IntegrationInterface)
+│   └── functions.php               # Publiczne API stdd_*
 ├── assets/
 │   ├── css/notice.css              # Widget
 │   ├── css/checkout.css            # Kafelki w checkoucie
@@ -595,158 +592,13 @@ wc-ship-today-notice/
 
 ## Changelog
 
-### 2.6.2 (31.10.2026)
+### 1.0.0
 
-- Domyślne teksty i etykiety panelu nie mają już półpauz ani pauz. Domyślny tekst przed godziną graniczną to teraz „Zamów w ciągu {countdown}, a wyślemy dziś!”.
-- Zakładka w WooCommerce → Ustawienia nazywa się teraz **Terminy dostawy** (adres bez zmian). Pełna nazwa wtyczki zostaje na liście wtyczek.
-- Usunięte nieużywane stałe `WC_STN_Schedule::DAY_*` i automatyczna zamiana domyślnych tekstów sprzed 2.2.0: sklep aktualizowany z takiej wersji zachowuje „Wyślemy jutro.”, dopóki nie zmieni tekstu.
-
-### 2.6.1 (31.10.2026)
-
-- Nowa nazwa: **Ship Today & Delivery Dates for WooCommerce** (w panelu: Ship Today & Delivery Dates). Text domain, nazwy opcji, hooki i shortcode'y bez zmian.
-- Paczka to teraz `build/ship-today-delivery-dates.zip`.
-
-### 2.6.0 (31.10.2026)
-
-- Ustawienia wtyczki przeniesione do zakładki **Ship Today Notice** w WooCommerce → Ustawienia, tuż przed „Zaawansowane”, z sekcjami Ustawienia, Metody wysyłki, Checkout i Styl.
-  Pozycji w bocznym menu WooCommerce już nie ma, stare adresy przekierowują w nowe miejsce. Na liście wtyczek doszedł link „Ustawienia”.
-- Godziny graniczne dla metod wysyłki przeniesione do osobnej sekcji **Metody wysyłki**.
-
-### 2.5.0 (31.10.2026)
-
-- Nowa zakładka **Checkout** obok „Ustawień” i „Stylu” z całą sekcją „Wybór terminu w checkoucie”. Przy wyłączonym module widać tylko
-  checkbox modułu i opcję „daty istniejących zamówień”; pozostałe pola pojawiają się od razu po zaznaczeniu checkboxa, bez zapisu.
-- Zapis jednej zakładki nie zmienia pól drugiej. Zapis opcji z kodu zmienia tylko podane klucze.
-- Usunięto obsługę Iconic Delivery Slots.
-- Powiadomienie o braku bloku „Termin wysyłki” pojawia się też w zakładkach Ustawienia i Styl (status bloku jest tylko w zakładce Checkout).
-- **Automatyczne wyświetlanie:** widget na stronie produktu, w koszyku i checkoucie bez shortcode, z miejscem i priorytetem dla każdej strony. Koszyk i checkout blokowy oraz blokowy szablon produktu: nad albo pod blokiem. Nowe sklepy: włączone na stronie produktu, pod przyciskiem „Dodaj do koszyka”. Sklepy po aktualizacji: wyłączone, dopóki same nie włączą.
-- JS widgetu działa dalej, gdy klasyczny koszyk albo checkout podmieni go AJAX-em, a zegar usuniętego widgetu się zatrzymuje.
-
-### 2.4.1 (31.10.2026)
-
-- Nazwa wtyczki w nagłówku, `readme.txt` i panelu po polsku: „WooCommerce Ship Today Notice” / „Ship Today Notice” (wcześniej „Powiadomienie o wysyłce dziś”).
-
-### 2.4.0 (30.10.2026)
-
-**Nowe**
-- **Godziny graniczne zależne od metody wysyłki:** sekcja „Metody wysyłki” w ustawieniach (lista stref → metod WooCommerce,
-  własne dni wysyłki, godziny graniczne, przesunięcia i liczba dni dostawy, podgląd terminów). Klasyczny i blokowy checkout:
-  kafelki, walidacja i zapis wg wybranej metody, zmiana metody przelicza kafelki (zaznaczenie zostaje albo przechodzi
-  z nowym komunikatem). Panel zamówienia liczy dostawę wg metody zamówienia. Widget: atrybut `method`.
-- API: `wc_stn_get_slots()`, `wc_stn_delivery_for_ship_date()`, `wc_stn_is_shipping_day()` z opcjonalnym `$method`; filtry
-  terminów i tekstu dostają ID metody jako ostatni argument (zgodnie wstecz).
-- Checkout blokowy: wiersz z wybranym terminem w **podsumowaniu zamówienia** (blok „Termin wysyłki: wiersz podsumowania”),
-  jak w klasycznym checkoucie, aktualizowany na żywo. Wstawiany raz pod wierszem wysyłki (przy wejściu do panelu albo aktualizacji),
-  przesuwalny i usuwalny w edytorze. Działa z przełącznikiem „Wiersz z terminem w podsumowaniu zamówienia”.
-  Na stronach zamówienia ze starszym układem podsumowania (bez bloku sum `checkout-order-summary-totals-block`, z wcześniejszych
-  wersji WooCommerce) wtyczka przy wstawieniu zamyka wiersze sum w tym bloku - tak jak robi to edytor WooCommerce przy otwarciu strony.
-  Gdy wiersza nie da się wstawić (np. strona bez podsumowania), ustawienia pokazują to na czerwono.
-
-Bez ustawień dla metod wysyłki wszystko działa jak w 2.3.0.
-
-### 2.3.0 (30.10.2026)
-
-> **Przy aktualizacji z 2.2.0 (checkout blokowy):** pole wyboru terminu (select w „Dodatkowych informacjach”) zastępuje blok
-> „Termin wysyłki” z kafelkami. Przy pierwszym wejściu do panelu po aktualizacji wtyczka sama wstawia blok do strony zamówienia
-> pod „Metody wysyłki” (raz; potem można go przesunąć albo usunąć). Do tej chwili checkout blokowy nie ma wyboru terminu, ale
-> zamówienia przechodzą normalnie. Jeśli checkout jest w szablonie motywu (Edytor witryny), panel pokaże powiadomienie - blok
-> trzeba dodać ręcznie. Zamówienia złożone z polem select mają te same daty w mailach, panelu i na liście zamówień.
-
-**Nowe**
-- **Teksty kafelków, wierszy i komunikatów w ustawieniach** (zakładka Checkout → Teksty): duży napis i druga linia
-  kafelka z tokenami (dotychczasowe z widgetu + `{ship_short}`, `{delivery_short}`; pusta druga linia = ukryta), etykiety
-  „Data wysyłki” / „Planowana dostawa”, cztery komunikaty checkoutu z `{field}` / `{slot}` / `{next_slot}`. Klasyczny i blokowy
-  checkout, maile, WPML. Puste pola = dotychczasowe przetłumaczone teksty (bez zmian dla sklepów, które nic nie ustawią).
-- Checkout blokowy: wybór terminu z **kafelków** jak w klasycznym checkoucie, w bloku „Termin wysyłki” (`wc-stn/ship-date`),
-  który można przesuwać, usuwać i dodawać ponownie w edytorze strony zamówienia. Upływ godziny granicznej na otwartej stronie
-  przełącza zaznaczenie z komunikatem. Działają ustawienia „Liczba terminów”, „Zaznacz najbliższy”, „Duży napis”, „Kolor zaznaczenia”.
-- Powiadomienie w panelu (do zamknięcia), gdy checkout blokowy nie ma bloku terminu; status bloku w ustawieniach.
-
-**Zmiany**
-- Usunięte pole select (Additional Checkout Fields) z 2.2.0. Termin idzie do Store API jako `extensions.wc-stn`; bez bloku data
-  nie jest wymagana (zamówienia nie są blokowane).
-
-### 2.2.0 (30.10.2026)
-
-> **Przy aktualizacji:** wymaga WordPressa 6.8. JS i CSS widgetu ładują się teraz tylko na stronach z widgetem - jeśli widget
-> jest w treści doładowanej AJAX-em (np. popup), dodaj `add_filter('wc_ship_today_notice_load_assets', '__return_true');`.
-> Stare domyślne teksty „Wyślemy jutro.” są poprawiane automatycznie.
-
-**Nowe**
-- **Przełączniki funkcji opcjonalnych** (domyślnie jak dotąd): wiersz w podsumowaniu checkoutu, wiersze dat w mailach / podziękowaniu /
-  Moim koncie, zmiana daty w panelu zamówienia, kolumna na liście zamówień, daty istniejących zamówień przy wyłączonym module
-  (domyślnie wyłączone), automatyczne pobieranie świąt, czyszczenie cache o godzinie granicznej, tryb testowy, WPML.
-- Wybór terminu w **checkoucie blokowym** (WooCommerce 10.1+): pole Additional Checkout Fields, walidacja w Store API, te same meta zamówienia.
-- Zakładka **„Styl”**: kolory przed/po godzinie granicznej, kolor odliczania, ramka, zaokrąglenie, odstęp, czcionka
-  i wyrównanie, z podglądem na żywo i „Przywróć domyślne”. Nowe zmienne CSS w `notice.css` (domyślny wygląd bez zmian).
-- **Tłumaczenia**: wszystkie teksty frontu i panelu do tłumaczenia (angielskie źródło, `_x()` dla form dni, `_n()` dla liczby mnogiej),
-  pełne pl_PL (teksty jak dotąd) i nowe de_DE. Stałe `WC_STN_Schedule::DAY_*` zostają dla zgodności, wtyczka używa `day_label()`.
-- **Święta regionalne**: pomijane, opcjonalny region (ISO 3166-2, np. `DE-BY`). Święta wielodniowe zapisywane jako kolejne dni.
-- Deklaracje zgodności z HPOS i z checkoutem blokowym.
-- Przygotowanie do WordPress.org: `readme.txt`, nagłówek wtyczki (licencja, wymagania, `Requires Plugins`), `uninstall.php`,
-  `.distignore`, `scripts/build-zip.sh`, zrzuty ekranu.
-
-**Zmiany**
-- Domyślne teksty „po godzinie granicznej” i „dzień bez wysyłki” to teraz „Wyślemy {ship_when}.” (wcześniej „Wyślemy jutro.”
-  i „Wyślemy w najbliższy dzień roboczy.” - błędne np. w piątek po godzinie granicznej). Przy aktualizacji do 2.2.0 zapisane
-  teksty **dokładnie równe** starym domyślnym (pl, en, de) są zamieniane na nowe (z rejestracją w WPML); teksty zmienione
-  przez sklep zostają.
-- JS i CSS widgetu tylko na stronach z widgetem (wcześniej na każdej stronie). Nowy filtr `wc_ship_today_notice_load_assets`.
-- Święta pobierane zaraz po aktywacji i po zmianie kraju/języka/regionu, ponowna próba po błędzie crona.
-- Odbiór osobisty (`local_pickup`, `pickup_location`) nie wymaga daty.
-- Kierownik sklepu (`manage_woocommerce`) może zapisywać ustawienia i styl (wcześniej `options.php` wymagał `manage_options`).
-- Cron czyszczenia cache tylko przy LiteSpeed Cache albo podpiętej akcji `wc_ship_today_notice_purge_cache`.
-- Minimalna wersja WordPressa: 6.8 (tłumaczenia ładuje WordPress, bez `load_plugin_textdomain`).
-- Pojedynczy termin widgetu też jest w `.wc-ship-today-notice__item`.
-
-**Poprawki**
-- Włączony moduł checkoutu bez wyrenderowanego pola (brak shortcode albo shortcode poza formularzem) blokował
-  wszystkie zamówienia z wysyłką. Teraz data jest wymagana tylko, gdy pole było w formularzu; w panelu jest ostrzeżenie.
-- Pusta albo błędna odpowiedź API świąt nie kasuje już zapisanych świąt.
-- Tłumaczenia nie ładują się przed `init` (notice `_load_textdomain_just_in_time` w WP 6.7+).
-- Pierwszy zapis ustawień (`add_option`) rejestruje stringi WPML i czyści cache.
-- Dezaktywacja usuwa wszystkie zaplanowane zdarzenia cron wtyczki.
-- Edycja daty wysyłki w zamówieniu odrzuca nieistniejące daty (np. 2026-02-31).
-- `wc_stn_is_shipping_day()` i `wc_stn_is_blocked_date()` zwracają `false` dla błędnej daty zamiast rzucać wyjątek.
-- Walidacja kodów kraju i języka (`[A-Z]{2}`), zapis ustawień nie nadpisuje już `cutoff_time`.
-- Podwójny odstęp przed odliczaniem („Zostało:  2 dni”), ucięty placeholder w zakładce „Styl”.
-- Zapytania do tabeli świąt przez `$wpdb->prepare()`, poprawki escapingu w panelu.
-- Pole godziny granicznej w tabeli dni mieści format 12-godzinny („02:00 PM”, np. przeglądarka en-US); wcześniej było ucięte.
-
-<details>
-<summary><b>Starsze wersje</b></summary>
-
-**2.1.0**
-- Moduł „Wybór terminu w checkoucie”: kafelki, walidacja przy składaniu zamówienia, zapis w zamówieniu, maile, panel
-  zamówienia z edycją daty, kolumna z sortowaniem i filtrem na liście zamówień (HPOS i stara tabela).
-- Przełącznik wyłączający Iconic Delivery Slots w koszyku i checkoucie (okres przejściowy).
-
-**2.0.0**
-- Tryb „najbliższy termin” i godzina graniczna przed dniem wysyłki.
-- Data dostawy (dni doręczeń po wysyłce, dni bez doręczeń, święta).
-- Tokeny z datami i polską odmianą dni, atrybuty shortcode `count`, `text`, `mode`, `class`.
-- Odliczanie z dniami i automatyczne przełączanie terminu po godzinie granicznej.
-- Harmonogram w HTML zamiast AJAX: usunięty endpoint `wc_ship_today_notice_get` z nonce, który na stronach z cache
-  po 12-24 h zwracał 403.
-- Święta na bieżący i następny rok, ignorowanie świąt po dacie (wcześniej po ID); migracja ustawień z 1.x.
-- Podgląd 5 najbliższych terminów w panelu, tryb testowy `?stn_now=`.
-- Funkcje `wc_stn_*`, filtry, tabela testów silnika.
-- Czyszczenie cache LiteSpeed o godzinie granicznej i po zapisie ustawień.
-
-**1.1.0**
-- Godziny graniczne dla każdego dnia tygodnia, daty wykluczone jako textarea.
-- Lista pobranych świąt z możliwością ignorowania.
-- Checkboxy dla tekstów po godzinie granicznej i w dni bez wysyłki, ustawienia widoczności widgetu.
-- Tłumaczenie pl_PL.
-
-**1.0.0**
-- Pierwsza wersja: odliczanie, OpenHolidays API, panel w WooCommerce, WPML.
-
-</details>
+- Pierwsze wydanie.
 
 ## Plany
 
-- [ ] Tryb testowy `?stn_now=` także w AJAX-ie przeliczania checkoutu (`update_order_review`), np. przesunięcie zapamiętane dla managera sklepu.
+- [ ] Tryb testowy `?stdd_now=` także w AJAX-ie przeliczania checkoutu (`update_order_review`), np. przesunięcie zapamiętane dla managera sklepu.
 - [ ] Publikacja w katalogu WordPress.org.
 
 ## Autor

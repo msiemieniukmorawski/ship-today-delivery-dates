@@ -2,9 +2,9 @@
 /**
  * Case table for the slot engine.
  *
- * Run: wp eval-file wp-content/plugins/wc-ship-today-notice/tests/cli-schedule-test.php
+ * Run: wp eval-file wp-content/plugins/ship-today-delivery-dates/tests/cli-schedule-test.php
  * Needs PL holidays for 2026-2027 and the pl_PL locale: templates and expected texts are Polish because they check the pl_PL translation.
- * Does not change saved settings, configurations go straight to WC_STN_Schedule.
+ * Does not change saved settings, configurations go straight to STDD_Schedule.
  */
 
 if (!defined('ABSPATH')) {
@@ -23,7 +23,7 @@ $two_days = [
     'country_code'     => 'PL',
 ];
 
-// 1.x mode: Mon-Fri until 14:00 the same day, no delivery date.
+// Single cutoff: Mon-Fri until 14:00 the same day, no delivery date.
 $legacy = [
     'delivery_days'  => [1, 2, 3, 4, 5],
     'cutoff_times'   => [1 => '14:00', 2 => '14:00', 3 => '14:00', 4 => '14:00', 5 => '14:00'],
@@ -42,10 +42,10 @@ $cases = [
     ['Jan 6 2027 is a holiday', $two_days, '2027-01-04 10:00', '2027-01-10 20:00', '2027-01-11', '2027-01-12'],
     ['excluded date Oct 28', $two_days + ['excluded_dates' => '28-10-2026'], '2026-10-25 20:00', '2026-11-01 20:00', '2026-11-02', '2026-11-03'],
     ['ignored holiday Nov 11', $two_days + ['excluded_holiday_dates' => ['2026-11-11']], '2026-11-08 21:00', '2026-11-10 20:00', '2026-11-11', '2026-11-12'],
-    ['1.x: Friday before 14:00', $legacy, '2026-10-16 13:00', '2026-10-16 14:00', '2026-10-16', ''],
-    ['1.x: Friday at 14:00', $legacy, '2026-10-16 14:00', '2026-10-19 14:00', '2026-10-19', ''],
-    ['1.x: Saturday', $legacy, '2026-10-17 10:00', '2026-10-19 14:00', '2026-10-19', ''],
-    ['1.x: Nov 11 is a holiday', $legacy, '2026-11-10 15:00', '2026-11-12 14:00', '2026-11-12', ''],
+    ['Single cutoff: Friday before 14:00', $legacy, '2026-10-16 13:00', '2026-10-16 14:00', '2026-10-16', ''],
+    ['Single cutoff: Friday at 14:00', $legacy, '2026-10-16 14:00', '2026-10-19 14:00', '2026-10-19', ''],
+    ['Single cutoff: Saturday', $legacy, '2026-10-17 10:00', '2026-10-19 14:00', '2026-10-19', ''],
+    ['Single cutoff: Nov 11 is a holiday', $legacy, '2026-11-10 15:00', '2026-11-12 14:00', '2026-11-12', ''],
 ];
 
 // [label, now, text, expected] on the $two_days config
@@ -60,7 +60,7 @@ $texts = [
 $fail = 0;
 
 foreach ($cases as [$label, $options, $now, $cutoff, $ship, $delivery]) {
-    $schedule = new WC_STN_Schedule($options, $tz);
+    $schedule = new STDD_Schedule($options, $tz);
     $slot     = $schedule->slots(1, new DateTimeImmutable($now, $tz))[0] ?? null;
     $got      = $slot ? [$slot['cutoff']->format('Y-m-d H:i'), $slot['ship']->format('Y-m-d'), $slot['delivery'] ? $slot['delivery']->format('Y-m-d') : ''] : ['-', '-', '-'];
     $ok       = $got === [$cutoff, $ship, $delivery];
@@ -76,7 +76,7 @@ $texts[] = ['widget: no short forms', '2026-10-25 15:00', 'Wyślemy {ship_when} 
 foreach ($texts as $row) {
     [$label, $now, $text, $expected] = $row;
     $extra = $row[4] ?? [];
-    $schedule = new WC_STN_Schedule($two_days, $tz);
+    $schedule = new STDD_Schedule($two_days, $tz);
     $now      = new DateTimeImmutable($now, $tz);
     $slot     = $schedule->slots(1, $now)[0];
     $got      = $schedule->render_text($text, $extra + $schedule->slot_labels($slot), $now);
@@ -86,7 +86,7 @@ foreach ($texts as $row) {
     printf("%s  text: %-14s %s%s\n", $ok ? 'OK  ' : 'FAIL', $label, $got, $ok ? '' : "  (expected: {$expected})");
 }
 
-// Method schedules. Engine: the same options with overridden days and hours (see WC_Ship_Today_Notice::method_overrides).
+// Method schedules. Engine: the same options with overridden days and hours (see STDD_Plugin::method_overrides).
 // [label, options, now, expected: cutoff, ship, delivery]
 $method_cases = [
     ['method: until 15:00 instead of 14:00', array_merge($legacy, ['cutoff_times' => array_fill(1, 5, '15:00')]), '2026-10-16 14:30', '2026-10-16 15:00', '2026-10-16', ''],
@@ -94,7 +94,7 @@ $method_cases = [
     ['method: 2 delivery days', array_merge($two_days, ['delivery_offset' => 2]), '2026-10-25 19:59', '2026-10-25 20:00', '2026-10-26', '2026-10-28'],
 ];
 foreach ($method_cases as [$label, $options, $now, $cutoff, $ship, $delivery]) {
-    $schedule = new WC_STN_Schedule($options, $tz, 'flat_rate:901');
+    $schedule = new STDD_Schedule($options, $tz, 'flat_rate:901');
     $slot     = $schedule->slots(1, new DateTimeImmutable($now, $tz))[0] ?? null;
     $got      = $slot ? [$slot['cutoff']->format('Y-m-d H:i'), $slot['ship']->format('Y-m-d'), $slot['delivery'] ? $slot['delivery']->format('Y-m-d') : ''] : ['-', '-', '-'];
     $ok       = $got === [$cutoff, $ship, $delivery];
@@ -104,7 +104,7 @@ foreach ($method_cases as [$label, $options, $now, $cutoff, $ship, $delivery]) {
 
 // Plugin: schedule($method) picks the method schedule only for an enabled entry of an existing method (no settings saved:
 // the option comes through pre_option, the method list through reflection). Filters get the method ID as the last argument.
-$plugin  = WC_Ship_Today_Notice::instance();
+$plugin  = STDD_Plugin::instance();
 $methods = new ReflectionProperty($plugin, 'shipping_methods');
 $cache   = new ReflectionProperty($plugin, 'schedule');
 $methods->setAccessible(true);
@@ -119,13 +119,13 @@ $fixture = function () {
         'flat_rate:999' => ['enabled' => true, 'delivery_days' => [1], 'cutoff_times' => array_fill(1, 7, '09:00'), 'cutoff_offsets' => [], 'delivery_offset' => ''],
     ];
 };
-add_filter('pre_option_' . WC_Ship_Today_Notice::METHOD_KEY, $fixture);
+add_filter('pre_option_' . STDD_Plugin::METHOD_KEY, $fixture);
 $seen = [];
 $spy  = function ($slots, $count, $now, $method = 'no argument') use (&$seen) {
     $seen[] = $method;
     return $slots;
 };
-add_filter('wc_ship_today_notice_slots', $spy, 10, 4);
+add_filter('stdd_slots', $spy, 10, 4);
 
 $at     = new DateTimeImmutable('2026-10-15 10:00', $tz); // Thursday
 $global = $plugin->schedule()->slots(1, $at)[0]['cutoff']->format('Y-m-d H:i');
@@ -148,20 +148,20 @@ $ok    = in_array('flat_rate:901', $seen, true) && in_array(null, $seen, true) &
 $fail += $ok ? 0 : 1;
 printf("%s  method: slots filter gets the method ID  %s\n", $ok ? 'OK  ' : 'FAIL', implode(', ', array_map('var_export', array_unique($seen, SORT_REGULAR), array_fill(0, count(array_unique($seen, SORT_REGULAR)), true))));
 
-remove_filter('wc_ship_today_notice_slots', $spy, 10);
-remove_filter('pre_option_' . WC_Ship_Today_Notice::METHOD_KEY, $fixture);
+remove_filter('stdd_slots', $spy, 10);
+remove_filter('pre_option_' . STDD_Plugin::METHOD_KEY, $fixture);
 $methods->setValue($plugin, $methods_before);
 $cache->setValue($plugin, null);
 
 // API with a bad date: false/null instead of an exception. [label, call, expected]
 $api = [
-    ['is_shipping_day("garbage")', function () { return wc_stn_is_shipping_day('garbage'); }, false],
-    ['is_shipping_day("2026-02-31")', function () { return wc_stn_is_shipping_day('2026-02-31'); }, false],
-    ['is_blocked_date("garbage")', function () { return wc_stn_is_blocked_date('garbage'); }, false],
-    ['is_blocked_date(null)', function () { return wc_stn_is_blocked_date(null); }, false],
-    ['delivery_for_ship_date("2026-1015")', function () { return wc_stn_delivery_for_ship_date('2026-1015'); }, null],
-    ['normalize_ymd("20261015")', function () { return wc_stn_normalize_ymd('20261015'); }, '2026-10-15'],
-    ['normalize_ymd("2026-10-15")', function () { return wc_stn_normalize_ymd('2026-10-15'); }, '2026-10-15'],
+    ['is_shipping_day("garbage")', function () { return stdd_is_shipping_day('garbage'); }, false],
+    ['is_shipping_day("2026-02-31")', function () { return stdd_is_shipping_day('2026-02-31'); }, false],
+    ['is_blocked_date("garbage")', function () { return stdd_is_blocked_date('garbage'); }, false],
+    ['is_blocked_date(null)', function () { return stdd_is_blocked_date(null); }, false],
+    ['delivery_for_ship_date("2026-1015")', function () { return stdd_delivery_for_ship_date('2026-1015'); }, null],
+    ['normalize_ymd("20261015")', function () { return stdd_normalize_ymd('20261015'); }, '2026-10-15'],
+    ['normalize_ymd("2026-10-15")', function () { return stdd_normalize_ymd('2026-10-15'); }, '2026-10-15'],
 ];
 
 foreach ($api as [$label, $call, $expected]) {
@@ -193,19 +193,19 @@ $holiday_cases = [
     ['region DE-BE: no holidays of other states', 'DE-BE', ['2026-01-01', '2026-12-31']],
 ];
 foreach ($holiday_cases as [$label, $sub, $expected]) {
-    $got  = array_keys(WC_Ship_Today_Notice::holidays_from_api($api_rows, 'DE', $sub, '2026-01-01', '2026-12-31'));
+    $got  = array_keys(STDD_Plugin::holidays_from_api($api_rows, 'DE', $sub, '2026-01-01', '2026-12-31'));
     $ok   = $got === $expected;
     $fail += $ok ? 0 : 1;
     printf("%s  holidays: %-58s %s%s\n", $ok ? 'OK  ' : 'FAIL', $label, implode(',', $got), $ok ? '' : '  (expected: ' . implode(',', $expected) . ')');
 }
-$got  = array_keys(WC_Ship_Today_Notice::holidays_from_api($api_rows, 'DE', '', '2027-01-01', '2027-12-31'));
+$got  = array_keys(STDD_Plugin::holidays_from_api($api_rows, 'DE', '', '2027-01-01', '2027-12-31'));
 $ok   = $got === ['2027-01-01', '2027-01-02'];
 $fail += $ok ? 0 : 1;
 printf("%s  holidays: %-58s %s\n", $ok ? 'OK  ' : 'FAIL', 'multi-day into the next year', implode(',', $got));
 
 // [code, country, expected]
 foreach ([['DE-BY', 'DE', true], ['DE-BY-AU', 'DE', true], ['CH-AG-BA-BA', 'CH', true], ['PL-BY', 'DE', false], ['DE', 'DE', false], ['de-by', 'DE', false], ['DE-BY;x', 'DE', false]] as [$code, $country, $expected]) {
-    $got  = WC_Ship_Today_Notice::valid_subdivision($code, $country);
+    $got  = STDD_Plugin::valid_subdivision($code, $country);
     $ok   = $got === $expected;
     $fail += $ok ? 0 : 1;
     printf("%s  region: %-14s (%s) %s\n", $ok ? 'OK  ' : 'FAIL', $code, $country, var_export($got, true));

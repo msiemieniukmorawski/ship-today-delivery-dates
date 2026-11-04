@@ -8,7 +8,7 @@
         "https://downloads.wordpress.org/theme/storefront.zip"
     ],
     "mappings": {
-        "wp-content/plugins/wc-ship-today-notice": "."
+        "wp-content/plugins/ship-today-delivery-dates": "."
     },
     "port": 8894,
     "testsPort": 8895,
@@ -20,6 +20,6 @@
         "WP_ENVIRONMENT_TYPE": "local"
     },
     "lifecycleScripts": {
-        "afterStart": "wp-env run cli bash wp-content/plugins/wc-ship-today-notice/scripts/env/after-start.sh"
+        "afterStart": "wp-env run cli bash wp-content/plugins/ship-today-delivery-dates/scripts/env/after-start.sh"
     }
 }

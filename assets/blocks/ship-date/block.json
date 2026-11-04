@@ -1,7 +1,7 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "wc-stn/ship-date",
+	"name": "stdd/ship-date",
 	"version": "1.0.0",
 	"title": "Ship date",
 	"description": "Ship date tiles from Ship Today & Delivery Dates. Added below the shipping options once; you can move or remove it.",
@@ -12,7 +12,7 @@
 		"delivery",
 		"date"
 	],
-	"textdomain": "wc-ship-today-notice",
+	"textdomain": "ship-today-delivery-dates",
 	"parent": [
 		"woocommerce/checkout-fields-block"
 	],

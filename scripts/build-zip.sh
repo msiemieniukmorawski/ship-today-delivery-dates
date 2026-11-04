@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Plugin package for WordPress.org or manual install: build/ship-today-delivery-dates.zip with wc-ship-today-notice/ inside.
+# Plugin package for WordPress.org or manual install: build/ship-today-delivery-dates.zip with ship-today-delivery-dates/ inside.
 # Skips files from .distignore (dev tools, tests).
 # Usage: scripts/build-zip.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SLUG="wc-ship-today-notice"
+SLUG="ship-today-delivery-dates"
 ZIP="ship-today-delivery-dates.zip"
 OUT="$ROOT/build"
 STAGE="$(mktemp -d)"

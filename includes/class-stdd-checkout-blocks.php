@@ -2,12 +2,12 @@
 /**
  * Ship date choice in the block checkout.
  *
- * Inner block "wc-stn/ship-date" (parent: woocommerce/checkout-fields-block) with the same tiles as the classic checkout.
+ * Inner block "stdd/ship-date" (parent: woocommerce/checkout-fields-block) with the same tiles as the classic checkout.
  * JS has no build step (assets/blocks/ship-date/).
  * - The block is inserted once into a block checkout page, below the shipping options. After that the shop can move or remove it,
  *   and a removed block is not added back. It is not a forced block (lock.remove) because WooCommerce appends those at the end
  *   of the form, below the place order button.
- * - The date goes to the Store API through setExtensionData (namespace "wc-stn") with a marker that the block was visible.
+ * - The date goes to the Store API through setExtensionData (namespace "stdd") with a marker that the block was visible.
  * - Validated and saved like in the classic checkout. Without the marker (express payment, external Store API order)
  *   no date is required, so a missing block never blocks orders.
  *
@@ -21,35 +21,35 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-final class WC_STN_Checkout_Blocks
+final class STDD_Checkout_Blocks
 {
-    const BLOCK = 'wc-stn/ship-date';
+    const BLOCK = 'stdd/ship-date';
 
     /** Row with the selected slot in the order summary, like review_row() in the classic checkout. */
-    const ROW_BLOCK = 'wc-stn/ship-date-row';
+    const ROW_BLOCK = 'stdd/ship-date-row';
 
     /** Checkout page ID the summary row was already inserted into. */
-    const ROW_INSERTED_KEY = 'wc_ship_today_notice_row_inserted';
+    const ROW_INSERTED_KEY = 'stdd_row_inserted';
 
-    /** Store API extension namespace (extensions.wc-stn). */
-    const API_NAMESPACE = 'wc-stn';
+    /** Store API extension namespace (extensions.stdd). */
+    const API_NAMESPACE = 'stdd';
 
     /** Checkout page ID the block was already inserted into. */
-    const BLOCK_INSERTED_KEY = 'wc_ship_today_notice_block_inserted';
+    const BLOCK_INSERTED_KEY = 'stdd_block_inserted';
 
     /** User meta: checkout page ID the "missing block" notice was dismissed for. */
-    const NOTICE_DISMISSED_META = 'wc_stn_block_notice_dismissed';
+    const NOTICE_DISMISSED_META = 'stdd_block_notice_dismissed';
 
     /** Tested on WooCommerce 11.x. Older versions get no block, so the block checkout has no ship date choice. */
     const MIN_WC_VERSION = '10.1.0';
 
-    /** @var WC_Ship_Today_Notice */
+    /** @var STDD_Plugin */
     private $plugin;
 
-    /** @var WC_STN_Checkout */
+    /** @var STDD_Checkout */
     private $checkout;
 
-    public function __construct(WC_Ship_Today_Notice $plugin, WC_STN_Checkout $checkout)
+    public function __construct(STDD_Plugin $plugin, STDD_Checkout $checkout)
     {
         $this->plugin   = $plugin;
         $this->checkout = $checkout;
@@ -82,35 +82,35 @@ final class WC_STN_Checkout_Blocks
      */
     public function register_block()
     {
-        $dir = plugin_dir_path(WC_STN_FILE) . 'assets/blocks/ship-date/';
-        $url = plugins_url('assets/blocks/ship-date/', WC_STN_FILE);
+        $dir = plugin_dir_path(STDD_FILE) . 'assets/blocks/ship-date/';
+        $url = plugins_url('assets/blocks/ship-date/', STDD_FILE);
 
-        wp_register_style('wc-stn-checkout', plugins_url('assets/css/checkout.css', WC_STN_FILE), [], WC_STN_VERSION);
-        wp_register_script('wc-stn-ship-date-frontend', $url . 'frontend.js', ['wc-blocks-checkout', 'wc-settings', 'wp-element', 'wp-data'], WC_STN_VERSION, true);
-        wp_register_script('wc-stn-ship-date-editor', $url . 'editor.js', ['wp-blocks', 'wp-block-editor', 'wp-element'], WC_STN_VERSION, true);
+        wp_register_style('stdd-checkout', plugins_url('assets/css/checkout.css', STDD_FILE), [], STDD_VERSION);
+        wp_register_script('stdd-ship-date-frontend', $url . 'frontend.js', ['wc-blocks-checkout', 'wc-settings', 'wp-element', 'wp-data'], STDD_VERSION, true);
+        wp_register_script('stdd-ship-date-editor', $url . 'editor.js', ['wp-blocks', 'wp-block-editor', 'wp-element'], STDD_VERSION, true);
         if (is_admin()) {
             // Admin only: don't compute slots on every frontend request
-            wp_add_inline_script('wc-stn-ship-date-editor', 'window.wcStnShipDateEditor = ' . wp_json_encode($this->editor_data()) . ';', 'before');
+            wp_add_inline_script('stdd-ship-date-editor', 'window.stddShipDateEditor = ' . wp_json_encode($this->editor_data()) . ';', 'before');
         }
 
         register_block_type($dir, [
-            'editor_script_handles' => ['wc-stn-ship-date-editor'],
-            'editor_style_handles'  => ['wc-stn-checkout'],
+            'editor_script_handles' => ['stdd-ship-date-editor'],
+            'editor_style_handles'  => ['stdd-checkout'],
         ]);
         // Same editor and frontend scripts: frontend.js registers both blocks
-        register_block_type(plugin_dir_path(WC_STN_FILE) . 'assets/blocks/ship-date-row/', [
-            'editor_script_handles' => ['wc-stn-ship-date-editor'],
+        register_block_type(plugin_dir_path(STDD_FILE) . 'assets/blocks/ship-date-row/', [
+            'editor_script_handles' => ['stdd-ship-date-editor'],
         ]);
     }
 
     public function register_integration($registry)
     {
-        require_once __DIR__ . '/class-wc-stn-blocks-integration.php';
-        $registry->register(new WC_STN_Blocks_Integration($this));
+        require_once __DIR__ . '/class-stdd-blocks-integration.php';
+        $registry->register(new STDD_Blocks_Integration($this));
     }
 
     /**
-     * extensions.wc-stn fields of POST /wc/store/v1/checkout.
+     * extensions.stdd fields of POST /wc/store/v1/checkout.
      */
     public function register_store_api_data()
     {
@@ -131,7 +131,7 @@ final class WC_STN_Checkout_Blocks
     }
 
     /**
-     * Data for the frontend block (wcSettings "wc-stn-ship-date_data"): slots for FRONTEND_DAYS days, like data-stn-checkout
+     * Data for the frontend block (wcSettings "stdd-ship-date_data"): slots for FRONTEND_DAYS days, like data-stdd-checkout
      * in the classic checkout, so JS can add the next slots when a cutoff passes on an open page.
      */
     public function script_data()
@@ -141,7 +141,7 @@ final class WC_STN_Checkout_Blocks
         $tiles    = [];
         $rows     = [];
 
-        foreach ($schedule->slots(40, $schedule->now(), WC_Ship_Today_Notice::FRONTEND_DAYS) as $slot) {
+        foreach ($schedule->slots(40, $schedule->now(), STDD_Plugin::FRONTEND_DAYS) as $slot) {
             $tiles[] = $this->checkout->tile_data($slot);
             $rows[$slot['ship']->format('Y-m-d')] = $this->checkout->review_lines($slot);
         }
@@ -153,9 +153,9 @@ final class WC_STN_Checkout_Blocks
             'accent'    => (string) $o['checkout_accent'],
             'tiles'     => $tiles,
             'nowOffset' => $this->plugin->now_offset() * 1000,
-            'required'  => __('required', 'wc-ship-today-notice'),
+            'required'  => __('required', 'ship-today-delivery-dates'),
             'choose'    => $this->checkout->choose_message(),
-            'empty'     => __('No delivery dates available. Please contact us.', 'wc-ship-today-notice'),
+            'empty'     => __('No delivery dates available. Please contact us.', 'ship-today-delivery-dates'),
             'closed'    => $this->checkout->switched_message(),
             // Summary row (ROW_BLOCK): "checkout_review_row" toggle, same content as the classic checkout
             'reviewRow' => !empty($o['checkout_review_row']),
@@ -168,7 +168,7 @@ final class WC_STN_Checkout_Blocks
             $method_schedule = $this->plugin->schedule($method);
             $data['methods'][$method]    = [];
             $data['methodRows'][$method] = [];
-            foreach ($method_schedule->slots(40, $method_schedule->now(), WC_Ship_Today_Notice::FRONTEND_DAYS) as $slot) {
+            foreach ($method_schedule->slots(40, $method_schedule->now(), STDD_Plugin::FRONTEND_DAYS) as $slot) {
                 $data['methods'][$method][] = $this->checkout->tile_data($slot);
                 $data['methodRows'][$method][$slot['ship']->format('Y-m-d')] = $this->checkout->review_lines($slot);
             }
@@ -189,11 +189,11 @@ final class WC_STN_Checkout_Blocks
             'label'  => $data['label'],
             'tiles'  => array_slice($data['tiles'], 0, $data['count']),
             'accent' => $data['accent'],
-            'hint'   => __('Ship date tiles. The dates are calculated at checkout. Without this block the checkout has no ship date choice.', 'wc-ship-today-notice'),
+            'hint'   => __('Ship date tiles. The dates are calculated at checkout. Without this block the checkout has no ship date choice.', 'ship-today-delivery-dates'),
             'row'    => $data['rows'] ? reset($data['rows']) : ['', ''],
             'rowHint' => $data['reviewRow']
-                ? __('Shows the ship date selected in the "Ship date" block.', 'wc-ship-today-notice')
-                : __('Hidden: the order summary row is turned off in WooCommerce → Settings → Delivery dates → Checkout.', 'wc-ship-today-notice'),
+                ? __('Shows the ship date selected in the "Ship date" block.', 'ship-today-delivery-dates')
+                : __('Hidden: the order summary row is turned off in WooCommerce → Settings → Delivery dates → Checkout.', 'ship-today-delivery-dates'),
         ];
     }
 
@@ -204,15 +204,6 @@ final class WC_STN_Checkout_Blocks
     public function maybe_insert_block()
     {
         $this->insert_block(true);
-    }
-
-    /**
-     * On plugin update (WC_Ship_Today_Notice::maybe_upgrade): shops that had the select field get the block right away,
-     * regardless of the current user's capabilities.
-     */
-    public function insert_on_upgrade()
-    {
-        $this->insert_block(false);
     }
 
     private function insert_block($check_cap)
@@ -406,30 +397,30 @@ final class WC_STN_Checkout_Blocks
 
         $page_id = (int) wc_get_page_id('checkout');
         // phpcs:disable WordPress.Security.NonceVerification -- only picks the admin page, saves nothing.
-        $on_checkout_tab = 'wc-settings' === sanitize_key(wp_unslash($_GET['page'] ?? '')) && WC_Ship_Today_Notice::SETTINGS_TAB === sanitize_title(wp_unslash($_GET['tab'] ?? '')) && 'checkout' === sanitize_key(wp_unslash($_GET['section'] ?? ''));
+        $on_checkout_tab = 'wc-settings' === sanitize_key(wp_unslash($_GET['page'] ?? '')) && STDD_Plugin::SETTINGS_TAB === sanitize_title(wp_unslash($_GET['tab'] ?? '')) && 'checkout' === sanitize_key(wp_unslash($_GET['section'] ?? ''));
         // phpcs:enable
         if ($on_checkout_tab || $page_id === (int) get_user_meta(get_current_user_id(), self::NOTICE_DISMISSED_META, true)) {
             return;
         }
 
-        $dismiss = wp_nonce_url(add_query_arg('wc_stn_dismiss_block_notice', 1), 'wc_stn_dismiss_block_notice');
+        $dismiss = wp_nonce_url(add_query_arg('stdd_dismiss_block_notice', 1), 'stdd_dismiss_block_notice');
         printf(
             '<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s</p><p><a class="button" href="%3$s">%4$s</a> <a href="%5$s">%6$s</a></p></div>',
-            esc_html__('Ship Today & Delivery Dates:', 'wc-ship-today-notice'),
-            esc_html__('the block checkout has no "Ship date" block, so customers cannot choose a ship date (orders are placed without it). Add the block inside the checkout form in the checkout page editor.', 'wc-ship-today-notice'),
+            esc_html__('Ship Today & Delivery Dates:', 'ship-today-delivery-dates'),
+            esc_html__('the block checkout has no "Ship date" block, so customers cannot choose a ship date (orders are placed without it). Add the block inside the checkout form in the checkout page editor.', 'ship-today-delivery-dates'),
             esc_url((string) get_edit_post_link($page_id)),
-            esc_html__('Edit the checkout page', 'wc-ship-today-notice'),
+            esc_html__('Edit the checkout page', 'ship-today-delivery-dates'),
             esc_url($dismiss),
-            esc_html__('Dismiss', 'wc-ship-today-notice')
+            esc_html__('Dismiss', 'ship-today-delivery-dates')
         );
     }
 
     public function maybe_dismiss_notice()
     {
-        if (empty($_GET['wc_stn_dismiss_block_notice']) || !current_user_can('manage_woocommerce')) { // phpcs:ignore WordPress.Security.NonceVerification -- nonce checked below.
+        if (empty($_GET['stdd_dismiss_block_notice']) || !current_user_can('manage_woocommerce')) { // phpcs:ignore WordPress.Security.NonceVerification -- nonce checked below.
             return;
         }
-        check_admin_referer('wc_stn_dismiss_block_notice');
+        check_admin_referer('stdd_dismiss_block_notice');
         update_user_meta(get_current_user_id(), self::NOTICE_DISMISSED_META, (int) wc_get_page_id('checkout'));
     }
 
@@ -464,16 +455,16 @@ final class WC_STN_Checkout_Blocks
 
         $ymd = sanitize_text_field((string) ($data['ship_date'] ?? ''));
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ymd)) {
-            throw new RouteException('wc_stn_ship_date_required', esc_html($this->checkout->choose_message()), 400);
+            throw new RouteException('stdd_ship_date_required', esc_html($this->checkout->choose_message()), 400);
         }
 
         $slot = $this->checkout->find_slot($ymd);
         if (!$slot) {
-            throw new RouteException('wc_stn_slot_unavailable', esc_html($this->checkout->unavailable_message($ymd)), 400);
+            throw new RouteException('stdd_slot_unavailable', esc_html($this->checkout->unavailable_message($ymd)), 400);
         }
 
-        $order->update_meta_data(WC_STN_Checkout::META_SHIP, $slot['ship']->format('Y-m-d'));
-        $order->update_meta_data(WC_STN_Checkout::META_DELIVERY, $slot['delivery'] ? $slot['delivery']->format('Y-m-d') : '');
-        $order->update_meta_data(WC_STN_Checkout::META_CUTOFF, $slot['cutoff']->getTimestamp());
+        $order->update_meta_data(STDD_Checkout::META_SHIP, $slot['ship']->format('Y-m-d'));
+        $order->update_meta_data(STDD_Checkout::META_DELIVERY, $slot['delivery'] ? $slot['delivery']->format('Y-m-d') : '');
+        $order->update_meta_data(STDD_Checkout::META_CUTOFF, $slot['cutoff']->getTimestamp());
     }
 }

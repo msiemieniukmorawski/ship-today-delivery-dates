@@ -3,18 +3,18 @@
  * Automatic widget display without a shortcode: product page, cart, checkout.
  *
  * Three independent rows in settings (key "auto_placement" in the main option). New shops: product page on, below the add to cart
- * button, cart and checkout off. Shops with settings from before this feature: all off, see disabled().
+ * button, cart and checkout off.
  * - classic pages: a WooCommerce hook from the list and a priority (empty = default for the hook),
  * - blocks (cart, checkout, add to cart form in a block template): above or below the block through render_block_{name},
  *   because these pages do not run the classic template hooks. A page has one or the other, so both are registered.
- * Always renders through WC_Ship_Today_Notice::shortcode_output(), independent of the ship date module.
+ * Always renders through STDD_Plugin::shortcode_output(), independent of the ship date module.
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-final class WC_STN_Auto_Placement
+final class STDD_Auto_Placement
 {
     /** Highest priority accepted from the form. */
     const MAX_PRIORITY = 999;
@@ -45,13 +45,13 @@ final class WC_STN_Auto_Placement
         ],
     ];
 
-    /** @var WC_Ship_Today_Notice */
+    /** @var STDD_Plugin */
     private $plugin;
 
     /** @var array<string,bool> Rows already rendered in this request (one widget per row). */
     private $rendered = [];
 
-    public function __construct(WC_Ship_Today_Notice $plugin)
+    public function __construct(STDD_Plugin $plugin)
     {
         $this->plugin = $plugin;
 
@@ -94,17 +94,6 @@ final class WC_STN_Auto_Placement
                 'priority' => '',
                 'block'    => 'product' === $row ? 'after' : 'before',
             ];
-        }
-
-        return $rows;
-    }
-
-    /** Default positions, but off: a shop from before this feature doesn't get the widget without deciding to. */
-    public static function disabled()
-    {
-        $rows = self::defaults();
-        foreach ($rows as $row => $set) {
-            $rows[$row]['enabled'] = false;
         }
 
         return $rows;

@@ -11,7 +11,7 @@ opt() {
 opt timezone_string Europe/Warsaw
 wp language core install pl_PL --activate >/dev/null
 
-wp plugin activate wc-ship-today-notice
+wp plugin activate ship-today-delivery-dates
 wp theme activate storefront
 
 # WooCommerce without the setup wizard and suggestions.
@@ -25,4 +25,4 @@ opt woocommerce_default_country PL
 opt woocommerce_currency PLN
 wp transient delete _wc_activation_redirect >/dev/null || true
 
-echo "wc-ship-today-notice: http://localhost:8894/wp-admin/admin.php?page=wc-settings&tab=ship_today_notice (admin / password)"
+echo "ship-today-delivery-dates: http://localhost:8894/wp-admin/admin.php?page=wc-settings&tab=stdd_notice (admin / password)"

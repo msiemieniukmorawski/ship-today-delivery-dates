@@ -1,11 +1,11 @@
 /**
  * Frontend of the checkout blocks:
- * - "wc-stn/ship-date": slot tiles, like checkout.js in the classic checkout,
- * - "wc-stn/ship-date-row": selected slot in the order summary, like review_row() in the classic checkout.
+ * - "stdd/ship-date": slot tiles, like checkout.js in the classic checkout,
+ * - "stdd/ship-date-row": selected slot in the order summary, like review_row() in the classic checkout.
  * They share the selected date through a small wp.data store (tiles write, the row reads).
  *
  * The date goes to the Store API with setExtensionData, together with 'rendered' (the block was visible). The server has
- * the final say, see WC_STN_Checkout_Blocks::validate_and_save(). Slots follow the cart rate (cfg.methods["method:instance"],
+ * the final say, see STDD_Checkout_Blocks::validate_and_save(). Slots follow the cart rate (cfg.methods["method:instance"],
  * otherwise cfg.tiles).
  * No build step, so wp.element.createElement instead of JSX.
  */
@@ -18,14 +18,14 @@
   var useRef = wp.element.useRef;
   var useSelect = wp.data.useSelect;
   var useDispatch = wp.data.useDispatch;
-  var cfg = wc.wcSettings.getSetting('wc-stn-ship-date_data', null);
-  var ERROR_ID = 'wc-stn-ship-date';
+  var cfg = wc.wcSettings.getSetting('stdd-ship-date_data', null);
+  var ERROR_ID = 'stdd-ship-date';
 
   if (!cfg) {
     return;
   }
 
-  var STORE = 'wc-stn/ship-date';
+  var STORE = 'stdd/ship-date';
   wp.data.register(wp.data.createReduxStore(STORE, {
     reducer: function (state, action) {
       state = state || { shipDate: '' };
@@ -145,8 +145,8 @@
     }, []);
 
     useEffect(function () {
-      setExtensionData('wc-stn', 'rendered', visible);
-      setExtensionData('wc-stn', 'ship_date', visible ? current.value : '');
+      setExtensionData('stdd', 'rendered', visible);
+      setExtensionData('stdd', 'ship_date', visible ? current.value : '');
       store.setShipDate(visible ? current.value : '');
 
       if (visible && !current.value) {
@@ -162,23 +162,23 @@
       return null;
     }
 
-    var style = cfg.accent ? { '--wc-stn-accent': cfg.accent } : undefined;
+    var style = cfg.accent ? { '--stdd-accent': cfg.accent } : undefined;
 
     if (!tiles.length) {
-      return el('p', { className: 'wc-stn-checkout__empty' }, cfg.empty);
+      return el('p', { className: 'stdd-checkout__empty' }, cfg.empty);
     }
 
-    return el('fieldset', { className: 'wc-stn-checkout wc-block-components-checkout-step', style: style },
-      el('legend', { className: 'wc-stn-checkout__legend' },
+    return el('fieldset', { className: 'stdd-checkout wc-block-components-checkout-step', style: style },
+      el('legend', { className: 'stdd-checkout__legend' },
         cfg.label, ' ', el('abbr', { className: 'required', title: cfg.required }, '*')
       ),
-      el('div', { className: 'wc-stn-checkout__tiles' }, tiles.map(function (tile) {
+      el('div', { className: 'stdd-checkout__tiles' }, tiles.map(function (tile) {
         var checked = tile.value === current.value;
-        return el('label', { key: tile.value, className: 'wc-stn-tile' + (checked ? ' is-checked' : '') },
+        return el('label', { key: tile.value, className: 'stdd-tile' + (checked ? ' is-checked' : '') },
           el('input', {
             type: 'radio',
-            className: 'wc-stn-tile__input',
-            name: 'wc_stn_ship_date',
+            className: 'stdd-tile__input',
+            name: 'stdd_ship_date',
             value: tile.value,
             checked: checked,
             'aria-label': tile.aria,
@@ -186,11 +186,11 @@
               setCurrent({ now: nowS(), value: tile.value, notice: '' });
             }
           }),
-          el('span', { className: 'wc-stn-tile__main' }, tile.main),
-          tile.sub ? el('span', { className: 'wc-stn-tile__sub' }, tile.sub) : null
+          el('span', { className: 'stdd-tile__main' }, tile.main),
+          tile.sub ? el('span', { className: 'stdd-tile__sub' }, tile.sub) : null
         );
       })),
-      current.notice ? el('p', { className: 'wc-stn-checkout__notice', role: 'status', 'aria-live': 'polite' }, current.notice) : null,
+      current.notice ? el('p', { className: 'stdd-checkout__notice', role: 'status', 'aria-live': 'polite' }, current.notice) : null,
       errorText ? el('p', { className: 'wc-block-components-validation-error', role: 'alert' }, errorText) : null
     );
   }
@@ -216,23 +216,23 @@
     }
 
     return el(wc.blocksCheckout.TotalsItem, {
-      className: 'wc-block-components-totals-wrapper wc-stn-review',
+      className: 'wc-block-components-totals-wrapper stdd-review',
       label: cfg.label,
       value: el('span', null, lines[0], lines[1] ? el('br') : null, lines[1] || null)
     });
   }
 
   wc.blocksCheckout.registerCheckoutBlock({
-    metadata: { name: 'wc-stn/ship-date-row', parent: ['woocommerce/checkout-order-summary-totals-block'] },
+    metadata: { name: 'stdd/ship-date-row', parent: ['woocommerce/checkout-order-summary-totals-block'] },
     component: ShipDateRow,
     force: false
   });
 
   wc.blocksCheckout.registerCheckoutBlock({
-    metadata: { name: 'wc-stn/ship-date', parent: ['woocommerce/checkout-fields-block'] },
+    metadata: { name: 'stdd/ship-date', parent: ['woocommerce/checkout-fields-block'] },
     component: ShipDate,
     // Not forced: WooCommerce appends forced blocks below the place order button and they can't be removed.
-    // PHP inserts it into the checkout page once, see WC_STN_Checkout_Blocks::maybe_insert_block().
+    // PHP inserts it into the checkout page once, see STDD_Checkout_Blocks::maybe_insert_block().
     force: false
   });
 })(window.wc, window.wp);

@@ -3,43 +3,43 @@
  * (400px selects, vertical-align: top), this restores the WordPress look. Loaded on this tab only.
  */
 
-.woocommerce .wc-stn-settings table.form-table select {
+.woocommerce .stdd-settings table.form-table select {
   width: auto;
   max-width: 100%;
   vertical-align: middle;
 }
 
-.woocommerce .wc-stn-settings table.form-table input[type="number"],
-.woocommerce .wc-stn-settings table.form-table input[type="text"],
-.woocommerce .wc-stn-settings table.form-table input[type="time"] {
+.woocommerce .stdd-settings table.form-table input[type="number"],
+.woocommerce .stdd-settings table.form-table input[type="text"],
+.woocommerce .stdd-settings table.form-table input[type="time"] {
   vertical-align: middle;
 }
 
-.woocommerce .wc-stn-settings table.form-table input.regular-text {
+.woocommerce .stdd-settings table.form-table input.regular-text {
   width: 25em;
   max-width: 100%;
 }
 
-.woocommerce .wc-stn-settings table.form-table textarea.large-text {
+.woocommerce .stdd-settings table.form-table textarea.large-text {
   width: 100%;
 }
 
 /* Tables inside fields (days, slots, holidays): text in line with the inputs */
-.wc-stn-settings table.widefat td {
+.stdd-settings table.widefat td {
   vertical-align: middle;
 }
 
-.woocommerce .wc-stn-settings table.form-table table.widefat th {
+.woocommerce .stdd-settings table.form-table table.widefat th {
   width: auto;
   padding: 8px 10px;
 }
 
 /* Style section: three colors in a row next to the preview */
-.woocommerce .wc-stn-settings #wc-stn-style-form table.form-table th {
+.woocommerce .stdd-settings #stdd-style-form table.form-table th {
   width: 170px;
   padding-right: 10px;
 }
 
-.woocommerce .wc-stn-settings #wc-stn-style-form table.form-table td {
+.woocommerce .stdd-settings #stdd-style-form table.form-table td {
   padding-right: 0;
 }

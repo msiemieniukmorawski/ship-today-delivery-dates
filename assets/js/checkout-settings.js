@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var form = document.getElementById('wc-stn-checkout-settings');
+  var form = document.getElementById('stdd-checkout-settings');
   if (!form) {
     return;
   }
@@ -20,9 +20,9 @@
   }
 
   function sync() {
-    toggle('.wc-stn-if-module', module.checked);
+    toggle('.stdd-if-module', module.checked);
     // Date rows and the list column also work without the module when "dates when disabled" is on
-    toggle('.wc-stn-if-dates', module.checked || dates.checked);
+    toggle('.stdd-if-dates', module.checked || dates.checked);
   }
 
   module.addEventListener('change', sync);

@@ -8,8 +8,8 @@
   var JUSTIFY = { left: 'flex-start', center: 'center', right: 'flex-end' };
 
   $(function () {
-    var $form = $('#wc-stn-style-form');
-    var preview = document.getElementById('wc-stn-style-preview');
+    var $form = $('#stdd-style-form');
+    var preview = document.getElementById('stdd-style-preview');
 
     if (!$form.length || !preview) {
       return;
@@ -29,37 +29,37 @@
 
       value = String(value === undefined ? $el.val() || '' : value).trim();
 
-      if ($el.is('[data-stn-align]')) {
-        setVar('--wc-ship-today-notice-align', value);
-        setVar('--wc-ship-today-notice-justify', JUSTIFY[value] || '');
+      if ($el.is('[data-stdd-align]')) {
+        setVar('--stdd-notice-align', value);
+        setVar('--stdd-notice-justify', JUSTIFY[value] || '');
         return;
       }
 
-      if (value !== '' && $el.data('stn-unit')) {
+      if (value !== '' && $el.data('stdd-unit')) {
         var n = parseInt(value, 10);
         if (isNaN(n)) {
           value = '';
         } else {
           n = Math.max(parseInt(el.min, 10) || 0, Math.min(parseInt(el.max, 10) || n, n));
-          value = n + $el.data('stn-unit');
+          value = n + $el.data('stdd-unit');
         }
       }
 
-      setVar($el.data('stn-var'), value);
+      setVar($el.data('stdd-var'), value);
     }
 
     function applyAll() {
-      $form.find('[data-stn-var], [data-stn-align]').each(function () {
+      $form.find('[data-stdd-var], [data-stdd-align]').each(function () {
         apply(this);
       });
     }
 
-    $form.find('.wc-stn-color').wpColorPicker({
+    $form.find('.stdd-color').wpColorPicker({
       change: function (event, ui) {
         apply(event.target, ui.color.toString());
       },
       clear: function (event) {
-        var input = $(event.target).closest('.wp-picker-container').find('.wc-stn-color')[0];
+        var input = $(event.target).closest('.wp-picker-container').find('.stdd-color')[0];
         if (input) {
           apply(input, '');
         }
@@ -70,8 +70,8 @@
       apply(this);
     });
 
-    $('#wc-stn-style-reset').on('click', function () {
-      $form.find('.wc-stn-color').each(function () {
+    $('#stdd-style-reset').on('click', function () {
+      $form.find('.stdd-color').each(function () {
         $(this).closest('.wp-picker-container').find('.wp-picker-clear').trigger('click');
         $(this).val('');
       });

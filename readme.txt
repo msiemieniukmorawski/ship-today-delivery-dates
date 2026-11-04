@@ -1,10 +1,10 @@
 === Ship Today & Delivery Dates for WooCommerce ===
-Contributors: TODO
+Contributors: smmarcin
 Tags: woocommerce, shipping, countdown, delivery date, cutoff time
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.2
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,14 +17,14 @@ Show customers how long they have to order so the parcel ships in the next slot:
 **Notice widget**
 
 * Automatic display on the product page, cart and checkout without a shortcode, with a position and priority for each. New shops show it on the product page, below the add to cart button, right after activation (block pages: above or below the block).
-* Shortcode `[ship_today_notice]` with two modes: "ships today" (countdown to today's cutoff) and "next slot" (always the nearest cutoff).
+* Shortcode `[stdd_notice]` with two modes: "ships today" (countdown to today's cutoff) and "next slot" (always the nearest cutoff).
 * Shipping weekdays with a cutoff time per day. The cutoff can fall 0-6 days before the ship day (e.g. ships on Monday, order by Sunday 8 pm).
 * Delivery date: N delivery days after shipping, skipping days without deliveries and public holidays.
 * Public holidays from the OpenHolidays API for the current and next year: nationwide holidays, optionally plus those of one region (e.g. DE-BY), with the option to ignore selected holidays, plus a manual list of excluded dates.
 * Tokens such as `{countdown}`, `{cutoff_when}`, `{ship_when}`, `{delivery_when}` with weekday forms in the shop language (e.g. Polish "do niedzieli 20:00", "we wtorek"; German "bis Sonntag 20:00", "am Dienstag").
 * Works with full-page cache: the next 42 days of slots are in the HTML and the browser switches slots itself. Optional cache purge (LiteSpeed Cache or your own hook) at each cutoff time.
 * "Style" section: colors, border, font and alignment of the widget with a live preview, output as CSS variables.
-* Preview of the next 5 slots in the settings and a test mode (`?stn_now=2026-12-20T19:59`) for shop managers.
+* Preview of the next 5 slots in the settings and a test mode (`?stdd_now=2026-12-20T19:59`) for shop managers.
 
 **Ship date at checkout (optional, off by default)**
 
@@ -35,7 +35,7 @@ Show customers how long they have to order so the parcel ships in the next slot:
 
 **For developers**
 
-Functions `wc_stn_get_slots()`, `wc_stn_delivery_for_ship_date()`, `wc_stn_is_blocked_date()`, `wc_stn_is_shipping_day()`, filters for the current time, shipping days, cutoff times, slots and texts, the `wc_ship_today_notice_purge_cache` action and `window.WcShipTodayNotice.init()` in JavaScript. The widget's JS and CSS load only on pages that contain the widget; use the `wc_ship_today_notice_load_assets` filter to force them, e.g. for content loaded with AJAX.
+Functions `stdd_get_slots()`, `stdd_delivery_for_ship_date()`, `stdd_is_blocked_date()`, `stdd_is_shipping_day()`, filters for the current time, shipping days, cutoff times, slots and texts, the `stdd_purge_cache` action and `window.StddNotice.init()` in JavaScript. The widget's JS and CSS load only on pages that contain the widget; use the `stdd_load_assets` filter to force them, e.g. for content loaded with AJAX.
 
 **Language note**
 
@@ -48,18 +48,18 @@ All plugin texts are translatable (English source): the admin, weekday names and
 3. Go to WooCommerce → Settings → Delivery dates. Set the shipping weekdays and cutoff times.
 4. Click "Fetch holidays now" at the bottom of the settings page to download holidays right away.
 5. Optionally set the delivery days, then save and check the "Next slots" preview.
-6. The widget already shows on product pages. Change it in "Automatic display" (product page, cart, checkout), or add `[ship_today_notice]` anywhere (e.g. the header or a popup).
+6. The widget already shows on product pages. Change it in "Automatic display" (product page, cart, checkout), or add `[stdd_notice]` anywhere (e.g. the header or a popup).
 7. Optionally enable the ship date choice in the Checkout section.
 
 == Frequently Asked Questions ==
 
 = I installed the plugin but see no message. =
 
-A new shop shows the widget on product pages, below the add to cart button. Shops updating from an earlier version keep it off until they turn it on: use WooCommerce → Settings → Delivery dates → "Automatic display" for the product page, cart or checkout, or add the `[ship_today_notice]` shortcode.
+After activation the widget shows on product pages, below the add to cart button. To show it elsewhere, use WooCommerce → Settings → Delivery dates → "Automatic display" for the product page, cart or checkout, or add the `[stdd_notice]` shortcode.
 
 = Does it work with the block-based checkout? =
 
-Yes, with WooCommerce 10.1 or newer. In both checkouts the customer picks a date from tiles. In the block-based checkout the tiles are the "Ship date" block: the plugin adds it once below the shipping options of the checkout page, and you can move it, remove it or add it again (search for "Ship date") in the checkout page editor like other checkout blocks. The date is validated on the server and saved to the order like in the classic checkout. The selected date is also shown as a row in the order summary (the "Ship date summary row" block, added once below the shipping row; it follows the "Row with the date in the order summary" setting). Without the block (or with older WooCommerce versions) the block-based checkout shows no date choice and orders are placed without a ship date. The notice widget `[ship_today_notice]` works independently of the checkout type.
+Yes, with WooCommerce 10.1 or newer. In both checkouts the customer picks a date from tiles. In the block-based checkout the tiles are the "Ship date" block: the plugin adds it once below the shipping options of the checkout page, and you can move it, remove it or add it again (search for "Ship date") in the checkout page editor like other checkout blocks. The date is validated on the server and saved to the order like in the classic checkout. The selected date is also shown as a row in the order summary (the "Ship date summary row" block, added once below the shipping row; it follows the "Row with the date in the order summary" setting). Without the block (or with older WooCommerce versions) the block-based checkout shows no date choice and orders are placed without a ship date. The notice widget `[stdd_notice]` works independently of the checkout type.
 
 = The block checkout does not show the ship date tiles. =
 
@@ -71,11 +71,11 @@ Yes, in WooCommerce → Settings → Delivery dates → Checkout → "Texts": th
 
 = Can shipping methods have different cutoff times? =
 
-Yes. In WooCommerce → Settings → Delivery dates → "Shipping methods" every method of your WooCommerce shipping zones (including methods from other plugins, e.g. parcel lockers) can get its own shipping days, cutoff times and delivery days, e.g. parcel lockers until 15:00 and courier until 13:00. Both checkouts then show the dates of the selected method and recalculate them when the customer changes the method. Methods without own times use the main table. For the notice widget use `[ship_today_notice method="flat_rate:3"]`.
+Yes. In WooCommerce → Settings → Delivery dates → "Shipping methods" every method of your WooCommerce shipping zones (including methods from other plugins, e.g. parcel lockers) can get its own shipping days, cutoff times and delivery days, e.g. parcel lockers until 15:00 and courier until 13:00. Both checkouts then show the dates of the selected method and recalculate them when the customer changes the method. Methods without own times use the main table. For the notice widget use `[stdd_notice method="flat_rate:3"]`.
 
 = The checkout module is enabled, but I don't see the date field. =
 
-With the default position "shortcode only" you have to place `[ship_today_checkout]` inside the checkout form. Without it the field is not shown and orders are placed without a ship date. You can also choose an automatic position in the settings.
+With the default position "shortcode only" you have to place `[stdd_checkout]` inside the checkout form. Without it the field is not shown and orders are placed without a ship date. You can also choose an automatic position in the settings.
 
 = Where can I get help? =
 
@@ -83,7 +83,7 @@ Bugs and questions about features: GitHub Issues (https://github.com/msiemieniuk
 
 = Does it work with page caching? =
 
-Yes. The widget does not use AJAX: the schedule for the next 42 days is embedded in the page, so a cached page keeps showing the correct countdown and switches to the next slot after the cutoff. If LiteSpeed Cache is active (or you hook into `wc_ship_today_notice_purge_cache`), the cache is also purged at each cutoff time and after saving the settings, so the text rendered on the server is fresh too.
+Yes. The widget does not use AJAX: the schedule for the next 42 days is embedded in the page, so a cached page keeps showing the correct countdown and switches to the next slot after the cutoff. If LiteSpeed Cache is active (or you hook into `stdd_purge_cache`), the cache is also purged at each cutoff time and after saving the settings, so the text rendered on the server is fresh too.
 
 = Where do the public holidays come from? =
 
@@ -99,7 +99,7 @@ Users with the `manage_woocommerce` capability (Administrator and Shop Manager).
 
 = How can I test the widget at a different time? =
 
-As a shop manager add `?stn_now=2026-12-20T19:59` to any URL. The widget and the checkout validation then use that time.
+As a shop manager add `?stdd_now=2026-12-20T19:59` to any URL. The widget and the checkout validation then use that time.
 
 = What happens to my data when I delete the plugin? =
 
@@ -127,104 +127,5 @@ This plugin connects to the OpenHolidays API (https://www.openholidaysapi.org/),
 
 == Changelog ==
 
-= 2.6.2 =
-* Changed: the settings tab in WooCommerce → Settings is now called Delivery dates.
-* Changed: the default text before the cutoff is now "Order within {countdown} and we will ship today!".
-* Removed: unused day name constants and the migration of old default texts.
-
-= 2.6.1 =
-* Changed: the plugin name is now Ship Today & Delivery Dates for WooCommerce.
-* New: support information in the FAQ.
-
-= 2.6.0 =
-* Changed: the plugin settings moved to a Ship Today Notice tab in WooCommerce → Settings, with Settings, Shipping methods, Checkout and Style sections. Old addresses redirect.
-* Changed: cutoff times per shipping method have their own section.
-
-= 2.5.0 =
-* New: automatic display of the widget without a shortcode on the product page, cart and checkout, with a position and a priority. New stores get it on the product page below the add to cart form.
-* New: Checkout settings tab. With the module off only the fields that matter are shown, the rest appear right after enabling it.
-* Changed: the widget keeps counting down after the classic cart or checkout refreshes it with AJAX.
-* Removed: Iconic Delivery Slots support.
-
-= 2.4.1 =
-* Changed: the plugin name is now WooCommerce Ship Today Notice (Polish admin: Ship Today Notice).
-
-= 2.4.0 =
-* New: cutoff times per shipping method. In the "Shipping methods" settings each method of every shipping zone can have its own shipping weekdays, cutoff times and delivery days, with a preview of the next slots. Without them the general schedule applies.
-* New: both checkouts show tiles, validate and save the date for the selected shipping method; changing the method recalculates the tiles.
-* New: widget attribute method="flat_rate:3" for the schedule of one shipping method.
-* New: ship date row in the order summary of the block-based checkout, updated live, movable in the editor. Works with older checkout page layouts too.
-* New: optional $method argument in wc_stn_get_slots(), wc_stn_delivery_for_ship_date() and wc_stn_is_shipping_day(); the schedule and text filters get the method ID as the last argument.
-
-= 2.3.0 =
-* New: in the block-based checkout the date is picked from tiles, like in the classic checkout, in a "Ship date" block that can be moved, removed and added again in the checkout page editor. It replaces the 2.2.0 select field.
-* New: tile texts in the settings (Ship date at checkout → Texts): the big text and the second line with tokens, including {ship_short} and {delivery_short}; an empty second line hides it.
-* New: custom labels for the "Ship date" and "Planned delivery" rows (emails, thank-you page, My Account) and for the checkout messages.
-* New: admin notice when the block checkout has no ship date block.
-* Changed: on upgrade from 2.2.0 the ship date block is added once to the checkout page below the shipping methods. Until then (and without the block) orders go through without a date. Orders placed with the 2.2.0 select keep their dates.
-
-= 2.2.0 =
-* New: ship date choice in the block-based checkout (WooCommerce 10.1+), validated by the Store API and stored like in the classic checkout.
-* New: "Style" tab with a live preview: colors before and after the cutoff, countdown color, border, radius, padding, font and alignment.
-* New: all texts are translatable; complete Polish and new German translations.
-* New: optional region for regional holidays (e.g. DE-BY); regional holidays are no longer applied nationwide. Multi-day holidays are stored day by day.
-* New: switches for optional features (order date rows, order admin date editing, orders list column, showing dates when the module is off, automatic holiday download, cache purge at the cutoff, test mode, WPML).
-* Changed: the default after-cutoff and non-shipping-day texts use {ship_when} ("We will ship on Monday" on a Friday evening instead of "tomorrow"). Saved texts exactly equal to the old defaults are updated on upgrade; custom texts are kept.
-* Changed: the widget JS and CSS load only on pages with the widget. Use the wc_ship_today_notice_load_assets filter for widgets loaded via AJAX.
-* Changed: holidays are downloaded right after activation and after changing the country, language or region; an empty or failed API response no longer deletes stored holidays.
-* Changed: no ship date required for local pickup. Shop managers can save the settings. HPOS and block checkout compatibility declared. Requires WordPress 6.8.
-* Fixed: with the checkout module on and the field not rendered (shortcode missing or outside the form) all orders with shipping were blocked.
-* Fixed: invalid dates in the order admin, early translation loading notice, double space before the countdown, cutoff time field cut off in 12-hour browsers, settings validation.
-
-= 2.1.0 =
-* New: "Ship date at checkout" module: tiles, validation when the order is placed, stored in the order, emails, order admin with date editing, orders list column with sorting and a filter (HPOS and legacy storage).
-* New: switch that disables Iconic Delivery Slots in the cart and checkout (migration period).
-
-= 2.0.0 =
-* New: "next slot" mode and cutoff times before the ship day.
-* New: delivery date (delivery days after shipping, days without deliveries, holidays).
-* New: date tokens with Polish day declension, shortcode attributes `count`, `text`, `mode`, `class`.
-* New: countdown with days and automatic switch to the next slot after the cutoff.
-* Changed: schedule embedded in the HTML instead of AJAX. Removed the `wc_ship_today_notice_get` endpoint, whose nonce returned 403 on cached pages after 12-24 h.
-* Changed: holidays for the current and next year, ignored holidays stored by date (previously by ID); settings migration from 1.x.
-* New: next 5 slots preview in the settings, test mode `?stn_now=`.
-* New: `wc_stn_*` functions, filters, schedule test table.
-* New: LiteSpeed Cache purge at the cutoff time and after saving the settings.
-
-= 1.1.0 =
-* New: cutoff time per weekday, excluded dates as a text area.
-* New: list of downloaded holidays with the option to ignore them.
-* New: checkboxes for the after-cutoff and non-shipping-day texts, widget visibility settings.
-* New: Polish translation.
-
 = 1.0.0 =
-* First version: countdown, OpenHolidays API, settings in WooCommerce, WPML support.
-
-== Upgrade Notice ==
-
-= 2.6.2 =
-The settings tab is now called Delivery dates. A saved before-cutoff text stays as it is.
-
-= 2.6.1 =
-New plugin name: Ship Today & Delivery Dates for WooCommerce. No functional changes.
-
-= 2.6.0 =
-The settings moved to WooCommerce → Settings → Ship Today Notice. Nothing changes on the storefront.
-
-= 2.5.0 =
-Automatic widget display and a Checkout settings tab. Stores with saved settings keep the display off until enabled in the settings. Iconic Delivery Slots support is removed.
-
-= 2.4.1 =
-New plugin name: WooCommerce Ship Today Notice. No functional changes.
-
-= 2.4.0 =
-Cutoff times per shipping method and a ship date row in the block checkout order summary. Nothing changes until you set a schedule for a shipping method.
-
-= 2.3.0 =
-Block checkout: the date select becomes a movable "Ship date" block with tiles, added on the first admin visit. In a theme template (Site Editor) add the block yourself. New settings for tile texts, order row labels and checkout messages.
-
-= 2.2.0 =
-Requires WordPress 6.8. Block checkout support, Style tab, German translation. Old "tomorrow" texts are updated. Widget loaded via AJAX (e.g. popup): add the wc_ship_today_notice_load_assets filter.
-
-= 2.1.0 =
-Adds an optional ship date choice at checkout. It is off by default; when you enable it with the "shortcode only" position, place [ship_today_checkout] inside the checkout form.
+* First release.

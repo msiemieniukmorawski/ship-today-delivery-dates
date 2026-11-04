@@ -1,61 +1,61 @@
 /**
- * Ship Today & Delivery Dates for WooCommerce: [ship_today_notice] widget
+ * Ship Today & Delivery Dates for WooCommerce: [stdd_notice] widget
  */
 
-.wc-ship-today-notice {
-  background: var(--wc-ship-today-notice-bg, #fff3b0);
-  border: var(--wc-ship-today-notice-border-width, 2px) solid var(--wc-ship-today-notice-border, #f2c94c);
-  color: var(--wc-ship-today-notice-color, #111);
-  border-radius: var(--wc-ship-today-notice-radius, 8px);
-  padding: var(--wc-ship-today-notice-padding, 10px 14px);
-  font-weight: var(--wc-ship-today-notice-font-weight, 600);
+.stdd-notice {
+  background: var(--stdd-notice-bg, #fff3b0);
+  border: var(--stdd-notice-border-width, 2px) solid var(--stdd-notice-border, #f2c94c);
+  color: var(--stdd-notice-color, #111);
+  border-radius: var(--stdd-notice-radius, 8px);
+  padding: var(--stdd-notice-padding, 10px 14px);
+  font-weight: var(--stdd-notice-font-weight, 600);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: var(--wc-ship-today-notice-justify, normal);
+  justify-content: var(--stdd-notice-justify, normal);
   /* Without the variable text-align is inherited. */
-  text-align: var(--wc-ship-today-notice-align);
+  text-align: var(--stdd-notice-align);
   gap: 6px;
-  font-size: var(--wc-ship-today-notice-font-size, 13px);
+  font-size: var(--stdd-notice-font-size, 13px);
   line-height: 1.2;
 }
 
-.wc-ship-today-notice--loading {
+.stdd-notice--loading {
   opacity: 0.6;
 }
 
-.wc-ship-today-notice--hidden {
+.stdd-notice--hidden {
   display: none !important;
 }
 
-.wc-ship-today-notice--before {
+.stdd-notice--before {
   display: flex !important;
-  background: var(--wc-ship-today-notice-before-bg, #fff3b0);
-  border-color: var(--wc-ship-today-notice-before-border, #f2c94c);
-  color: var(--wc-ship-today-notice-before-color, var(--wc-ship-today-notice-color, #111));
+  background: var(--stdd-notice-before-bg, #fff3b0);
+  border-color: var(--stdd-notice-before-border, #f2c94c);
+  color: var(--stdd-notice-before-color, var(--stdd-notice-color, #111));
 }
 
-.wc-ship-today-notice--after {
+.stdd-notice--after {
   display: flex !important;
-  background: var(--wc-ship-today-notice-after-bg, #fff3b0);
-  border-color: var(--wc-ship-today-notice-after-border, #f2c94c);
-  color: var(--wc-ship-today-notice-after-color, #111);
+  background: var(--stdd-notice-after-bg, #fff3b0);
+  border-color: var(--stdd-notice-after-border, #f2c94c);
+  color: var(--stdd-notice-after-color, #111);
 }
 
-.wc-ship-today-notice .wc-ship-today-countdown {
+.stdd-notice .stdd-countdown {
   display: inline-flex;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   /* Without the variable the color is inherited. */
-  color: var(--wc-ship-today-notice-countdown-color);
+  color: var(--stdd-notice-countdown-color);
 }
 
-/* Slot list: [ship_today_notice count="2"] */
-.wc-ship-today-notice--list {
+/* Slot list: [stdd_notice count="2"] */
+.stdd-notice--list {
   flex-direction: column;
-  align-items: var(--wc-ship-today-notice-justify, flex-start);
+  align-items: var(--stdd-notice-justify, flex-start);
 }
 
-.wc-ship-today-notice__item {
+.stdd-notice__item {
   display: block;
 }

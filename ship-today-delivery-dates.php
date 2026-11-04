@@ -2,8 +2,8 @@
 
 /**
  * Plugin Name: Ship Today & Delivery Dates for WooCommerce
- * Description: Countdown to the order cutoff time with the next ship and delivery dates (shortcode [ship_today_notice]), plus an optional ship date choice at checkout.
- * Version: 2.6.2
+ * Description: Countdown to the order cutoff time with the next ship and delivery dates (shortcode [stdd_notice]), plus an optional ship date choice at checkout.
+ * Version: 1.0.0
  * Requires at least: 6.8
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -11,7 +11,7 @@
  * Author URI: https://ms-m.pl
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: wc-ship-today-notice
+ * Text Domain: ship-today-delivery-dates
  * Domain Path: /languages
  * WC requires at least: 9.4
  * WC tested up to: 11.2
@@ -21,26 +21,26 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WC_STN_VERSION', '2.6.2');
-define('WC_STN_FILE', __FILE__);
+define('STDD_VERSION', '1.0.0');
+define('STDD_FILE', __FILE__);
 
-require_once __DIR__ . '/includes/class-wc-stn-schedule.php';
-require_once __DIR__ . '/includes/class-wc-stn-checkout.php';
-require_once __DIR__ . '/includes/class-wc-stn-checkout-blocks.php';
-require_once __DIR__ . '/includes/class-wc-stn-auto-placement.php';
+require_once __DIR__ . '/includes/class-stdd-schedule.php';
+require_once __DIR__ . '/includes/class-stdd-checkout.php';
+require_once __DIR__ . '/includes/class-stdd-checkout-blocks.php';
+require_once __DIR__ . '/includes/class-stdd-auto-placement.php';
 require_once __DIR__ . '/includes/functions.php';
 
-final class WC_Ship_Today_Notice
+final class STDD_Plugin
 {
-    const OPTION_KEY       = 'wc_ship_today_notice_options';
-    const STYLE_KEY        = 'wc_ship_today_notice_style';
+    const OPTION_KEY       = 'stdd_options';
+    const STYLE_KEY        = 'stdd_style';
     /** Method schedules: ["flat_rate:3" => [enabled, delivery_days, cutoff_times, cutoff_offsets, delivery_offset]]. */
-    const METHOD_KEY       = 'wc_ship_today_notice_method_schedules';
-    const VERSION_KEY      = 'wc_ship_today_notice_version';
-    const CRON_HOOK        = 'wc_ship_today_notice_cron_sync_holidays';
-    const CRON_PURGE_HOOK  = 'wc_ship_today_notice_cron_purge_cache';
-    const TABLE_NAME       = 'wc_ship_today_notice_holidays';
-    const WPML_DOMAIN      = 'wc-ship-today-notice';
+    const METHOD_KEY       = 'stdd_method_schedules';
+    const VERSION_KEY      = 'stdd_version';
+    const CRON_HOOK        = 'stdd_cron_sync_holidays';
+    const CRON_PURGE_HOOK  = 'stdd_cron_purge_cache';
+    const TABLE_NAME       = 'stdd_holidays';
+    const WPML_DOMAIN      = 'ship-today-delivery-dates';
 
     /**
      * Optional feature toggles. Saved only from the form (_toggles marker), so writes from code keep the previous values.
@@ -78,10 +78,10 @@ final class WC_Ship_Today_Notice
     ];
 
     /** Tab under WooCommerce > Settings. */
-    const SETTINGS_TAB = 'ship_today_notice';
+    const SETTINGS_TAB = 'stdd_notice';
 
     /** Settings API page of the Checkout section. */
-    const CHECKOUT_PAGE = 'wc-ship-today-notice-checkout';
+    const CHECKOUT_PAGE = 'stdd-notice-checkout';
 
     const TOGGLES = [
         'checkout_review_row',
@@ -101,13 +101,13 @@ final class WC_Ship_Today_Notice
     /** @var self|null */
     private static $instance = null;
 
-    /** @var WC_STN_Schedule|null */
+    /** @var STDD_Schedule|null */
     private $schedule = null;
 
-    /** @var int Test mode offset of "now" in seconds (?stn_now=). */
+    /** @var int Test mode offset of "now" in seconds (?stdd_now=). */
     private $now_offset = 0;
 
-    /** @var WC_STN_Checkout_Blocks|null */
+    /** @var STDD_Checkout_Blocks|null */
     private $checkout_blocks = null;
 
     public static function instance()
@@ -125,8 +125,6 @@ final class WC_Ship_Today_Notice
 
         // WordPress loads the translations itself, wp-content/languages/plugins/ takes precedence.
 
-        // On admin_menu because the page access check runs before admin_init.
-        add_action('admin_menu', [$this, 'redirect_old_page'], 1);
         add_action('admin_init', [$this, 'maybe_upgrade'], 5);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'admin_assets']);
@@ -137,7 +135,7 @@ final class WC_Ship_Today_Notice
         add_action('woocommerce_settings_' . self::SETTINGS_TAB, [$this, 'render_settings_tab']);
         add_action('woocommerce_update_options_' . self::SETTINGS_TAB, [$this, 'save_settings']);
         add_action('woocommerce_settings_start', [$this, 'holidays_fetch_message']);
-        add_action('admin_post_wc_stn_fetch_holidays', [$this, 'handle_fetch_holidays']);
+        add_action('admin_post_stdd_fetch_holidays', [$this, 'handle_fetch_holidays']);
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), [$this, 'plugin_action_links']);
         add_action('before_woocommerce_init', [$this, 'declare_wc_compatibility']);
 
@@ -163,14 +161,14 @@ final class WC_Ship_Today_Notice
 
     public function init_checkout()
     {
-        new WC_STN_Auto_Placement($this);
+        new STDD_Auto_Placement($this);
 
         // Priority 1: test mode must be active before the block checkout computes slots on init 2.
         if (!empty($this->get_options()['test_mode'])) {
             add_action('init', [$this, 'maybe_enable_test_mode'], 1);
         }
 
-        $this->checkout_blocks = new WC_STN_Checkout_Blocks($this, new WC_STN_Checkout($this));
+        $this->checkout_blocks = new STDD_Checkout_Blocks($this, new STDD_Checkout($this));
     }
 
     /**
@@ -179,8 +177,8 @@ final class WC_Ship_Today_Notice
     public function declare_wc_compatibility()
     {
         if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', WC_STN_FILE, true);
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', WC_STN_FILE, true);
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', STDD_FILE, true);
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', STDD_FILE, true);
         }
     }
 
@@ -204,7 +202,7 @@ final class WC_Ship_Today_Notice
             $this->schedule = [];
         }
         if (!isset($this->schedule[$method])) {
-            $this->schedule[$method] = new WC_STN_Schedule(
+            $this->schedule[$method] = new STDD_Schedule(
                 array_merge($this->get_options(), $this->method_overrides($method)),
                 null,
                 '' === $method ? null : $method
@@ -276,7 +274,7 @@ final class WC_Ship_Today_Notice
             }
             foreach ($zone->get_shipping_methods() as $method) {
                 $key = $method->id . ':' . $method->get_instance_id();
-                $this->shipping_methods[$key] = $zone->get_zone_name() . ' - ' . $method->get_title() . ('yes' === $method->enabled ? '' : ' (' . __('disabled', 'wc-ship-today-notice') . ')');
+                $this->shipping_methods[$key] = $zone->get_zone_name() . ' - ' . $method->get_title() . ('yes' === $method->enabled ? '' : ' (' . __('disabled', 'ship-today-delivery-dates') . ')');
             }
         }
 
@@ -317,7 +315,7 @@ final class WC_Ship_Today_Notice
         }
 
         if (!wp_next_scheduled(self::CRON_HOOK)) {
-            wp_schedule_event(time() + HOUR_IN_SECONDS, 'every_four_months', self::CRON_HOOK);
+            wp_schedule_event(time() + HOUR_IN_SECONDS, 'stdd_every_four_months', self::CRON_HOOK);
         }
         // On the next WP-Cron run, so activation doesn't wait for the API.
         wp_schedule_single_event(time(), self::CRON_HOOK);
@@ -330,45 +328,24 @@ final class WC_Ship_Today_Notice
         }
     }
 
-    /**
-     * 1.x stored ignored holidays by row ID, and the IDs changed on every download. Converts them to dates.
-     */
+    /** Creates the table again after an update that changes it. */
     public function maybe_upgrade()
     {
-        $installed = get_option(self::VERSION_KEY, '1.0.0');
-
-        if (version_compare($installed, WC_STN_VERSION, '>=')) {
+        if (version_compare(get_option(self::VERSION_KEY, '0'), STDD_VERSION, '>=')) {
             return;
         }
 
         $this->maybe_create_table();
 
-        $saved = get_option(self::OPTION_KEY, []);
-
-        if (is_array($saved) && !empty($saved['excluded_holidays']) && empty($saved['excluded_holiday_dates'])) {
-            global $wpdb;
-            $table = $wpdb->prefix . self::TABLE_NAME;
-            $ids   = array_map('intval', (array) $saved['excluded_holidays']);
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off migration, own table.
-            $dates = $wpdb->get_col($wpdb->prepare('SELECT holiday_date FROM %i WHERE id IN (' . implode(',', array_fill(0, count($ids), '%d')) . ')', array_merge([$table], $ids)));
-            $saved['excluded_holiday_dates'] = array_values(array_unique((array) $dates));
-            unset($saved['excluded_holidays']);
-            update_option(self::OPTION_KEY, $saved);
-        }
-
-        // The block replaced the select field, so add it right away (once per checkout page).
-        if ($this->checkout_blocks) {
-            $this->checkout_blocks->insert_on_upgrade();
-        }
-
-        update_option(self::VERSION_KEY, WC_STN_VERSION);
+        update_option(self::VERSION_KEY, STDD_VERSION);
     }
 
     public function add_cron_schedules($schedules)
     {
-        $schedules['every_four_months'] = [
+        $schedules['stdd_every_four_months'] = [
             'interval' => 4 * 30 * DAY_IN_SECONDS, // ~4 months; 3x per year
-            'display'  => __('Every four months', 'wc-ship-today-notice')
+            // WooCommerce can schedule events before init, and translations must not load that early.
+            'display'  => did_action('init') ? __('Every four months', 'ship-today-delivery-dates') : 'Every four months',
         ];
         return $schedules;
     }
@@ -400,16 +377,16 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
 
     /**
-     * ?stn_now=2026-10-25T19:59 (shop managers only) overrides "now" in PHP and JS.
+     * ?stdd_now=2026-10-25T19:59 (shop managers only) overrides "now" in PHP and JS.
      */
     public function maybe_enable_test_mode()
     {
-        if (empty($_GET['stn_now']) || !current_user_can('manage_woocommerce')) { // phpcs:ignore WordPress.Security.NonceVerification
+        if (empty($_GET['stdd_now']) || !current_user_can('manage_woocommerce')) { // phpcs:ignore WordPress.Security.NonceVerification
             return;
         }
 
         try {
-            $fake = new DateTimeImmutable(sanitize_text_field(wp_unslash($_GET['stn_now'])), wp_timezone()); // phpcs:ignore WordPress.Security.NonceVerification
+            $fake = new DateTimeImmutable(sanitize_text_field(wp_unslash($_GET['stdd_now'])), wp_timezone()); // phpcs:ignore WordPress.Security.NonceVerification
         } catch (Exception $e) {
             return;
         }
@@ -418,7 +395,7 @@ final class WC_Ship_Today_Notice
         $offset           = $this->now_offset;
 
         // From a timestamp: modify('+N seconds') uses wall clock time and is an hour off across a DST change.
-        add_filter('wc_ship_today_notice_now', function () use ($offset) {
+        add_filter('stdd_now', function () use ($offset) {
             return (new DateTimeImmutable('@' . (time() + $offset)))->setTimezone(wp_timezone());
         });
     }
@@ -441,7 +418,7 @@ final class WC_Ship_Today_Notice
         foreach (['country_code', 'language_code', 'holiday_subdivision'] as $key) {
             if (!empty($new_toggles['holidays_auto_fetch']) && ($old[$key] ?? null) !== ($new[$key] ?? null)) {
                 if (!$this->fetch_and_store_holidays()) {
-                    $this->settings_error(__('Failed to update holidays.', 'wc-ship-today-notice'));
+                    $this->settings_error(__('Failed to update holidays.', 'ship-today-delivery-dates'));
                 }
                 break;
             }
@@ -475,8 +452,8 @@ final class WC_Ship_Today_Notice
      */
     private function purge_cache()
     {
-        do_action('litespeed_purge_all');
-        do_action('wc_ship_today_notice_purge_cache');
+        do_action('litespeed_purge_all'); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- LiteSpeed Cache action.
+        do_action('stdd_purge_cache');
     }
 
     public function cron_purge_cache()
@@ -488,7 +465,7 @@ final class WC_Ship_Today_Notice
     /** Whether anything needs purging at the cutoff: LiteSpeed Cache or a hooked action (same as purge_cache()). */
     private function cache_purge_enabled()
     {
-        return !empty($this->get_options()['cache_purge_at_cutoff']) && (defined('LSCWP_V') || has_action('wc_ship_today_notice_purge_cache'));
+        return !empty($this->get_options()['cache_purge_at_cutoff']) && (defined('LSCWP_V') || has_action('stdd_purge_cache'));
     }
 
     public function maybe_schedule_cache_purge()
@@ -540,23 +517,9 @@ final class WC_Ship_Today_Notice
         );
     }
 
-    /** Old admin.php?page=wc-ship-today-notice URLs (also &tab=checkout, style) redirect here. */
-    public function redirect_old_page()
-    {
-        // phpcs:disable WordPress.Security.NonceVerification -- redirect only.
-        if (!isset($_GET['page']) || 'wc-ship-today-notice' !== sanitize_key(wp_unslash($_GET['page']))) {
-            return;
-        }
-        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
-        // phpcs:enable
-
-        wp_safe_redirect(self::settings_url(in_array($tab, ['checkout', 'style'], true) ? $tab : ''));
-        exit;
-    }
-
     public function plugin_action_links($links)
     {
-        array_unshift($links, sprintf('<a href="%s">%s</a>', esc_url(self::settings_url()), esc_html__('Settings', 'wc-ship-today-notice')));
+        array_unshift($links, sprintf('<a href="%s">%s</a>', esc_url(self::settings_url()), esc_html__('Settings', 'ship-today-delivery-dates')));
 
         return $links;
     }
@@ -564,7 +527,7 @@ final class WC_Ship_Today_Notice
     /** Goes before Advanced, or last if there is no such tab. */
     public function add_settings_tab($tabs)
     {
-        $label  = __('Delivery dates', 'wc-ship-today-notice');
+        $label  = __('Delivery dates', 'ship-today-delivery-dates');
         $result = [];
 
         foreach ($tabs as $key => $name) {
@@ -581,10 +544,10 @@ final class WC_Ship_Today_Notice
     public function output_sections()
     {
         $sections = [
-            ''         => __('Settings', 'wc-ship-today-notice'),
-            'methods'  => __('Shipping methods', 'wc-ship-today-notice'),
-            'checkout' => __('Checkout', 'wc-ship-today-notice'),
-            'style'    => __('Style', 'wc-ship-today-notice'),
+            ''         => __('Settings', 'ship-today-delivery-dates'),
+            'methods'  => __('Shipping methods', 'ship-today-delivery-dates'),
+            'checkout' => __('Checkout', 'ship-today-delivery-dates'),
+            'style'    => __('Style', 'ship-today-delivery-dates'),
         ];
         $current  = $this->current_section();
 
@@ -645,122 +608,122 @@ final class WC_Ship_Today_Notice
     public function handle_fetch_holidays()
     {
         if (!current_user_can('manage_woocommerce')) {
-            wp_die(esc_html__('Sorry, you are not allowed to do this.', 'wc-ship-today-notice'), 403);
+            wp_die(esc_html__('Sorry, you are not allowed to do this.', 'ship-today-delivery-dates'), 403);
         }
-        check_admin_referer('wc_stn_fetch_holidays');
+        check_admin_referer('stdd_fetch_holidays');
 
         $result         = $this->fetch_and_store_holidays();
         $this->schedule = null;
 
-        wp_safe_redirect(add_query_arg('wc_stn_holidays', $result ? 'ok' : 'failed', self::settings_url()));
+        wp_safe_redirect(add_query_arg('stdd_holidays', $result ? 'ok' : 'failed', self::settings_url()));
         exit;
     }
 
     public function holidays_fetch_message()
     {
-        $result = isset($_GET['wc_stn_holidays']) ? sanitize_key(wp_unslash($_GET['wc_stn_holidays'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- notice only.
+        $result = isset($_GET['stdd_holidays']) ? sanitize_key(wp_unslash($_GET['stdd_holidays'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- notice only.
 
         if ('ok' === $result) {
-            WC_Admin_Settings::add_message(__('Holidays updated.', 'wc-ship-today-notice'));
+            WC_Admin_Settings::add_message(__('Holidays updated.', 'ship-today-delivery-dates'));
         } elseif ('failed' === $result) {
-            WC_Admin_Settings::add_error(__('Failed to update holidays.', 'wc-ship-today-notice'));
+            WC_Admin_Settings::add_error(__('Failed to update holidays.', 'ship-today-delivery-dates'));
         }
     }
 
     public function register_settings()
     {
         add_settings_section(
-            'wc_ship_today_shortcode',
-            __('Shortcode', 'wc-ship-today-notice'),
+            'stdd_shortcode',
+            __('Shortcode', 'ship-today-delivery-dates'),
             [$this, 'section_shortcode_info'],
-            'wc-ship-today-notice'
+            'ship-today-delivery-dates'
         );
 
         add_settings_section(
-            'wc_ship_today_main',
-            __('Main settings', 'wc-ship-today-notice'),
+            'stdd_main',
+            __('Main settings', 'ship-today-delivery-dates'),
             '__return_false',
-            'wc-ship-today-notice'
+            'ship-today-delivery-dates'
         );
 
-        add_settings_field('mode', __('Message mode', 'wc-ship-today-notice'), [$this, 'field_mode'], 'wc-ship-today-notice', 'wc_ship_today_main');
-        add_settings_field('delivery_days', __('Delivery weekdays & cutoff times', 'wc-ship-today-notice'), [$this, 'field_delivery_days'], 'wc-ship-today-notice', 'wc_ship_today_main');
-        add_settings_field('delivery', __('Delivery', 'wc-ship-today-notice'), [$this, 'field_delivery'], 'wc-ship-today-notice', 'wc_ship_today_main');
-        add_settings_field('excluded_dates', __('Excluded dates', 'wc-ship-today-notice'), [$this, 'field_excluded_dates'], 'wc-ship-today-notice', 'wc_ship_today_main');
-        add_settings_field('preview', __('Upcoming dates', 'wc-ship-today-notice'), [$this, 'field_preview'], 'wc-ship-today-notice', 'wc_ship_today_main');
+        add_settings_field('mode', __('Message mode', 'ship-today-delivery-dates'), [$this, 'field_mode'], 'ship-today-delivery-dates', 'stdd_main');
+        add_settings_field('delivery_days', __('Delivery weekdays & cutoff times', 'ship-today-delivery-dates'), [$this, 'field_delivery_days'], 'ship-today-delivery-dates', 'stdd_main');
+        add_settings_field('delivery', __('Delivery', 'ship-today-delivery-dates'), [$this, 'field_delivery'], 'ship-today-delivery-dates', 'stdd_main');
+        add_settings_field('excluded_dates', __('Excluded dates', 'ship-today-delivery-dates'), [$this, 'field_excluded_dates'], 'ship-today-delivery-dates', 'stdd_main');
+        add_settings_field('preview', __('Upcoming dates', 'ship-today-delivery-dates'), [$this, 'field_preview'], 'ship-today-delivery-dates', 'stdd_main');
 
         add_settings_section(
-            'wc_ship_today_auto',
-            __('Automatic display', 'wc-ship-today-notice'),
+            'stdd_auto',
+            __('Automatic display', 'ship-today-delivery-dates'),
             '__return_false',
-            'wc-ship-today-notice'
+            'ship-today-delivery-dates'
         );
-        add_settings_field('auto_placement', __('Show the widget without a shortcode', 'wc-ship-today-notice'), [$this, 'field_auto_placement'], 'wc-ship-today-notice', 'wc_ship_today_auto');
+        add_settings_field('auto_placement', __('Show the widget without a shortcode', 'ship-today-delivery-dates'), [$this, 'field_auto_placement'], 'ship-today-delivery-dates', 'stdd_auto');
 
         // Module fields are hidden while the module is off (assets/js/checkout-settings.js).
         add_settings_section(
-            'wc_ship_today_checkout',
-            __('Ship date choice at checkout', 'wc-ship-today-notice'),
+            'stdd_checkout',
+            __('Ship date choice at checkout', 'ship-today-delivery-dates'),
             [$this, 'section_checkout_info'],
             self::CHECKOUT_PAGE
         );
-        $module_row = ['class' => 'wc-stn-if-module' . (empty($this->get_options()['checkout_enabled']) ? ' hidden' : '')];
-        add_settings_field('checkout_enabled', __('Module', 'wc-ship-today-notice'), [$this, 'field_checkout_enabled'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout');
-        add_settings_field('checkout_placement', __('Position', 'wc-ship-today-notice'), [$this, 'field_checkout_placement'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
-        add_settings_field('checkout_tiles', __('Tiles', 'wc-ship-today-notice'), [$this, 'field_checkout_tiles'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
-        add_settings_field('checkout_texts', __('Texts', 'wc-ship-today-notice'), [$this, 'field_checkout_texts'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout', $module_row);
+        $module_row = ['class' => 'stdd-if-module' . (empty($this->get_options()['checkout_enabled']) ? ' hidden' : '')];
+        add_settings_field('checkout_enabled', __('Module', 'ship-today-delivery-dates'), [$this, 'field_checkout_enabled'], self::CHECKOUT_PAGE, 'stdd_checkout');
+        add_settings_field('checkout_placement', __('Position', 'ship-today-delivery-dates'), [$this, 'field_checkout_placement'], self::CHECKOUT_PAGE, 'stdd_checkout', $module_row);
+        add_settings_field('checkout_tiles', __('Tiles', 'ship-today-delivery-dates'), [$this, 'field_checkout_tiles'], self::CHECKOUT_PAGE, 'stdd_checkout', $module_row);
+        add_settings_field('checkout_texts', __('Texts', 'ship-today-delivery-dates'), [$this, 'field_checkout_texts'], self::CHECKOUT_PAGE, 'stdd_checkout', $module_row);
         // No class: this toggle matters exactly when the module is off.
-        add_settings_field('checkout_display', __('Dates in orders', 'wc-ship-today-notice'), [$this, 'field_checkout_display'], self::CHECKOUT_PAGE, 'wc_ship_today_checkout');
+        add_settings_field('checkout_display', __('Dates in orders', 'ship-today-delivery-dates'), [$this, 'field_checkout_display'], self::CHECKOUT_PAGE, 'stdd_checkout');
 
         add_settings_section(
-            'wc_ship_today_visibility',
-            __('Widget visibility', 'wc-ship-today-notice'),
+            'stdd_visibility',
+            __('Widget visibility', 'ship-today-delivery-dates'),
             '__return_false',
-            'wc-ship-today-notice'
+            'ship-today-delivery-dates'
         );
 
-        add_settings_field('visibility_mode', __('Display widget', 'wc-ship-today-notice'), [$this, 'field_visibility_mode'], 'wc-ship-today-notice', 'wc_ship_today_visibility');
+        add_settings_field('visibility_mode', __('Display widget', 'ship-today-delivery-dates'), [$this, 'field_visibility_mode'], 'ship-today-delivery-dates', 'stdd_visibility');
 
         add_settings_section(
-            'wc_ship_today_countdown',
-            __('Countdown format', 'wc-ship-today-notice'),
+            'stdd_countdown',
+            __('Countdown format', 'ship-today-delivery-dates'),
             '__return_false',
-            'wc-ship-today-notice'
+            'ship-today-delivery-dates'
         );
 
-        add_settings_field('countdown_format', __('Time labels', 'wc-ship-today-notice'), [$this, 'field_countdown_format'], 'wc-ship-today-notice', 'wc_ship_today_countdown');
+        add_settings_field('countdown_format', __('Time labels', 'ship-today-delivery-dates'), [$this, 'field_countdown_format'], 'ship-today-delivery-dates', 'stdd_countdown');
 
         add_settings_section(
-            'wc_ship_today_holidays',
-            __('Public holidays API', 'wc-ship-today-notice'),
+            'stdd_holidays',
+            __('Public holidays API', 'ship-today-delivery-dates'),
             [$this, 'section_holidays_info'],
-            'wc-ship-today-notice'
+            'ship-today-delivery-dates'
         );
 
-        add_settings_field('country_code', __('Country ISO code', 'wc-ship-today-notice'), [$this, 'field_country_code'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
-        add_settings_field('language_code', __('Language ISO code', 'wc-ship-today-notice'), [$this, 'field_language_code'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
-        add_settings_field('holiday_subdivision', __('Region', 'wc-ship-today-notice'), [$this, 'field_holiday_subdivision'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
-        add_settings_field('holidays_auto_fetch', __('Automatic download', 'wc-ship-today-notice'), [$this, 'field_holidays_auto_fetch'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
-        add_settings_field('holidays_list', __('Fetched holidays', 'wc-ship-today-notice'), [$this, 'field_holidays_list'], 'wc-ship-today-notice', 'wc_ship_today_holidays');
+        add_settings_field('country_code', __('Country ISO code', 'ship-today-delivery-dates'), [$this, 'field_country_code'], 'ship-today-delivery-dates', 'stdd_holidays');
+        add_settings_field('language_code', __('Language ISO code', 'ship-today-delivery-dates'), [$this, 'field_language_code'], 'ship-today-delivery-dates', 'stdd_holidays');
+        add_settings_field('holiday_subdivision', __('Region', 'ship-today-delivery-dates'), [$this, 'field_holiday_subdivision'], 'ship-today-delivery-dates', 'stdd_holidays');
+        add_settings_field('holidays_auto_fetch', __('Automatic download', 'ship-today-delivery-dates'), [$this, 'field_holidays_auto_fetch'], 'ship-today-delivery-dates', 'stdd_holidays');
+        add_settings_field('holidays_list', __('Fetched holidays', 'ship-today-delivery-dates'), [$this, 'field_holidays_list'], 'ship-today-delivery-dates', 'stdd_holidays');
 
         add_settings_section(
-            'wc_ship_today_texts',
-            __('Frontend texts', 'wc-ship-today-notice'),
+            'stdd_texts',
+            __('Frontend texts', 'ship-today-delivery-dates'),
             [$this, 'section_texts_info'],
-            'wc-ship-today-notice'
+            'ship-today-delivery-dates'
         );
-        add_settings_field('text_next_slot', __('Text in "next date" mode', 'wc-ship-today-notice'), [$this, 'field_text_next_slot'], 'wc-ship-today-notice', 'wc_ship_today_texts');
-        add_settings_field('text_before_cutoff', __('Text before cutoff', 'wc-ship-today-notice'), [$this, 'field_text_before_cutoff'], 'wc-ship-today-notice', 'wc_ship_today_texts');
-        add_settings_field('text_after_cutoff', __('Text after cutoff', 'wc-ship-today-notice'), [$this, 'field_text_after_cutoff'], 'wc-ship-today-notice', 'wc_ship_today_texts');
-        add_settings_field('text_not_shipping_day', __('Text when not a shipping day', 'wc-ship-today-notice'), [$this, 'field_text_not_shipping_day'], 'wc-ship-today-notice', 'wc_ship_today_texts');
+        add_settings_field('text_next_slot', __('Text in "next date" mode', 'ship-today-delivery-dates'), [$this, 'field_text_next_slot'], 'ship-today-delivery-dates', 'stdd_texts');
+        add_settings_field('text_before_cutoff', __('Text before cutoff', 'ship-today-delivery-dates'), [$this, 'field_text_before_cutoff'], 'ship-today-delivery-dates', 'stdd_texts');
+        add_settings_field('text_after_cutoff', __('Text after cutoff', 'ship-today-delivery-dates'), [$this, 'field_text_after_cutoff'], 'ship-today-delivery-dates', 'stdd_texts');
+        add_settings_field('text_not_shipping_day', __('Text when not a shipping day', 'ship-today-delivery-dates'), [$this, 'field_text_not_shipping_day'], 'ship-today-delivery-dates', 'stdd_texts');
 
         add_settings_section(
-            'wc_ship_today_advanced',
-            __('Advanced', 'wc-ship-today-notice'),
+            'stdd_advanced',
+            __('Advanced', 'ship-today-delivery-dates'),
             '__return_false',
-            'wc-ship-today-notice'
+            'ship-today-delivery-dates'
         );
-        add_settings_field('advanced_toggles', __('Optional features', 'wc-ship-today-notice'), [$this, 'field_advanced_toggles'], 'wc-ship-today-notice', 'wc_ship_today_advanced');
+        add_settings_field('advanced_toggles', __('Optional features', 'ship-today-delivery-dates'), [$this, 'field_advanced_toggles'], 'ship-today-delivery-dates', 'stdd_advanced');
     }
 
     public function sanitize_options($input)
@@ -798,8 +761,8 @@ final class WC_Ship_Today_Notice
 
         // Two letters. An invalid value keeps the previous one and shows a notice.
         $codes = [
-            'country_code'  => __('Country ISO code', 'wc-ship-today-notice'),
-            'language_code' => __('Language ISO code', 'wc-ship-today-notice'),
+            'country_code'  => __('Country ISO code', 'ship-today-delivery-dates'),
+            'language_code' => __('Language ISO code', 'ship-today-delivery-dates'),
         ];
         foreach ($codes as $key => $label) {
             if (!isset($input[$key])) {
@@ -811,7 +774,7 @@ final class WC_Ship_Today_Notice
             } else {
                 $this->settings_error(sprintf(
                     /* translators: 1: field label, 2: entered value, 3: previous value */
-                    __('%1$s: "%2$s" is not a two-letter code. The previous value %3$s was kept.', 'wc-ship-today-notice'),
+                    __('%1$s: "%2$s" is not a two-letter code. The previous value %3$s was kept.', 'ship-today-delivery-dates'),
                     $label,
                     $value,
                     $options[$key]
@@ -828,7 +791,7 @@ final class WC_Ship_Today_Notice
                 $options['holiday_subdivision'] = '';
                 $this->settings_error(sprintf(
                     /* translators: 1: entered value, 2: country code */
-                    __('Region "%1$s" is not a region code of %2$s (e.g. DE-BY). Only nationwide holidays are used.', 'wc-ship-today-notice'),
+                    __('Region "%1$s" is not a region code of %2$s (e.g. DE-BY). Only nationwide holidays are used.', 'ship-today-delivery-dates'),
                     $value,
                     $options['country_code']
                 ));
@@ -857,7 +820,7 @@ final class WC_Ship_Today_Notice
         $options['checkout_enabled']   = !empty($input['checkout_enabled']);
         $options['checkout_count']     = max(1, min(12, (int) ($input['checkout_count'] ?? 6)));
         $options['checkout_preselect'] = !empty($input['checkout_preselect']);
-        $options['checkout_label']     = sanitize_text_field($input['checkout_label'] ?? '') ?: __('Delivery date', 'wc-ship-today-notice');
+        $options['checkout_label']     = sanitize_text_field($input['checkout_label'] ?? '') ?: __('Delivery date', 'ship-today-delivery-dates');
         $options['checkout_primary']   = in_array($input['checkout_primary'] ?? '', ['delivery', 'ship'], true) ? $input['checkout_primary'] : 'delivery';
         $options['checkout_position']  = in_array($input['checkout_position'] ?? '', ['shortcode', 'after_order_notes', 'before_order_review'], true) ? $input['checkout_position'] : 'shortcode';
         $options['checkout_accent']    = (string) sanitize_hex_color($input['checkout_accent'] ?? '');
@@ -874,15 +837,15 @@ final class WC_Ship_Today_Notice
             $prev = $this->get_options();
             $sub  = trim(sanitize_text_field((string) $input['checkout_tile_sub']));
             $defaults = [
-                WC_STN_Checkout::default_tile_texts($prev['checkout_primary'], (int) $prev['delivery_offset'] > 0)['sub'],
-                WC_STN_Checkout::default_tile_texts($options['checkout_primary'], (int) $options['delivery_offset'] > 0)['sub'],
+                STDD_Checkout::default_tile_texts($prev['checkout_primary'], (int) $prev['delivery_offset'] > 0)['sub'],
+                STDD_Checkout::default_tile_texts($options['checkout_primary'], (int) $options['delivery_offset'] > 0)['sub'],
             ];
             $options['checkout_tile_sub'] = in_array($sub, $defaults, true) ? null : $sub;
         }
 
         // Form only: a write from code without this key keeps the previous values.
         if (isset($input['auto_placement'])) {
-            $options['auto_placement'] = WC_STN_Auto_Placement::sanitize((array) $input['auto_placement']);
+            $options['auto_placement'] = STDD_Auto_Placement::sanitize((array) $input['auto_placement']);
         }
 
         // An unchecked box is missing from POST, so without the form marker nothing changes.
@@ -928,7 +891,7 @@ final class WC_Ship_Today_Notice
     /** Rendered inside WooCommerce's #mainform: no own <form> or submit buttons. */
     public function render_settings_tab()
     {
-        echo '<div class="wc-stn-settings">';
+        echo '<div class="stdd-settings">';
         $this->render_section($this->current_section());
         echo '</div>';
     }
@@ -941,25 +904,25 @@ final class WC_Ship_Today_Notice
         }
 
         if ('methods' === $section) {
-            echo '<h2>' . esc_html__('Shipping methods', 'wc-ship-today-notice') . '</h2>';
+            echo '<h2>' . esc_html__('Shipping methods', 'ship-today-delivery-dates') . '</h2>';
             $this->field_method_schedules();
             return;
         }
 
         if ('checkout' === $section) {
-            echo '<div id="wc-stn-checkout-settings">';
+            echo '<div id="stdd-checkout-settings">';
             do_settings_sections(self::CHECKOUT_PAGE);
             echo '</div>';
             return;
         }
 
-        do_settings_sections('wc-ship-today-notice');
+        do_settings_sections('ship-today-delivery-dates');
         ?>
         <hr style="margin: 30px 0;">
 
-        <h2><?php esc_html_e('Fetch holidays', 'wc-ship-today-notice'); ?></h2>
-        <p class="description"><?php esc_html_e('Fetches holidays for the current and next year. Holidays are also fetched automatically every 4 months.', 'wc-ship-today-notice'); ?></p>
-        <p><a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=wc_stn_fetch_holidays'), 'wc_stn_fetch_holidays')); ?>"><?php esc_html_e('Fetch holidays now', 'wc-ship-today-notice'); ?></a></p>
+        <h2><?php esc_html_e('Fetch holidays', 'ship-today-delivery-dates'); ?></h2>
+        <p class="description"><?php esc_html_e('Fetches holidays for the current and next year. Holidays are also fetched automatically every 4 months.', 'ship-today-delivery-dates'); ?></p>
+        <p><a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=stdd_fetch_holidays'), 'stdd_fetch_holidays')); ?>"><?php esc_html_e('Fetch holidays now', 'ship-today-delivery-dates'); ?></a></p>
         <?php
     }
 
@@ -990,11 +953,11 @@ final class WC_Ship_Today_Notice
             'country_code' => 'PL',
             'language_code' => 'PL',
             'holiday_subdivision' => '', // ISO 3166-2 (e.g. DE-BY), empty = nationwide only
-            'text_next_slot' => __('Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}', 'wc-ship-today-notice'),
-            'text_before_cutoff' => __('Order within {countdown} and we will ship today!', 'wc-ship-today-notice'),
+            'text_next_slot' => __('Order {cutoff_when}, we will ship {ship_when}. Time left: {countdown}', 'ship-today-delivery-dates'),
+            'text_before_cutoff' => __('Order within {countdown} and we will ship today!', 'ship-today-delivery-dates'),
             // {ship_when}: "tomorrow" or a weekday, e.g. Monday on Friday after the cutoff
-            'text_after_cutoff' => __('We will ship {ship_when}.', 'wc-ship-today-notice'),
-            'text_not_shipping_day' => __('We will ship {ship_when}.', 'wc-ship-today-notice'),
+            'text_after_cutoff' => __('We will ship {ship_when}.', 'ship-today-delivery-dates'),
+            'text_not_shipping_day' => __('We will ship {ship_when}.', 'ship-today-delivery-dates'),
             'show_after_cutoff' => true,
             'show_not_shipping_day' => true,
             'visibility_mode' => 'always', // 'disabled', 'always', 'before_cutoff_only', 'hours_before'
@@ -1006,7 +969,7 @@ final class WC_Ship_Today_Notice
             'checkout_enabled' => false,
             'checkout_count' => 6,
             'checkout_preselect' => true,
-            'checkout_label' => __('Delivery date', 'wc-ship-today-notice'),
+            'checkout_label' => __('Delivery date', 'ship-today-delivery-dates'),
             'checkout_primary' => 'delivery', // large text on the tile: 'delivery' or 'ship'
             'checkout_position' => 'shortcode', // 'shortcode', 'after_order_notes', 'before_order_review'
             'checkout_accent' => '',
@@ -1029,17 +992,10 @@ final class WC_Ship_Today_Notice
             'cache_purge_at_cutoff' => true,
             'test_mode' => true,
             'wpml_strings' => true,
-            'auto_placement' => WC_STN_Auto_Placement::defaults(), // new shops get the widget on the product page
+            'auto_placement' => STDD_Auto_Placement::defaults(), // new shops get the widget on the product page
         ];
 
-        $saved = get_option(self::OPTION_KEY, []);
-
-        // Saved settings without this key predate the feature: an update must not add the widget.
-        if (is_array($saved) && $saved && !isset($saved['auto_placement'])) {
-            $saved['auto_placement'] = WC_STN_Auto_Placement::disabled();
-        }
-
-        return wp_parse_args($saved, $defaults);
+        return wp_parse_args(get_option(self::OPTION_KEY, []), $defaults);
     }
 
     /* ---------------------------------------------------------
@@ -1113,9 +1069,9 @@ final class WC_Ship_Today_Notice
             if ('' === $value) {
                 continue;
             }
-            $css .= '--wc-ship-today-notice-' . $fields[$key][1] . ':' . $value . ('px' === $fields[$key][0] ? 'px' : '') . ';';
+            $css .= '--stdd-notice-' . $fields[$key][1] . ':' . $value . ('px' === $fields[$key][0] ? 'px' : '') . ';';
             if ('align' === $fields[$key][0]) {
-                $css .= '--wc-ship-today-notice-justify:' . $justify[$value] . ';';
+                $css .= '--stdd-notice-justify:' . $justify[$value] . ';';
             }
         }
 
@@ -1129,18 +1085,18 @@ final class WC_Ship_Today_Notice
         }
 
         wp_enqueue_style(
-            'wc-ship-today-notice-settings',
+            'stdd-notice-settings',
             plugins_url('assets/css/settings.css', __FILE__),
             [],
-            WC_STN_VERSION
+            STDD_VERSION
         );
 
         if ('checkout' === $this->current_section()) {
             wp_enqueue_script(
-                'wc-ship-today-notice-checkout-settings',
+                'stdd-notice-checkout-settings',
                 plugins_url('assets/js/checkout-settings.js', __FILE__),
                 [],
-                WC_STN_VERSION,
+                STDD_VERSION,
                 true
             );
             return;
@@ -1152,16 +1108,16 @@ final class WC_Ship_Today_Notice
 
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_style(
-            'wc-ship-today-notice',
+            'ship-today-delivery-dates',
             plugins_url('assets/css/notice.css', __FILE__),
             [],
-            WC_STN_VERSION
+            STDD_VERSION
         );
         wp_enqueue_script(
-            'wc-ship-today-notice-style',
+            'stdd-notice-style',
             plugins_url('assets/js/style-preview.js', __FILE__),
             ['jquery', 'wp-color-picker'],
-            WC_STN_VERSION,
+            STDD_VERSION,
             true
         );
     }
@@ -1169,7 +1125,7 @@ final class WC_Ship_Today_Notice
     private function style_color_input($key, array $s)
     {
         printf(
-            '<input type="text" class="wc-stn-color" name="%1$s[%2$s]" value="%3$s" data-stn-var="--wc-ship-today-notice-%4$s" />',
+            '<input type="text" class="stdd-color" name="%1$s[%2$s]" value="%3$s" data-stdd-var="--stdd-notice-%4$s" />',
             esc_attr(self::STYLE_KEY),
             esc_attr($key),
             esc_attr($s[$key]),
@@ -1181,7 +1137,7 @@ final class WC_Ship_Today_Notice
     {
         $field = $this->style_fields()[$key];
         printf(
-            '<input type="number" min="%1$d" max="%2$d" step="1" name="%3$s[%4$s]" value="%5$s" placeholder="%6$s" data-stn-var="--wc-ship-today-notice-%7$s" data-stn-unit="px" style="width:80px" /> px',
+            '<input type="number" min="%1$d" max="%2$d" step="1" name="%3$s[%4$s]" value="%5$s" placeholder="%6$s" data-stdd-var="--stdd-notice-%7$s" data-stdd-unit="px" style="width:80px" /> px',
             (int) $field[2],
             (int) $field[3],
             esc_attr(self::STYLE_KEY),
@@ -1205,24 +1161,24 @@ final class WC_Ship_Today_Notice
         }
         $before_html = str_replace(
             '{countdown}',
-            '<span class="wc-ship-today-countdown">' . esc_html($countdown) . '</span>',
-            esc_html__('Order within {countdown} and we will ship today!', 'wc-ship-today-notice')
+            '<span class="stdd-countdown">' . esc_html($countdown) . '</span>',
+            esc_html__('Order within {countdown} and we will ship today!', 'ship-today-delivery-dates')
         );
 
         $colors = [
-            'bg'     => __('Background', 'wc-ship-today-notice'),
-            'border' => __('Border color', 'wc-ship-today-notice'),
-            'color'  => __('Text color', 'wc-ship-today-notice'),
+            'bg'     => __('Background', 'ship-today-delivery-dates'),
+            'border' => __('Border color', 'ship-today-delivery-dates'),
+            'color'  => __('Text color', 'ship-today-delivery-dates'),
         ];
         $col = 'display:inline-block;vertical-align:top;margin:0 16px 8px 0;';
         ?>
         <div style="display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start;">
-            <div id="wc-stn-style-form" style="flex:1 1 520px;min-width:0;">
-                <p class="description"><?php esc_html_e('Empty field = default look. Changes are shown in the preview right away; click "Save Changes" to apply them on the site.', 'wc-ship-today-notice'); ?></p>
+            <div id="stdd-style-form" style="flex:1 1 520px;min-width:0;">
+                <p class="description"><?php esc_html_e('Empty field = default look. Changes are shown in the preview right away; click "Save Changes" to apply them on the site.', 'ship-today-delivery-dates'); ?></p>
 
-                <h2><?php esc_html_e('Colors', 'wc-ship-today-notice'); ?></h2>
+                <h2><?php esc_html_e('Colors', 'ship-today-delivery-dates'); ?></h2>
                 <table class="form-table" role="presentation">
-                    <?php foreach (['before' => __('Before cutoff', 'wc-ship-today-notice'), 'after' => __('After cutoff', 'wc-ship-today-notice')] as $state => $label) : ?>
+                    <?php foreach (['before' => __('Before cutoff', 'ship-today-delivery-dates'), 'after' => __('After cutoff', 'ship-today-delivery-dates')] as $state => $label) : ?>
                         <tr>
                             <th scope="row"><?php echo esc_html($label); ?></th>
                             <td>
@@ -1233,43 +1189,43 @@ final class WC_Ship_Today_Notice
                                     </div>
                                 <?php endforeach; ?>
                                 <?php if ('after' === $state) : ?>
-                                    <p class="description"><?php esc_html_e('Also used on non-shipping days.', 'wc-ship-today-notice'); ?></p>
+                                    <p class="description"><?php esc_html_e('Also used on non-shipping days.', 'ship-today-delivery-dates'); ?></p>
                                 <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Countdown color', 'wc-ship-today-notice'); ?></th>
+                        <th scope="row"><?php esc_html_e('Countdown color', 'ship-today-delivery-dates'); ?></th>
                         <td><?php $this->style_color_input('countdown_color', $s); ?></td>
                     </tr>
                 </table>
 
-                <h2><?php esc_html_e('Layout and text', 'wc-ship-today-notice'); ?></h2>
+                <h2><?php esc_html_e('Layout and text', 'ship-today-delivery-dates'); ?></h2>
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><?php esc_html_e('Border width', 'wc-ship-today-notice'); ?></th>
+                        <th scope="row"><?php esc_html_e('Border width', 'ship-today-delivery-dates'); ?></th>
                         <td><?php $this->style_px_input('border_width', $s, '2'); ?></td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Border radius', 'wc-ship-today-notice'); ?></th>
+                        <th scope="row"><?php esc_html_e('Border radius', 'ship-today-delivery-dates'); ?></th>
                         <td><?php $this->style_px_input('radius', $s, '8'); ?></td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Padding', 'wc-ship-today-notice'); ?></th>
+                        <th scope="row"><?php esc_html_e('Padding', 'ship-today-delivery-dates'); ?></th>
                         <td>
                             <?php $this->style_px_input('padding', $s, '10'); ?>
-                            <p class="description"><?php esc_html_e('Same on all sides. Default: 10px top and bottom, 14px left and right.', 'wc-ship-today-notice'); ?></p>
+                            <p class="description"><?php esc_html_e('Same on all sides. Default: 10px top and bottom, 14px left and right.', 'ship-today-delivery-dates'); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Font size', 'wc-ship-today-notice'); ?></th>
+                        <th scope="row"><?php esc_html_e('Font size', 'ship-today-delivery-dates'); ?></th>
                         <td><?php $this->style_px_input('font_size', $s, '13'); ?></td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Font weight', 'wc-ship-today-notice'); ?></th>
+                        <th scope="row"><?php esc_html_e('Font weight', 'ship-today-delivery-dates'); ?></th>
                         <td>
-                            <select name="<?php echo esc_attr($name); ?>[font_weight]" data-stn-var="--wc-ship-today-notice-font-weight">
-                                <option value=""><?php esc_html_e('Default (600)', 'wc-ship-today-notice'); ?></option>
+                            <select name="<?php echo esc_attr($name); ?>[font_weight]" data-stdd-var="--stdd-notice-font-weight">
+                                <option value=""><?php esc_html_e('Default (600)', 'ship-today-delivery-dates'); ?></option>
                                 <?php foreach (['400', '500', '600', '700', '800'] as $weight) : ?>
                                     <option value="<?php echo esc_attr($weight); ?>" <?php selected($s['font_weight'], $weight); ?>><?php echo esc_html($weight); ?></option>
                                 <?php endforeach; ?>
@@ -1277,30 +1233,30 @@ final class WC_Ship_Today_Notice
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Alignment', 'wc-ship-today-notice'); ?></th>
+                        <th scope="row"><?php esc_html_e('Alignment', 'ship-today-delivery-dates'); ?></th>
                         <td>
-                            <select name="<?php echo esc_attr($name); ?>[align]" data-stn-align="1">
-                                <option value=""><?php esc_html_e('Default', 'wc-ship-today-notice'); ?></option>
-                                <option value="left" <?php selected($s['align'], 'left'); ?>><?php esc_html_e('Left', 'wc-ship-today-notice'); ?></option>
-                                <option value="center" <?php selected($s['align'], 'center'); ?>><?php esc_html_e('Center', 'wc-ship-today-notice'); ?></option>
-                                <option value="right" <?php selected($s['align'], 'right'); ?>><?php esc_html_e('Right', 'wc-ship-today-notice'); ?></option>
+                            <select name="<?php echo esc_attr($name); ?>[align]" data-stdd-align="1">
+                                <option value=""><?php esc_html_e('Default', 'ship-today-delivery-dates'); ?></option>
+                                <option value="left" <?php selected($s['align'], 'left'); ?>><?php esc_html_e('Left', 'ship-today-delivery-dates'); ?></option>
+                                <option value="center" <?php selected($s['align'], 'center'); ?>><?php esc_html_e('Center', 'ship-today-delivery-dates'); ?></option>
+                                <option value="right" <?php selected($s['align'], 'right'); ?>><?php esc_html_e('Right', 'ship-today-delivery-dates'); ?></option>
                             </select>
                         </td>
                     </tr>
                 </table>
 
                 <p class="submit">
-                    <button type="button" class="button" id="wc-stn-style-reset"><?php esc_html_e('Restore defaults', 'wc-ship-today-notice'); ?></button>
+                    <button type="button" class="button" id="stdd-style-reset"><?php esc_html_e('Restore defaults', 'ship-today-delivery-dates'); ?></button>
                 </p>
             </div>
 
             <div style="flex:0 1 380px;min-width:260px;position:sticky;top:46px;">
-                <h2><?php esc_html_e('Preview', 'wc-ship-today-notice'); ?></h2>
-                <div id="wc-stn-style-preview" style="background:#fff;border:1px solid #c3c4c7;padding:16px;">
-                    <p style="margin:0 0 6px;"><?php esc_html_e('Before cutoff', 'wc-ship-today-notice'); ?></p>
-                    <div class="wc-ship-today-notice wc-ship-today-notice--before"><div class="wc-ship-today-notice__item"><?php echo $before_html; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above. ?></div></div>
-                    <p style="margin:16px 0 6px;"><?php esc_html_e('After cutoff', 'wc-ship-today-notice'); ?></p>
-                    <div class="wc-ship-today-notice wc-ship-today-notice--after"><div class="wc-ship-today-notice__item"><?php echo esc_html(str_replace('{ship_when}', WC_STN_Schedule::words()['tomorrow'], __('We will ship {ship_when}.', 'wc-ship-today-notice'))); ?></div></div>
+                <h2><?php esc_html_e('Preview', 'ship-today-delivery-dates'); ?></h2>
+                <div id="stdd-style-preview" style="background:#fff;border:1px solid #c3c4c7;padding:16px;">
+                    <p style="margin:0 0 6px;"><?php esc_html_e('Before cutoff', 'ship-today-delivery-dates'); ?></p>
+                    <div class="stdd-notice stdd-notice--before"><div class="stdd-notice__item"><?php echo $before_html; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above. ?></div></div>
+                    <p style="margin:16px 0 6px;"><?php esc_html_e('After cutoff', 'ship-today-delivery-dates'); ?></p>
+                    <div class="stdd-notice stdd-notice--after"><div class="stdd-notice__item"><?php echo esc_html(str_replace('{ship_when}', STDD_Schedule::words()['tomorrow'], __('We will ship {ship_when}.', 'ship-today-delivery-dates'))); ?></div></div>
                 </div>
             </div>
         </div>
@@ -1318,35 +1274,35 @@ final class WC_Ship_Today_Notice
     public function field_auto_placement()
     {
         $name  = self::OPTION_KEY . '[auto_placement]';
-        $rows  = WC_STN_Auto_Placement::settings($this->get_options());
+        $rows  = STDD_Auto_Placement::settings($this->get_options());
         $texts = [
-            'product'  => __('Product page', 'wc-ship-today-notice'),
-            'cart'     => __('Cart', 'wc-ship-today-notice'),
-            'checkout' => __('Checkout', 'wc-ship-today-notice'),
+            'product'  => __('Product page', 'ship-today-delivery-dates'),
+            'cart'     => __('Cart', 'ship-today-delivery-dates'),
+            'checkout' => __('Checkout', 'ship-today-delivery-dates'),
         ];
         $hooks = [
-            'woocommerce_before_add_to_cart_form'      => __('Above the add to cart form', 'wc-ship-today-notice'),
-            'woocommerce_after_add_to_cart_form'       => __('Below the add to cart form', 'wc-ship-today-notice'),
-            'woocommerce_single_product_summary'       => __('In the product summary (position set by the priority)', 'wc-ship-today-notice'),
-            'woocommerce_before_cart'                  => __('Above the cart', 'wc-ship-today-notice'),
-            'woocommerce_before_cart_totals'           => __('Above the cart totals', 'wc-ship-today-notice'),
-            'woocommerce_proceed_to_checkout'          => __('Next to the "Proceed to checkout" button', 'wc-ship-today-notice'),
-            'woocommerce_before_checkout_form'         => __('Above the checkout form', 'wc-ship-today-notice'),
-            'woocommerce_checkout_before_order_review' => __('Above the order review', 'wc-ship-today-notice'),
-            'woocommerce_review_order_before_submit'   => __('Above the "Place order" button', 'wc-ship-today-notice'),
+            'woocommerce_before_add_to_cart_form'      => __('Above the add to cart form', 'ship-today-delivery-dates'),
+            'woocommerce_after_add_to_cart_form'       => __('Below the add to cart form', 'ship-today-delivery-dates'),
+            'woocommerce_single_product_summary'       => __('In the product summary (position set by the priority)', 'ship-today-delivery-dates'),
+            'woocommerce_before_cart'                  => __('Above the cart', 'ship-today-delivery-dates'),
+            'woocommerce_before_cart_totals'           => __('Above the cart totals', 'ship-today-delivery-dates'),
+            'woocommerce_proceed_to_checkout'          => __('Next to the "Proceed to checkout" button', 'ship-today-delivery-dates'),
+            'woocommerce_before_checkout_form'         => __('Above the checkout form', 'ship-today-delivery-dates'),
+            'woocommerce_checkout_before_order_review' => __('Above the order review', 'ship-today-delivery-dates'),
+            'woocommerce_review_order_before_submit'   => __('Above the "Place order" button', 'ship-today-delivery-dates'),
         ];
         $block_texts = [
-            'product'  => [__('Above the add to cart block', 'wc-ship-today-notice'), __('Below the add to cart block', 'wc-ship-today-notice')],
-            'cart'     => [__('Above the cart block', 'wc-ship-today-notice'), __('Below the cart block', 'wc-ship-today-notice')],
-            'checkout' => [__('Above the checkout block', 'wc-ship-today-notice'), __('Below the checkout block', 'wc-ship-today-notice')],
+            'product'  => [__('Above the add to cart block', 'ship-today-delivery-dates'), __('Below the add to cart block', 'ship-today-delivery-dates')],
+            'cart'     => [__('Above the cart block', 'ship-today-delivery-dates'), __('Below the cart block', 'ship-today-delivery-dates')],
+            'checkout' => [__('Above the checkout block', 'ship-today-delivery-dates'), __('Below the checkout block', 'ship-today-delivery-dates')],
         ];
 
         echo '<table class="widefat striped" style="max-width:760px"><thead><tr>';
-        printf('<th>%s</th><th>%s</th><th>%s</th><th>%s</th>', esc_html__('Page', 'wc-ship-today-notice'), esc_html__('Show', 'wc-ship-today-notice'), esc_html__('Position', 'wc-ship-today-notice'), esc_html__('Priority', 'wc-ship-today-notice'));
+        printf('<th>%s</th><th>%s</th><th>%s</th><th>%s</th>', esc_html__('Page', 'ship-today-delivery-dates'), esc_html__('Show', 'ship-today-delivery-dates'), esc_html__('Position', 'ship-today-delivery-dates'), esc_html__('Priority', 'ship-today-delivery-dates'));
         echo '</tr></thead><tbody>';
 
         foreach ($rows as $row => $set) {
-            $is_block = 'block' === WC_STN_Auto_Placement::page_type($row);
+            $is_block = 'block' === STDD_Auto_Placement::page_type($row);
             $field    = $name . '[' . $row . ']';
 
             echo '<tr><td>' . esc_html($texts[$row]) . '</td><td>';
@@ -1363,17 +1319,17 @@ final class WC_Ship_Today_Notice
                 printf('</td><td>-<input type="hidden" name="%s" value="%s" />', esc_attr($field . '[priority]'), esc_attr($set['priority']));
             } else {
                 printf('<select name="%s">', esc_attr($field . '[hook]'));
-                foreach (WC_STN_Auto_Placement::HOOKS[$row] as $hook => $default) {
+                foreach (STDD_Auto_Placement::HOOKS[$row] as $hook => $default) {
                     printf('<option value="%s" %s>%s</option>', esc_attr($hook), selected($set['hook'], $hook, false), esc_html($hooks[$hook]));
                 }
                 echo '</select>';
                 printf('<input type="hidden" name="%s" value="%s" />', esc_attr($field . '[block]'), esc_attr($set['block']));
                 printf(
                     '</td><td><input type="number" min="0" max="%d" step="1" name="%s" value="%s" placeholder="%d" style="width:80px" />',
-                    (int) WC_STN_Auto_Placement::MAX_PRIORITY,
+                    (int) STDD_Auto_Placement::MAX_PRIORITY,
                     esc_attr($field . '[priority]'),
                     esc_attr($set['priority']),
-                    (int) WC_STN_Auto_Placement::HOOKS[$row][$set['hook']]
+                    (int) STDD_Auto_Placement::HOOKS[$row][$set['hook']]
                 );
             }
             echo '</td></tr>';
@@ -1381,14 +1337,14 @@ final class WC_Ship_Today_Notice
             if ($is_block) {
                 echo '<tr><td colspan="4" class="description">' . esc_html(
                     'product' === $row
-                        ? __('The product template uses the add to cart block, so the widget can only be placed above or below this block. The priority is not available.', 'wc-ship-today-notice')
-                        : __('This page uses a WooCommerce block, so the widget can only be placed above or below the whole block. The priority is not available.', 'wc-ship-today-notice')
+                        ? __('The product template uses the add to cart block, so the widget can only be placed above or below this block. The priority is not available.', 'ship-today-delivery-dates')
+                        : __('This page uses a WooCommerce block, so the widget can only be placed above or below the whole block. The priority is not available.', 'ship-today-delivery-dates')
                 ) . '</td></tr>';
             }
         }
 
         echo '</tbody></table>';
-        echo '<p class="description">' . esc_html__('Works next to the shortcode and independently of the ship date choice: a page with both shows two widgets. Priority: elements on the same position are shown from the lowest number. In the product summary the title has 5, the price 10, the description 20, the add to cart button 30, so 25 is above the button. Empty = a default that fits the position.', 'wc-ship-today-notice') . '</p>';
+        echo '<p class="description">' . esc_html__('Works next to the shortcode and independently of the ship date choice: a page with both shows two widgets. Priority: elements on the same position are shown from the lowest number. In the product summary the title has 5, the price 10, the description 20, the add to cart button 30, so 25 is above the button. Empty = a default that fits the position.', 'ship-today-delivery-dates') . '</p>';
     }
 
     /**
@@ -1398,21 +1354,21 @@ final class WC_Ship_Today_Notice
     {
         ?>
         <div style="background:#f0f6fc;border:1px solid #c3d9ed;border-radius:4px;padding:12px 16px;margin-bottom:20px;">
-            <strong><?php esc_html_e('Use this shortcode to display the widget (or turn on "Automatic display" below):', 'wc-ship-today-notice'); ?></strong>
-            <code style="display:inline-block;margin:8px 0;padding:6px 12px;background:#fff;border-radius:3px;font-size:14px;">[ship_today_notice]</code>
+            <strong><?php esc_html_e('Use this shortcode to display the widget (or turn on "Automatic display" below):', 'ship-today-delivery-dates'); ?></strong>
+            <code style="display:inline-block;margin:8px 0;padding:6px 12px;background:#fff;border-radius:3px;font-size:14px;">[stdd_notice]</code>
             <p class="description" style="margin:0 0 6px;">
-                <?php esc_html_e('Place it on product pages, cart, sidebar, or anywhere you want to show the shipping countdown.', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Place it on product pages, cart, sidebar, or anywhere you want to show the shipping countdown.', 'ship-today-delivery-dates'); ?>
             </p>
             <p class="description" style="margin:0;">
                 <?php
                 printf(
                     /* translators: %1$s-%5$s: shortcode attribute examples in <code> */
-                    esc_html__('Attributes: %1$s (list of next dates), %2$s (custom text), %3$s or %4$s, %5$s (custom CSS class).', 'wc-ship-today-notice'),
+                    esc_html__('Attributes: %1$s (list of next dates), %2$s (custom text), %3$s or %4$s, %5$s (custom CSS class).', 'ship-today-delivery-dates'),
                     '<code>count="2"</code>',
-                    '<code>text="' . esc_html__('Order {cutoff_when}, we will deliver {delivery_when}.', 'wc-ship-today-notice') . '"</code>',
+                    '<code>text="' . esc_html__('Order {cutoff_when}, we will deliver {delivery_when}.', 'ship-today-delivery-dates') . '"</code>',
                     '<code>mode="next_slot"</code>',
                     '<code>mode="today"</code>',
-                    '<code>class="' . esc_html_x('my-class', 'example CSS class name', 'wc-ship-today-notice') . '"</code>'
+                    '<code>class="' . esc_html_x('my-class', 'example CSS class name', 'ship-today-delivery-dates') . '"</code>'
                 );
                 ?>
             </p>
@@ -1430,7 +1386,7 @@ final class WC_Ship_Today_Notice
             <?php
             printf(
                 /* translators: %s: link to OpenHolidays API */
-                esc_html__('Public holidays are fetched from %s. Configure your country and language below.', 'wc-ship-today-notice'),
+                esc_html__('Public holidays are fetched from %s. Configure your country and language below.', 'ship-today-delivery-dates'),
                 '<a href="https://www.openholidaysapi.org/" target="_blank" rel="noopener noreferrer">OpenHolidays API</a>'
             );
             ?>
@@ -1446,20 +1402,20 @@ final class WC_Ship_Today_Notice
         ?>
         <?php
         // Examples use the frontend translations, so they show the shop language's forms
-        $w      = WC_STN_Schedule::words();
-        $sunday = WC_STN_Schedule::day_label(7, 'until');
-        $on_mon = WC_STN_Schedule::day_label(1, 'on');
-        $on_tue = WC_STN_Schedule::day_label(2, 'on');
+        $w      = STDD_Schedule::words();
+        $sunday = STDD_Schedule::day_label(7, 'until');
+        $on_mon = STDD_Schedule::day_label(1, 'on');
+        $on_tue = STDD_Schedule::day_label(2, 'on');
         $q      = function ($text) {
             return '"' . esc_html($text) . '"';
         };
         ?>
         <p class="description">
-            <?php echo esc_html__('Tokens:', 'wc-ship-today-notice'); ?> <code>{countdown}</code> <?php echo esc_html__('countdown', 'wc-ship-today-notice'); ?>,
+            <?php echo esc_html__('Tokens:', 'ship-today-delivery-dates'); ?> <code>{countdown}</code> <?php echo esc_html__('countdown', 'ship-today-delivery-dates'); ?>,
             <code>{cutoff_when}</code> <?php echo $q(sprintf($w['relative'], $w['today'], '20:00')) . ' / ' . $q(sprintf($w['relative'], $w['tomorrow'], '20:00')) . ' / ' . $q(sprintf($w['until'], $sunday, '20:00')); // phpcs:ignore WordPress.Security.EscapeOutput -- esc_html in $q. ?>,
             <code>{cutoff_day}</code> <?php echo $q($sunday); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{cutoff_time}</code> "20:00", <code>{cutoff_date}</code> "25.10",
             <code>{ship_when}</code> <?php echo $q($w['today']) . ' / ' . $q($w['tomorrow']) . ' / ' . $q($on_mon); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{ship_day}</code> <?php echo $q($on_mon); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{ship_date}</code>,
-            <code>{delivery_when}</code> <?php echo $q($w['tomorrow']) . ' / ' . $q($on_tue); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{delivery_day}</code> <?php echo $q($on_tue); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{delivery_date}</code> (<?php echo esc_html__('requires the delivery setting', 'wc-ship-today-notice'); ?>).
+            <code>{delivery_when}</code> <?php echo $q($w['tomorrow']) . ' / ' . $q($on_tue); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{delivery_day}</code> <?php echo $q($on_tue); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{delivery_date}</code> (<?php echo esc_html__('requires the delivery setting', 'ship-today-delivery-dates'); ?>).
         </p>
         <?php
     }
@@ -1468,29 +1424,29 @@ final class WC_Ship_Today_Notice
     {
         ?>
         <p class="description">
-            <?php esc_html_e('Tiles with the next dates at checkout. The ship and delivery date go to the order, emails, the thank-you page, the order screen (editable) and the "Shipping" column in the orders list.', 'wc-ship-today-notice'); ?>
+            <?php esc_html_e('Tiles with the next dates at checkout. The ship and delivery date go to the order, emails, the thank-you page, the order screen (editable) and the "Shipping" column in the orders list.', 'ship-today-delivery-dates'); ?>
             <?php
             printf(
-                /* translators: %s: [ship_today_checkout] shortcode */
-                esc_html__('Insert it with the %s shortcode (must be inside the checkout form) or automatically.', 'wc-ship-today-notice'),
-                '<code>[ship_today_checkout]</code>'
+                /* translators: %s: [stdd_checkout] shortcode */
+                esc_html__('Insert it with the %s shortcode (must be inside the checkout form) or automatically.', 'ship-today-delivery-dates'),
+                '<code>[stdd_checkout]</code>'
             );
             ?>
         </p>
         <?php
         $o = $this->get_options();
-        if (empty($o['checkout_enabled']) || !WC_STN_Checkout_Blocks::supported()) {
+        if (empty($o['checkout_enabled']) || !STDD_Checkout_Blocks::supported()) {
             return;
         }
-        $status = WC_STN_Checkout_Blocks::block_status();
+        $status = STDD_Checkout_Blocks::block_status();
         if ('present' === $status) {
-            echo '<p class="description">' . esc_html__('Block checkout: the "Ship date" block is on the checkout page. You can move it in the editor like other checkout blocks.', 'wc-ship-today-notice') . '</p>';
+            echo '<p class="description">' . esc_html__('Block checkout: the "Ship date" block is on the checkout page. You can move it in the editor like other checkout blocks.', 'ship-today-delivery-dates') . '</p>';
         } elseif ('missing' === $status) {
-            echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date" block is not on the checkout page, so customers cannot choose a ship date (orders are placed without it). Add the block in the checkout page editor (inside the checkout form).', 'wc-ship-today-notice') . '</p>';
+            echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date" block is not on the checkout page, so customers cannot choose a ship date (orders are placed without it). Add the block in the checkout page editor (inside the checkout form).', 'ship-today-delivery-dates') . '</p>';
         }
         // Inserted once: can be missing if the page layout didn't allow it or the shop removed it
-        if ('missing' === WC_STN_Checkout_Blocks::block_status(WC_STN_Checkout_Blocks::ROW_BLOCK) && !empty($o['checkout_review_row'])) {
-            echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date summary row" block is not in the order summary, so the selected date is not shown there. Add it in the checkout page editor (inside the order summary).', 'wc-ship-today-notice') . '</p>';
+        if ('missing' === STDD_Checkout_Blocks::block_status(STDD_Checkout_Blocks::ROW_BLOCK) && !empty($o['checkout_review_row'])) {
+            echo '<p class="description" style="color:#b32d2e;">' . esc_html__('Block checkout: the "Ship date summary row" block is not in the order summary, so the selected date is not shown there. Add it in the checkout page editor (inside the order summary).', 'ship-today-delivery-dates') . '</p>';
         }
     }
 
@@ -1500,7 +1456,7 @@ final class WC_Ship_Today_Notice
         ?>
         <label>
             <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_enabled]" value="1" <?php checked(!empty($o['checkout_enabled'])); ?> />
-            <?php esc_html_e('Enable the ship date choice at checkout (required for products that need shipping)', 'wc-ship-today-notice'); ?>
+            <?php esc_html_e('Enable the ship date choice at checkout (required for products that need shipping)', 'ship-today-delivery-dates'); ?>
         </label>
         <?php
     }
@@ -1511,22 +1467,22 @@ final class WC_Ship_Today_Notice
         ?>
         <p style="margin-top:0">
             <label>
-                <?php esc_html_e('Position:', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Position:', 'ship-today-delivery-dates'); ?>
                 <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_position]">
-                    <option value="shortcode" <?php selected($o['checkout_position'], 'shortcode'); ?>><?php esc_html_e('shortcode [ship_today_checkout] only', 'wc-ship-today-notice'); ?></option>
-                    <option value="after_order_notes" <?php selected($o['checkout_position'], 'after_order_notes'); ?>><?php esc_html_e('automatically below the order notes', 'wc-ship-today-notice'); ?></option>
-                    <option value="before_order_review" <?php selected($o['checkout_position'], 'before_order_review'); ?>><?php esc_html_e('automatically above the order review', 'wc-ship-today-notice'); ?></option>
+                    <option value="shortcode" <?php selected($o['checkout_position'], 'shortcode'); ?>><?php esc_html_e('shortcode [stdd_checkout] only', 'ship-today-delivery-dates'); ?></option>
+                    <option value="after_order_notes" <?php selected($o['checkout_position'], 'after_order_notes'); ?>><?php esc_html_e('automatically below the order notes', 'ship-today-delivery-dates'); ?></option>
+                    <option value="before_order_review" <?php selected($o['checkout_position'], 'before_order_review'); ?>><?php esc_html_e('automatically above the order review', 'ship-today-delivery-dates'); ?></option>
                 </select>
             </label>
         </p>
         <?php if ('shortcode' === $o['checkout_position']) : ?>
             <p class="description" style="color:#b32d2e;">
-                <?php esc_html_e('The [ship_today_checkout] shortcode must be placed inside the checkout form. If it is missing or outside the form, the date field is not shown and orders are placed without a ship date.', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('The [stdd_checkout] shortcode must be placed inside the checkout form. If it is missing or outside the form, the date field is not shown and orders are placed without a ship date.', 'ship-today-delivery-dates'); ?>
             </p>
         <?php endif; ?>
         <p>
             <label>
-                <?php esc_html_e('Field label:', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Field label:', 'ship-today-delivery-dates'); ?>
                 <input type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_label]" value="<?php echo esc_attr($o['checkout_label']); ?>" class="regular-text" />
             </label>
         </p>
@@ -1539,26 +1495,26 @@ final class WC_Ship_Today_Notice
         ?>
         <p>
             <label>
-                <?php esc_html_e('Number of dates:', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Number of dates:', 'ship-today-delivery-dates'); ?>
                 <input type="number" min="1" max="12" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_count]" value="<?php echo esc_attr((int) $o['checkout_count']); ?>" style="width:60px" />
             </label>
             <label style="margin-left:16px">
                 <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_preselect]" value="1" <?php checked(!empty($o['checkout_preselect'])); ?> />
-                <?php esc_html_e('select the nearest date', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('select the nearest date', 'ship-today-delivery-dates'); ?>
             </label>
         </p>
         <p>
-            <?php esc_html_e('Large text on the tile:', 'wc-ship-today-notice'); ?>
-            <label><input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_primary]" value="delivery" <?php checked($o['checkout_primary'], 'delivery'); ?> /> <?php esc_html_e('delivery date', 'wc-ship-today-notice'); ?></label>
-            <label style="margin-left:10px"><input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_primary]" value="ship" <?php checked($o['checkout_primary'], 'ship'); ?> /> <?php esc_html_e('ship date', 'wc-ship-today-notice'); ?></label>
-            <br><span class="description"><?php esc_html_e('Sets the default tile texts (see "Texts" below).', 'wc-ship-today-notice'); ?></span>
+            <?php esc_html_e('Large text on the tile:', 'ship-today-delivery-dates'); ?>
+            <label><input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_primary]" value="delivery" <?php checked($o['checkout_primary'], 'delivery'); ?> /> <?php esc_html_e('delivery date', 'ship-today-delivery-dates'); ?></label>
+            <label style="margin-left:10px"><input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_primary]" value="ship" <?php checked($o['checkout_primary'], 'ship'); ?> /> <?php esc_html_e('ship date', 'ship-today-delivery-dates'); ?></label>
+            <br><span class="description"><?php esc_html_e('Sets the default tile texts (see "Texts" below).', 'ship-today-delivery-dates'); ?></span>
         </p>
         <p>
             <label>
-                <?php esc_html_e('Selection color:', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Selection color:', 'ship-today-delivery-dates'); ?>
                 <input type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[checkout_accent]" value="<?php echo esc_attr($o['checkout_accent']); ?>" placeholder="#8c3215" style="width:90px" />
             </label>
-            <span class="description"><?php esc_html_e('(HEX, empty = dark gray)', 'wc-ship-today-notice'); ?></span>
+            <span class="description"><?php esc_html_e('(HEX, empty = dark gray)', 'ship-today-delivery-dates'); ?></span>
         </p>
         <?php
     }
@@ -1570,8 +1526,8 @@ final class WC_Ship_Today_Notice
     public function field_checkout_texts()
     {
         $o        = $this->get_options();
-        $defaults = WC_STN_Checkout::default_tile_texts($o['checkout_primary'], (int) $o['delivery_offset'] > 0);
-        $messages = WC_STN_Checkout::default_messages();
+        $defaults = STDD_Checkout::default_tile_texts($o['checkout_primary'], (int) $o['delivery_offset'] > 0);
+        $messages = STDD_Checkout::default_messages();
         $input    = function ($key, $placeholder, $value = null) use ($o) {
             printf(
                 '<input type="text" name="%s[%s]" value="%s" placeholder="%s" class="regular-text" />',
@@ -1583,34 +1539,34 @@ final class WC_Ship_Today_Notice
         };
         $sub = null === $o['checkout_tile_sub'] ? $defaults['sub'] : (string) $o['checkout_tile_sub'];
         ?>
-        <p><strong><?php esc_html_e('Tile', 'wc-ship-today-notice'); ?></strong></p>
+        <p><strong><?php esc_html_e('Tile', 'ship-today-delivery-dates'); ?></strong></p>
         <p>
-            <label><?php esc_html_e('Large text:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_tile_main', $defaults['main']); ?></label>
+            <label><?php esc_html_e('Large text:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_tile_main', $defaults['main']); ?></label>
         </p>
         <p>
-            <label><?php esc_html_e('Second line:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_tile_sub', '', $sub); ?></label>
-            <button type="button" class="button button-small" data-default="<?php echo esc_attr($defaults['sub']); ?>" onclick="this.previousElementSibling.querySelector('input').value = this.dataset.default;"><?php esc_html_e('Restore default', 'wc-ship-today-notice'); ?></button>
+            <label><?php esc_html_e('Second line:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_tile_sub', '', $sub); ?></label>
+            <button type="button" class="button button-small" data-default="<?php echo esc_attr($defaults['sub']); ?>" onclick="this.previousElementSibling.querySelector('input').value = this.dataset.default;"><?php esc_html_e('Restore default', 'ship-today-delivery-dates'); ?></button>
         </p>
-        <p class="description"><?php esc_html_e('Large text: empty = default. Second line: empty = no second line.', 'wc-ship-today-notice'); ?>
-            <?php esc_html_e('Tokens:', 'wc-ship-today-notice'); ?> <code>{ship_short}</code> <code>{delivery_short}</code> (<?php esc_html_e('e.g. "Mon 02.11"', 'wc-ship-today-notice'); ?>), <code>{ship_when}</code> <code>{ship_day}</code> <code>{ship_date}</code> <code>{delivery_when}</code> <code>{delivery_day}</code> <code>{delivery_date}</code> <code>{cutoff_when}</code> <code>{cutoff_time}</code> <code>{cutoff_date}</code>.
-            <?php esc_html_e('The screen reader label of the tile always contains the full ship and delivery date.', 'wc-ship-today-notice'); ?></p>
+        <p class="description"><?php esc_html_e('Large text: empty = default. Second line: empty = no second line.', 'ship-today-delivery-dates'); ?>
+            <?php esc_html_e('Tokens:', 'ship-today-delivery-dates'); ?> <code>{ship_short}</code> <code>{delivery_short}</code> (<?php esc_html_e('e.g. "Mon 02.11"', 'ship-today-delivery-dates'); ?>), <code>{ship_when}</code> <code>{ship_day}</code> <code>{ship_date}</code> <code>{delivery_when}</code> <code>{delivery_day}</code> <code>{delivery_date}</code> <code>{cutoff_when}</code> <code>{cutoff_time}</code> <code>{cutoff_date}</code>.
+            <?php esc_html_e('The screen reader label of the tile always contains the full ship and delivery date.', 'ship-today-delivery-dates'); ?></p>
 
-        <p style="margin-top:14px"><strong><?php esc_html_e('Rows after the order is placed (emails, thank-you page, My Account)', 'wc-ship-today-notice'); ?></strong></p>
+        <p style="margin-top:14px"><strong><?php esc_html_e('Rows after the order is placed (emails, thank-you page, My Account)', 'ship-today-delivery-dates'); ?></strong></p>
         <p>
-            <label><?php esc_html_e('Ship date label:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_row_ship_label', __('Ship date:', 'wc-ship-today-notice')); ?></label>
+            <label><?php esc_html_e('Ship date label:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_row_ship_label', __('Ship date:', 'ship-today-delivery-dates')); ?></label>
         </p>
         <p>
-            <label><?php esc_html_e('Delivery date label:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_row_delivery_label', __('Planned delivery:', 'wc-ship-today-notice')); ?></label>
+            <label><?php esc_html_e('Delivery date label:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_row_delivery_label', __('Planned delivery:', 'ship-today-delivery-dates')); ?></label>
         </p>
 
-        <p style="margin-top:14px"><strong><?php esc_html_e('Checkout messages', 'wc-ship-today-notice'); ?></strong></p>
-        <p><label><?php esc_html_e('No date selected:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_choose', $messages['checkout_msg_choose']); ?></label></p>
-        <p><label><?php esc_html_e('Cutoff time of the selected date has passed:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_closed', $messages['checkout_msg_closed']); ?></label></p>
-        <p><label><?php esc_html_e('Selected date is not available:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_unavailable', $messages['checkout_msg_unavailable']); ?></label></p>
-        <p><label><?php esc_html_e('Selected date closed while the page was open:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_switched', $messages['checkout_msg_switched']); ?></label></p>
-        <p><label><?php esc_html_e('Selected date does not exist for the newly chosen shipping method:', 'wc-ship-today-notice'); ?><br><?php $input('checkout_msg_method', $messages['checkout_msg_method']); ?></label></p>
-        <p class="description"><?php esc_html_e('Empty = default text (shown in the field), translated to the store language.', 'wc-ship-today-notice'); ?>
-            <?php esc_html_e('Tokens:', 'wc-ship-today-notice'); ?> <code>{field}</code> (<?php esc_html_e('field name', 'wc-ship-today-notice'); ?>), <code>{slot}</code> (<?php esc_html_e('date, e.g. "Tue 03.11"', 'wc-ship-today-notice'); ?>), <code>{next_slot}</code> (<?php esc_html_e('newly selected date', 'wc-ship-today-notice'); ?>).</p>
+        <p style="margin-top:14px"><strong><?php esc_html_e('Checkout messages', 'ship-today-delivery-dates'); ?></strong></p>
+        <p><label><?php esc_html_e('No date selected:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_msg_choose', $messages['checkout_msg_choose']); ?></label></p>
+        <p><label><?php esc_html_e('Cutoff time of the selected date has passed:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_msg_closed', $messages['checkout_msg_closed']); ?></label></p>
+        <p><label><?php esc_html_e('Selected date is not available:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_msg_unavailable', $messages['checkout_msg_unavailable']); ?></label></p>
+        <p><label><?php esc_html_e('Selected date closed while the page was open:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_msg_switched', $messages['checkout_msg_switched']); ?></label></p>
+        <p><label><?php esc_html_e('Selected date does not exist for the newly chosen shipping method:', 'ship-today-delivery-dates'); ?><br><?php $input('checkout_msg_method', $messages['checkout_msg_method']); ?></label></p>
+        <p class="description"><?php esc_html_e('Empty = default text (shown in the field), translated to the store language.', 'ship-today-delivery-dates'); ?>
+            <?php esc_html_e('Tokens:', 'ship-today-delivery-dates'); ?> <code>{field}</code> (<?php esc_html_e('field name', 'ship-today-delivery-dates'); ?>), <code>{slot}</code> (<?php esc_html_e('date, e.g. "Tue 03.11"', 'ship-today-delivery-dates'); ?>), <code>{next_slot}</code> (<?php esc_html_e('newly selected date', 'ship-today-delivery-dates'); ?>).</p>
         <?php
     }
 
@@ -1642,31 +1598,31 @@ final class WC_Ship_Today_Notice
         };
         $dates   = $enabled || !empty($o['checkout_dates_when_disabled']);
 
-        $part('wc-stn-if-module', $enabled, function () {
-            $this->toggle_checkbox('checkout_review_row', __('Row with the date in the order summary at checkout', 'wc-ship-today-notice'), __('The selected date as a row in the order summary: in the classic checkout in the order review table, in the block checkout as the "Ship date summary row" block.', 'wc-ship-today-notice'));
+        $part('stdd-if-module', $enabled, function () {
+            $this->toggle_checkbox('checkout_review_row', __('Row with the date in the order summary at checkout', 'ship-today-delivery-dates'), __('The selected date as a row in the order summary: in the classic checkout in the order review table, in the block checkout as the "Ship date summary row" block.', 'ship-today-delivery-dates'));
         });
-        $part('wc-stn-if-dates', $dates, function () {
-            $this->toggle_checkbox('checkout_order_rows', __('"Ship date" and "Planned delivery" rows after the order is placed', 'wc-ship-today-notice'), __('Thank-you page, order emails (customer and admin) and My Account.', 'wc-ship-today-notice'));
+        $part('stdd-if-dates', $dates, function () {
+            $this->toggle_checkbox('checkout_order_rows', __('"Ship date" and "Planned delivery" rows after the order is placed', 'ship-today-delivery-dates'), __('Thank-you page, order emails (customer and admin) and My Account.', 'ship-today-delivery-dates'));
         });
-        $part('wc-stn-if-module', $enabled, function () {
-            $this->toggle_checkbox('checkout_admin_edit', __('Change the ship date in the order edit screen', 'wc-ship-today-notice'), __('Date field in the order admin; the delivery date is recalculated and an order note is added. Off: the dates are shown read-only.', 'wc-ship-today-notice'));
+        $part('stdd-if-module', $enabled, function () {
+            $this->toggle_checkbox('checkout_admin_edit', __('Change the ship date in the order edit screen', 'ship-today-delivery-dates'), __('Date field in the order admin; the delivery date is recalculated and an order note is added. Off: the dates are shown read-only.', 'ship-today-delivery-dates'));
         });
-        $part('wc-stn-if-dates', $dates, function () {
-            $this->toggle_checkbox('checkout_list_column', __('"Shipping" column in the orders list', 'wc-ship-today-notice'), __('Column with sorting and a ship date filter in WooCommerce → Orders.', 'wc-ship-today-notice'));
+        $part('stdd-if-dates', $dates, function () {
+            $this->toggle_checkbox('checkout_list_column', __('"Shipping" column in the orders list', 'ship-today-delivery-dates'), __('Column with sorting and a ship date filter in WooCommerce → Orders.', 'ship-today-delivery-dates'));
         });
-        $this->toggle_checkbox('checkout_dates_when_disabled', __('Show dates of existing orders also when the module is disabled', 'wc-ship-today-notice'), __('Orders keep their dates when you turn the module off. On: they are still shown in emails, on the thank-you page, in My Account, in the order admin (read-only) and in the orders list, according to the options above. Off: they are hidden until the module is enabled again.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('checkout_dates_when_disabled', __('Show dates of existing orders also when the module is disabled', 'ship-today-delivery-dates'), __('Orders keep their dates when you turn the module off. On: they are still shown in emails, on the thank-you page, in My Account, in the order admin (read-only) and in the orders list, according to the options above. Off: they are hidden until the module is enabled again.', 'ship-today-delivery-dates'));
     }
 
     public function field_holidays_auto_fetch()
     {
-        $this->toggle_checkbox('holidays_auto_fetch', __('Download holidays automatically', 'wc-ship-today-notice'), __('Connects to OpenHolidays API right after activation, about every 4 months and after changing the country, language or region. Off: holidays are downloaded only with the "Fetch holidays now" button below.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('holidays_auto_fetch', __('Download holidays automatically', 'ship-today-delivery-dates'), __('Connects to OpenHolidays API right after activation, about every 4 months and after changing the country, language or region. Off: holidays are downloaded only with the "Fetch holidays now" button below.', 'ship-today-delivery-dates'));
     }
 
     public function field_advanced_toggles()
     {
-        $this->toggle_checkbox('cache_purge_at_cutoff', __('Purge the page cache at each cutoff time', 'wc-ship-today-notice'), __('Only with LiteSpeed Cache or a hooked wc_ship_today_notice_purge_cache action: a WP-Cron event at each cutoff time, so cached pages get a fresh start text. The cache is still purged after saving the settings.', 'wc-ship-today-notice'));
-        $this->toggle_checkbox('test_mode', __('Test mode ?stn_now=', 'wc-ship-today-notice'), __('Shop managers can add ?stn_now=2026-12-20T19:59 to any URL to see the widget and the checkout at another time.', 'wc-ship-today-notice'));
-        $this->toggle_checkbox('wpml_strings', __('WPML: translate the widget texts', 'wc-ship-today-notice'), __('With WPML active: the four widget texts are registered as strings when saving and shown translated. Off: the texts are shown as saved.', 'wc-ship-today-notice'));
+        $this->toggle_checkbox('cache_purge_at_cutoff', __('Purge the page cache at each cutoff time', 'ship-today-delivery-dates'), __('Only with LiteSpeed Cache or a hooked stdd_purge_cache action: a WP-Cron event at each cutoff time, so cached pages get a fresh start text. The cache is still purged after saving the settings.', 'ship-today-delivery-dates'));
+        $this->toggle_checkbox('test_mode', __('Test mode ?stdd_now=', 'ship-today-delivery-dates'), __('Shop managers can add ?stdd_now=2026-12-20T19:59 to any URL to see the widget and the checkout at another time.', 'ship-today-delivery-dates'));
+        $this->toggle_checkbox('wpml_strings', __('WPML: translate the widget texts', 'ship-today-delivery-dates'), __('With WPML active: the four widget texts are registered as strings when saving and shown translated. Off: the texts are shown as saved.', 'ship-today-delivery-dates'));
     }
 
     public function field_mode()
@@ -1676,12 +1632,12 @@ final class WC_Ship_Today_Notice
         <fieldset>
             <label>
                 <input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[mode]" value="today" <?php checked($o['mode'], 'today'); ?> />
-                <?php esc_html_e('Ship today: countdown to today\'s cutoff time, separate texts after it and on non-shipping days', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Ship today: countdown to today\'s cutoff time, separate texts after it and on non-shipping days', 'ship-today-delivery-dates'); ?>
             </label>
             <br>
             <label>
                 <input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[mode]" value="next_slot" <?php checked($o['mode'], 'next_slot'); ?> />
-                <?php esc_html_e('Next date: always a countdown to the nearest cutoff time and one text with dates (e.g. shipping twice a week)', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Next date: always a countdown to the nearest cutoff time and one text with dates (e.g. shipping twice a week)', 'ship-today-delivery-dates'); ?>
             </label>
         </fieldset>
         <?php
@@ -1690,7 +1646,7 @@ final class WC_Ship_Today_Notice
     public function field_delivery_days()
     {
         $this->render_days_table(self::OPTION_KEY, $this->get_options());
-        echo '<p class="description">' . esc_html__('The cutoff time belongs to the ship day. Example: shipping on Monday, 20:00, "the day before" = orders until Sunday 20:00 are shipped on Monday.', 'wc-ship-today-notice') . '</p>';
+        echo '<p class="description">' . esc_html__('The cutoff time belongs to the ship day. Example: shipping on Monday, 20:00, "the day before" = orders until Sunday 20:00 are shipped on Monday.', 'ship-today-delivery-dates') . '</p>';
     }
 
     /**
@@ -1699,18 +1655,18 @@ final class WC_Ship_Today_Notice
     private function render_days_table($name, array $o)
     {
         $days = [
-            1 => __('Monday', 'wc-ship-today-notice'),
-            2 => __('Tuesday', 'wc-ship-today-notice'),
-            3 => __('Wednesday', 'wc-ship-today-notice'),
-            4 => __('Thursday', 'wc-ship-today-notice'),
-            5 => __('Friday', 'wc-ship-today-notice'),
-            6 => __('Saturday', 'wc-ship-today-notice'),
-            7 => __('Sunday', 'wc-ship-today-notice'),
+            1 => __('Monday', 'ship-today-delivery-dates'),
+            2 => __('Tuesday', 'ship-today-delivery-dates'),
+            3 => __('Wednesday', 'ship-today-delivery-dates'),
+            4 => __('Thursday', 'ship-today-delivery-dates'),
+            5 => __('Friday', 'ship-today-delivery-dates'),
+            6 => __('Saturday', 'ship-today-delivery-dates'),
+            7 => __('Sunday', 'ship-today-delivery-dates'),
         ];
-        $offsets = [0 => __('same day', 'wc-ship-today-notice'), 1 => __('the day before', 'wc-ship-today-notice')];
+        $offsets = [0 => __('same day', 'ship-today-delivery-dates'), 1 => __('the day before', 'ship-today-delivery-dates')];
         for ($n = 2; $n <= 6; $n++) {
             /* translators: %d: number of days (2-6) the cutoff time falls before the ship day */
-            $offsets[$n] = sprintf(_n('%d day earlier', '%d days earlier', $n, 'wc-ship-today-notice'), $n);
+            $offsets[$n] = sprintf(_n('%d day earlier', '%d days earlier', $n, 'ship-today-delivery-dates'), $n);
         }
 
         $cutoff_times = $o['cutoff_times'] ?? [];
@@ -1718,10 +1674,10 @@ final class WC_Ship_Today_Notice
 
         echo '<table class="widefat striped" style="max-width:640px">';
         echo '<thead><tr>';
-        echo '<th>' . esc_html__('Day', 'wc-ship-today-notice') . '</th>';
-        echo '<th>' . esc_html__('Shipping', 'wc-ship-today-notice') . '</th>';
-        echo '<th>' . esc_html__('Cutoff time', 'wc-ship-today-notice') . '</th>';
-        echo '<th>' . esc_html__('Cutoff time falls', 'wc-ship-today-notice') . '</th>';
+        echo '<th>' . esc_html__('Day', 'ship-today-delivery-dates') . '</th>';
+        echo '<th>' . esc_html__('Shipping', 'ship-today-delivery-dates') . '</th>';
+        echo '<th>' . esc_html__('Cutoff time', 'ship-today-delivery-dates') . '</th>';
+        echo '<th>' . esc_html__('Cutoff time falls', 'ship-today-delivery-dates') . '</th>';
         echo '</tr></thead><tbody>';
 
         foreach ($days as $num => $label) {
@@ -1762,22 +1718,22 @@ final class WC_Ship_Today_Notice
         ?>
         <p>
             <label>
-                <?php esc_html_e('Delivery', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Delivery', 'ship-today-delivery-dates'); ?>
                 <input type="number" min="0" max="14" step="1" name="<?php echo esc_attr(self::OPTION_KEY); ?>[delivery_offset]" value="<?php echo esc_attr((int) $o['delivery_offset']); ?>" style="width:60px" />
-                <?php esc_html_e('delivery day(s) after shipping', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('delivery day(s) after shipping', 'ship-today-delivery-dates'); ?>
             </label>
-            <span class="description"><?php esc_html_e('(0 = do not show the delivery date)', 'wc-ship-today-notice'); ?></span>
+            <span class="description"><?php esc_html_e('(0 = do not show the delivery date)', 'ship-today-delivery-dates'); ?></span>
         </p>
         <p>
-            <?php esc_html_e('Days without deliveries:', 'wc-ship-today-notice'); ?>
+            <?php esc_html_e('Days without deliveries:', 'ship-today-delivery-dates'); ?>
             <?php foreach (range(1, 7) as $num) : ?>
                 <label style="margin-right:10px">
                     <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[no_delivery_days][]" value="<?php echo (int) $num; ?>" <?php checked(in_array($num, (array) $o['no_delivery_days'], true)); ?> />
-                    <?php echo esc_html(WC_STN_Schedule::day_label($num, 'short')); ?>
+                    <?php echo esc_html(STDD_Schedule::day_label($num, 'short')); ?>
                 </label>
             <?php endforeach; ?>
         </p>
-        <p class="description"><?php esc_html_e('Public holidays are always skipped when counting the delivery date.', 'wc-ship-today-notice'); ?></p>
+        <p class="description"><?php esc_html_e('Public holidays are always skipped when counting the delivery date.', 'ship-today-delivery-dates'); ?></p>
         <?php
     }
 
@@ -1789,7 +1745,7 @@ final class WC_Ship_Today_Notice
             esc_attr(self::OPTION_KEY),
             esc_textarea($o['excluded_dates'])
         );
-        echo '<p class="description">' . esc_html__('Enter dates in dd-mm-yyyy format, one per line or comma-separated. These dates are excluded even if they are weekdays.', 'wc-ship-today-notice') . '</p>';
+        echo '<p class="description">' . esc_html__('Enter dates in dd-mm-yyyy format, one per line or comma-separated. These dates are excluded even if they are weekdays.', 'ship-today-delivery-dates') . '</p>';
     }
 
     /**
@@ -1801,39 +1757,39 @@ final class WC_Ship_Today_Notice
             printf(
                 '<p class="description">%s</p>',
                 sprintf(
-                    /* translators: %s: example URL parameter ?stn_now=... */
-                    esc_html__('Based on the saved settings and fetched holidays. To test another moment, add %s to the page address (shop managers only).', 'wc-ship-today-notice'),
-                    '<code>?stn_now=2026-12-20T19:59</code>'
+                    /* translators: %s: example URL parameter ?stdd_now=... */
+                    esc_html__('Based on the saved settings and fetched holidays. To test another moment, add %s to the page address (shop managers only).', 'ship-today-delivery-dates'),
+                    '<code>?stdd_now=2026-12-20T19:59</code>'
                 )
             );
         }
     }
 
     /** Table of the next 5 slots. Returns whether there were any. */
-    private function render_preview(WC_STN_Schedule $schedule)
+    private function render_preview(STDD_Schedule $schedule)
     {
         $slots = $schedule->slots(5);
 
         if (!$slots) {
             /* translators: %d: number of days searched */
-            echo '<p class="description">' . esc_html(sprintf(_n('No dates in the next %d day. Check the shipping days.', 'No dates in the next %d days. Check the shipping days.', WC_STN_Schedule::HORIZON_DAYS, 'wc-ship-today-notice'), WC_STN_Schedule::HORIZON_DAYS)) . '</p>';
+            echo '<p class="description">' . esc_html(sprintf(_n('No dates in the next %d day. Check the shipping days.', 'No dates in the next %d days. Check the shipping days.', STDD_Schedule::HORIZON_DAYS, 'ship-today-delivery-dates'), STDD_Schedule::HORIZON_DAYS)) . '</p>';
             return false;
         }
 
         printf(
             '<table class="widefat striped" style="max-width:640px"><thead><tr><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>',
-            esc_html__('Orders until', 'wc-ship-today-notice'),
-            esc_html_x('Shipping', 'column with the ship date', 'wc-ship-today-notice'),
-            esc_html__('Delivery', 'wc-ship-today-notice')
+            esc_html__('Orders until', 'ship-today-delivery-dates'),
+            esc_html_x('Shipping', 'column with the ship date', 'ship-today-delivery-dates'),
+            esc_html__('Delivery', 'ship-today-delivery-dates')
         );
         foreach ($slots as $slot) {
             printf(
                 '<tr><td>%s, %s</td><td>%s, %s</td><td>%s</td></tr>',
-                esc_html(WC_STN_Schedule::day_label((int) $slot['cutoff']->format('N'), 'name')),
+                esc_html(STDD_Schedule::day_label((int) $slot['cutoff']->format('N'), 'name')),
                 esc_html($slot['cutoff']->format('d.m.Y H:i')),
-                esc_html(WC_STN_Schedule::day_label((int) $slot['ship']->format('N'), 'name')),
+                esc_html(STDD_Schedule::day_label((int) $slot['ship']->format('N'), 'name')),
                 esc_html($slot['ship']->format('d.m.Y')),
-                $slot['delivery'] ? esc_html(WC_STN_Schedule::day_label((int) $slot['delivery']->format('N'), 'name') . ', ' . $slot['delivery']->format('d.m.Y')) : '-'
+                $slot['delivery'] ? esc_html(STDD_Schedule::day_label((int) $slot['delivery']->format('N'), 'name') . ', ' . $slot['delivery']->format('d.m.Y')) : '-'
             );
         }
         echo '</tbody></table>';
@@ -1853,11 +1809,11 @@ final class WC_Ship_Today_Notice
         printf('<input type="hidden" name="%s[_form]" value="1" />', esc_attr(self::METHOD_KEY));
 
         if (!$methods) {
-            echo '<p class="description">' . esc_html__('No shipping methods in WooCommerce shipping zones.', 'wc-ship-today-notice') . '</p>';
+            echo '<p class="description">' . esc_html__('No shipping methods in WooCommerce shipping zones.', 'ship-today-delivery-dates') . '</p>';
             return;
         }
 
-        echo '<p class="description" style="margin-bottom:8px">' . esc_html__('Different shipping days and cutoff times for a shipping method (e.g. parcel lockers until 15:00, courier until 13:00). Without own times the method uses the table in Settings. Holidays, excluded dates and days without deliveries are shared.', 'wc-ship-today-notice') . '</p>';
+        echo '<p class="description" style="margin-bottom:8px">' . esc_html__('Different shipping days and cutoff times for a shipping method (e.g. parcel lockers until 15:00, courier until 13:00). Without own times the method uses the table in Settings. Holidays, excluded dates and days without deliveries are shared.', 'ship-today-delivery-dates') . '</p>';
 
         foreach ($methods as $key => $label) {
             $entry   = $saved[$key] ?? [];
@@ -1871,22 +1827,22 @@ final class WC_Ship_Today_Notice
                 $enabled ? ' open' : '',
                 esc_html($label),
                 esc_html($key),
-                $enabled ? ' - ' . esc_html__('own times', 'wc-ship-today-notice') : ''
+                $enabled ? ' - ' . esc_html__('own times', 'ship-today-delivery-dates') : ''
             );
             printf(
                 '<p><label><input type="checkbox" name="%s[enabled]" value="1" %s /> %s</label></p>',
                 esc_attr($name),
                 checked($enabled, true, false),
-                esc_html__('Own shipping days and cutoff times for this method', 'wc-ship-today-notice')
+                esc_html__('Own shipping days and cutoff times for this method', 'ship-today-delivery-dates')
             );
             $this->render_days_table($name, $values);
             printf(
                 '<p><label>%s <input type="number" min="0" max="14" name="%s[delivery_offset]" value="%s" placeholder="%s" style="width:70px" /></label> <span class="description">%s</span></p>',
-                esc_html__('Delivery days after shipping:', 'wc-ship-today-notice'),
+                esc_html__('Delivery days after shipping:', 'ship-today-delivery-dates'),
                 esc_attr($name),
                 esc_attr(isset($entry['delivery_offset']) ? (string) $entry['delivery_offset'] : ''),
                 esc_attr((string) (int) $global['delivery_offset']),
-                esc_html__('empty = as in "Delivery"', 'wc-ship-today-notice')
+                esc_html__('empty = as in "Delivery"', 'ship-today-delivery-dates')
             );
             if ($enabled) {
                 $this->render_preview($this->schedule($key));
@@ -1946,8 +1902,8 @@ final class WC_Ship_Today_Notice
             esc_attr($o['country_code'])
         );
         echo '<p class="description">';
-        esc_html_e('Two-letter ISO 3166-1 country code. Examples: PL (Poland), DE (Germany), CZ (Czech Republic), FR (France), GB (United Kingdom).', 'wc-ship-today-notice');
-        echo ' <a href="https://openholidaysapi.org/Countries" target="_blank" rel="noopener noreferrer">' . esc_html__('See supported countries', 'wc-ship-today-notice') . '</a></p>';
+        esc_html_e('Two-letter ISO 3166-1 country code. Examples: PL (Poland), DE (Germany), CZ (Czech Republic), FR (France), GB (United Kingdom).', 'ship-today-delivery-dates');
+        echo ' <a href="https://openholidaysapi.org/Countries" target="_blank" rel="noopener noreferrer">' . esc_html__('See supported countries', 'ship-today-delivery-dates') . '</a></p>';
     }
 
     public function field_language_code()
@@ -1959,7 +1915,7 @@ final class WC_Ship_Today_Notice
             esc_attr($o['language_code'])
         );
         echo '<p class="description">';
-        esc_html_e('Two-letter ISO 639-1 language code for holiday names. Examples: PL (Polish), DE (German), EN (English), FR (French).', 'wc-ship-today-notice');
+        esc_html_e('Two-letter ISO 639-1 language code for holiday names. Examples: PL (Polish), DE (German), EN (English), FR (French).', 'ship-today-delivery-dates');
         echo '</p>';
     }
 
@@ -1973,11 +1929,11 @@ final class WC_Ship_Today_Notice
             esc_attr($o['country_code'] . '-…')
         );
         echo '<p class="description">';
-        esc_html_e('Optional ISO 3166-2 region code, e.g. DE-BY. Empty: only nationwide holidays. With a region, its regional holidays also block shipping.', 'wc-ship-today-notice');
+        esc_html_e('Optional ISO 3166-2 region code, e.g. DE-BY. Empty: only nationwide holidays. With a region, its regional holidays also block shipping.', 'ship-today-delivery-dates');
         printf(
             ' <a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p>',
             esc_url('https://openholidaysapi.org/Subdivisions?countryIsoCode=' . rawurlencode($o['country_code'])),
-            esc_html__('Region codes for this country', 'wc-ship-today-notice')
+            esc_html__('Region codes for this country', 'ship-today-delivery-dates')
         );
     }
 
@@ -2003,7 +1959,7 @@ final class WC_Ship_Today_Notice
         );
 
         if (empty($holidays)) {
-            echo '<p class="description">' . esc_html__('No holidays found. Click "Fetch holidays now" at the bottom of this page.', 'wc-ship-today-notice') . '</p>';
+            echo '<p class="description">' . esc_html__('No holidays found. Click "Fetch holidays now" at the bottom of this page.', 'ship-today-delivery-dates') . '</p>';
             return;
         }
 
@@ -2012,7 +1968,7 @@ final class WC_Ship_Today_Notice
         }, $holidays));
         if (!in_array($year + 1, $years_found, true)) {
             /* translators: %d: year */
-            echo '<p class="description" style="color:#b32d2e">' . esc_html(sprintf(__('No holidays for %d. Click "Fetch holidays now" at the bottom of the page.', 'wc-ship-today-notice'), $year + 1)) . '</p>';
+            echo '<p class="description" style="color:#b32d2e">' . esc_html(sprintf(__('No holidays for %d. Click "Fetch holidays now" at the bottom of the page.', 'ship-today-delivery-dates'), $year + 1)) . '</p>';
         }
 
         $excluded = (array) ($o['excluded_holiday_dates'] ?? []);
@@ -2020,9 +1976,9 @@ final class WC_Ship_Today_Notice
         echo '<div style="max-height:300px;overflow-y:auto;border:1px solid #ddd;padding:10px;background:#fff;max-width:500px">';
         echo '<table class="widefat striped" style="margin:0">';
         echo '<thead><tr>';
-        echo '<th style="width:30px">' . esc_html__('Ignore', 'wc-ship-today-notice') . '</th>';
-        echo '<th>' . esc_html__('Date', 'wc-ship-today-notice') . '</th>';
-        echo '<th>' . esc_html__('Holiday name', 'wc-ship-today-notice') . '</th>';
+        echo '<th style="width:30px">' . esc_html__('Ignore', 'ship-today-delivery-dates') . '</th>';
+        echo '<th>' . esc_html__('Date', 'ship-today-delivery-dates') . '</th>';
+        echo '<th>' . esc_html__('Holiday name', 'ship-today-delivery-dates') . '</th>';
         echo '</tr></thead><tbody>';
 
         foreach ($holidays as $h) {
@@ -2038,7 +1994,7 @@ final class WC_Ship_Today_Notice
                 esc_attr(self::OPTION_KEY),
                 esc_attr($h->holiday_date),
                 $is_excluded ? 'checked' : '',
-                esc_attr__('Check to IGNORE this holiday (shipping will be available)', 'wc-ship-today-notice'),
+                esc_attr__('Check to IGNORE this holiday (shipping will be available)', 'ship-today-delivery-dates'),
                 esc_html($date_formatted),
                 esc_html($h->holiday_name ?: '-')
             );
@@ -2046,7 +2002,7 @@ final class WC_Ship_Today_Notice
 
         echo '</tbody></table>';
         echo '</div>';
-        echo '<p class="description">' . esc_html__('Check holidays to IGNORE them (shipping will be available on these days). Unchecked holidays block shipping.', 'wc-ship-today-notice') . '</p>';
+        echo '<p class="description">' . esc_html__('Check holidays to IGNORE them (shipping will be available on these days). Unchecked holidays block shipping.', 'ship-today-delivery-dates') . '</p>';
     }
 
     /**
@@ -2062,27 +2018,27 @@ final class WC_Ship_Today_Notice
         <fieldset>
             <label>
                 <input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[visibility_mode]" value="disabled" <?php checked($mode, 'disabled'); ?> />
-                <?php esc_html_e('Disabled (widget completely hidden)', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Disabled (widget completely hidden)', 'ship-today-delivery-dates'); ?>
             </label>
             <br>
             <label>
                 <input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[visibility_mode]" value="always" <?php checked($mode, 'always'); ?> />
-                <?php esc_html_e('Always visible', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Always visible', 'ship-today-delivery-dates'); ?>
             </label>
             <br>
             <label>
                 <input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[visibility_mode]" value="before_cutoff_only" <?php checked($mode, 'before_cutoff_only'); ?> />
-                <?php esc_html_e('Only before cutoff time (hide after cutoff)', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Only before cutoff time (hide after cutoff)', 'ship-today-delivery-dates'); ?>
             </label>
             <br>
             <label>
                 <input type="radio" name="<?php echo esc_attr(self::OPTION_KEY); ?>[visibility_mode]" value="hours_before" <?php checked($mode, 'hours_before'); ?> />
-                <?php esc_html_e('Only', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('Only', 'ship-today-delivery-dates'); ?>
                 <input type="number" name="<?php echo esc_attr(self::OPTION_KEY); ?>[visibility_hours_before]" value="<?php echo esc_attr($hours); ?>" min="0.5" max="168" step="0.5" style="width:60px" />
-                <?php esc_html_e('hour(s) before cutoff', 'wc-ship-today-notice'); ?>
+                <?php esc_html_e('hour(s) before cutoff', 'ship-today-delivery-dates'); ?>
             </label>
         </fieldset>
-        <p class="description"><?php esc_html_e('Control when the widget is displayed to customers.', 'wc-ship-today-notice'); ?> <?php esc_html_e('In "next date" mode, "only before cutoff time" works like "always".', 'wc-ship-today-notice'); ?></p>
+        <p class="description"><?php esc_html_e('Control when the widget is displayed to customers.', 'ship-today-delivery-dates'); ?> <?php esc_html_e('In "next date" mode, "only before cutoff time" works like "always".', 'ship-today-delivery-dates'); ?></p>
         <?php
     }
 
@@ -2100,7 +2056,7 @@ final class WC_Ship_Today_Notice
         <table class="form-table" style="margin:0;width:auto;">
             <tr>
                 <td style="padding:5px 10px 5px 0;">
-                    <label><?php esc_html_e('Hours label:', 'wc-ship-today-notice'); ?></label>
+                    <label><?php esc_html_e('Hours label:', 'ship-today-delivery-dates'); ?></label>
                 </td>
                 <td style="padding:5px 10px;">
                     <input type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[countdown_label_h]" value="<?php echo esc_attr($label_h); ?>" style="width:60px" placeholder="h" />
@@ -2108,7 +2064,7 @@ final class WC_Ship_Today_Notice
             </tr>
             <tr>
                 <td style="padding:5px 10px 5px 0;">
-                    <label><?php esc_html_e('Minutes label:', 'wc-ship-today-notice'); ?></label>
+                    <label><?php esc_html_e('Minutes label:', 'ship-today-delivery-dates'); ?></label>
                 </td>
                 <td style="padding:5px 10px;">
                     <input type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[countdown_label_m]" value="<?php echo esc_attr($label_m); ?>" style="width:60px" placeholder="min" />
@@ -2116,7 +2072,7 @@ final class WC_Ship_Today_Notice
             </tr>
             <tr>
                 <td style="padding:5px 10px 5px 0;">
-                    <label><?php esc_html_e('Seconds label:', 'wc-ship-today-notice'); ?></label>
+                    <label><?php esc_html_e('Seconds label:', 'ship-today-delivery-dates'); ?></label>
                 </td>
                 <td style="padding:5px 10px;">
                     <input type="text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[countdown_label_s]" value="<?php echo esc_attr($label_s); ?>" style="width:60px" placeholder="s" />
@@ -2126,17 +2082,17 @@ final class WC_Ship_Today_Notice
                 <td colspan="2" style="padding:5px 10px 5px 0;">
                     <label>
                         <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[countdown_show_seconds]" value="1" <?php checked($show_seconds); ?> />
-                        <?php esc_html_e('Show seconds in countdown', 'wc-ship-today-notice'); ?>
+                        <?php esc_html_e('Show seconds in countdown', 'ship-today-delivery-dates'); ?>
                     </label>
                 </td>
             </tr>
         </table>
         <p class="description">
-            <?php esc_html_e('Examples: "1h 30min 10s" or "01:30" (without seconds). Leave label empty to hide it completely.', 'wc-ship-today-notice'); ?>
+            <?php esc_html_e('Examples: "1h 30min 10s" or "01:30" (without seconds). Leave label empty to hide it completely.', 'ship-today-delivery-dates'); ?>
             <?php
             printf(
                 /* translators: %1$s: "1 day", %2$s: "3 days" */
-                esc_html__('Above 24 hours the countdown also shows days ("%1$s", "%2$s").', 'wc-ship-today-notice'),
+                esc_html__('Above 24 hours the countdown also shows days ("%1$s", "%2$s").', 'ship-today-delivery-dates'),
                 esc_html(sprintf(self::countdown_days(1), 1)),
                 esc_html(sprintf(self::countdown_days(3), 3))
             );
@@ -2153,7 +2109,7 @@ final class WC_Ship_Today_Notice
             esc_attr(self::OPTION_KEY),
             esc_textarea($o['text_next_slot']),
             /* translators: %s: example text with tokens */
-            esc_html(sprintf(__('E.g. "%s"', 'wc-ship-today-notice'), __('Order {cutoff_when}, we will deliver {delivery_when}. Time left: {countdown}', 'wc-ship-today-notice')))
+            esc_html(sprintf(__('E.g. "%s"', 'ship-today-delivery-dates'), __('Order {cutoff_when}, we will deliver {delivery_when}. Time left: {countdown}', 'ship-today-delivery-dates')))
         );
     }
 
@@ -2164,7 +2120,7 @@ final class WC_Ship_Today_Notice
             '<textarea name="%s[text_before_cutoff]" rows="3" class="large-text">%s</textarea><p class="description">%s</p>',
             esc_attr(self::OPTION_KEY),
             esc_textarea($o['text_before_cutoff']),
-            esc_html__('"Ship today" mode.', 'wc-ship-today-notice') . ' ' . esc_html__('Available token: {countdown}', 'wc-ship-today-notice')
+            esc_html__('"Ship today" mode.', 'ship-today-delivery-dates') . ' ' . esc_html__('Available token: {countdown}', 'ship-today-delivery-dates')
         );
     }
 
@@ -2175,10 +2131,10 @@ final class WC_Ship_Today_Notice
         ?>
         <label style="display:block;margin-bottom:8px;">
             <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[show_after_cutoff]" value="1" <?php checked($show); ?> />
-            <?php esc_html_e('Show this message after cutoff time', 'wc-ship-today-notice'); ?>
+            <?php esc_html_e('Show this message after cutoff time', 'ship-today-delivery-dates'); ?>
         </label>
         <textarea name="<?php echo esc_attr(self::OPTION_KEY); ?>[text_after_cutoff]" rows="3" class="large-text"><?php echo esc_textarea($o['text_after_cutoff']); ?></textarea>
-        <p class="description"><?php esc_html_e('"Ship today" mode.', 'wc-ship-today-notice'); ?> <?php esc_html_e('If disabled, the widget will be hidden after cutoff time.', 'wc-ship-today-notice'); ?></p>
+        <p class="description"><?php esc_html_e('"Ship today" mode.', 'ship-today-delivery-dates'); ?> <?php esc_html_e('If disabled, the widget will be hidden after cutoff time.', 'ship-today-delivery-dates'); ?></p>
         <?php
     }
 
@@ -2189,10 +2145,10 @@ final class WC_Ship_Today_Notice
         ?>
         <label style="display:block;margin-bottom:8px;">
             <input type="checkbox" name="<?php echo esc_attr(self::OPTION_KEY); ?>[show_not_shipping_day]" value="1" <?php checked($show); ?> />
-            <?php esc_html_e('Show this message on non-shipping days', 'wc-ship-today-notice'); ?>
+            <?php esc_html_e('Show this message on non-shipping days', 'ship-today-delivery-dates'); ?>
         </label>
         <textarea name="<?php echo esc_attr(self::OPTION_KEY); ?>[text_not_shipping_day]" rows="3" class="large-text"><?php echo esc_textarea($o['text_not_shipping_day']); ?></textarea>
-        <p class="description"><?php esc_html_e('"Ship today" mode.', 'wc-ship-today-notice'); ?> <?php esc_html_e('If disabled, the widget will be hidden on weekends, holidays, and excluded dates.', 'wc-ship-today-notice'); ?></p>
+        <p class="description"><?php esc_html_e('"Ship today" mode.', 'ship-today-delivery-dates'); ?> <?php esc_html_e('If disabled, the widget will be hidden on weekends, holidays, and excluded dates.', 'ship-today-delivery-dates'); ?></p>
         <?php
     }
 
@@ -2385,7 +2341,7 @@ final class WC_Ship_Today_Notice
      * --------------------------------------------------------- */
     public function register_shortcode()
     {
-        add_shortcode('ship_today_notice', [$this, 'shortcode_output']);
+        add_shortcode('stdd_notice', [$this, 'shortcode_output']);
     }
 
     /**
@@ -2402,9 +2358,9 @@ final class WC_Ship_Today_Notice
 
         /**
          * Whether to load the widget JS and CSS in <head> on this page (default: shortcode in the main query posts or automatic display).
-         * True forces loading, e.g. for a widget in AJAX-loaded content before WcShipTodayNotice.init().
+         * True forces loading, e.g. for a widget in AJAX-loaded content before StddNotice.init().
          */
-        if (apply_filters('wc_ship_today_notice_load_assets', $this->page_has_shortcode() || WC_STN_Auto_Placement::active_on_page($this->get_options()))) {
+        if (apply_filters('stdd_load_assets', $this->page_has_shortcode() || STDD_Auto_Placement::active_on_page($this->get_options()))) {
             $this->enqueue_widget_assets();
         }
     }
@@ -2417,7 +2373,7 @@ final class WC_Ship_Today_Notice
         global $wp_query;
 
         foreach ((array) ($wp_query->posts ?? []) as $post) {
-            if ($post instanceof WP_Post && (has_shortcode($post->post_content, 'ship_today_notice') || has_shortcode($post->post_excerpt, 'ship_today_notice'))) {
+            if ($post instanceof WP_Post && (has_shortcode($post->post_content, 'stdd_notice') || has_shortcode($post->post_excerpt, 'stdd_notice'))) {
                 return true;
             }
         }
@@ -2428,25 +2384,25 @@ final class WC_Ship_Today_Notice
     /** Registers the widget JS and CSS, with the Style tab CSS inline. */
     private function register_widget_assets()
     {
-        if (wp_style_is('wc-ship-today-notice', 'registered')) {
+        if (wp_style_is('ship-today-delivery-dates', 'registered')) {
             return;
         }
 
         wp_register_style(
-            'wc-ship-today-notice',
+            'ship-today-delivery-dates',
             plugins_url('assets/css/notice.css', __FILE__),
             [],
-            WC_STN_VERSION
+            STDD_VERSION
         );
         $style_css = $this->style_css();
         if ('' !== $style_css) {
-            wp_add_inline_style('wc-ship-today-notice', $style_css);
+            wp_add_inline_style('ship-today-delivery-dates', $style_css);
         }
         wp_register_script(
-            'wc-ship-today-notice',
+            'ship-today-delivery-dates',
             plugins_url('assets/js/notice.js', __FILE__),
             [],
-            WC_STN_VERSION,
+            STDD_VERSION,
             true
         );
     }
@@ -2454,8 +2410,8 @@ final class WC_Ship_Today_Notice
     private function enqueue_widget_assets()
     {
         $this->register_widget_assets();
-        wp_enqueue_style('wc-ship-today-notice');
-        wp_enqueue_script('wc-ship-today-notice');
+        wp_enqueue_style('ship-today-delivery-dates');
+        wp_enqueue_script('ship-today-delivery-dates');
     }
 
     public function shortcode_output($atts = [])
@@ -2472,7 +2428,7 @@ final class WC_Ship_Today_Notice
             'mode'   => '',
             'class'  => '',
             'method' => '',
-        ], $atts, 'ship_today_notice');
+        ], $atts, 'stdd_notice');
 
         $mode     = in_array($atts['mode'], ['today', 'next_slot'], true) ? $atts['mode'] : $o['mode'];
         $count    = max(1, min(10, (int) $atts['count']));
@@ -2483,24 +2439,24 @@ final class WC_Ship_Today_Notice
         $config = $this->frontend_config($o, $mode, $count, $text, $schedule);
         $state  = $this->initial_state($config, $schedule);
 
-        $classes = array_merge(['wc-ship-today-notice'], array_filter(array_map('sanitize_html_class', preg_split('/\s+/', (string) $atts['class']))));
+        $classes = array_merge(['stdd-notice'], array_filter(array_map('sanitize_html_class', preg_split('/\s+/', (string) $atts['class']))));
         if ($count > 1) {
-            $classes[] = 'wc-ship-today-notice--list';
+            $classes[] = 'stdd-notice--list';
         }
-        $classes[] = $state['hide'] ? 'wc-ship-today-notice--hidden' : 'wc-ship-today-notice--' . $state['class'];
+        $classes[] = $state['hide'] ? 'stdd-notice--hidden' : 'stdd-notice--' . $state['class'];
 
         // Widget outside post content (sidebar, template, page builder): the script goes to the footer and the CSS is printed
         // next to the widget if <head> is already out, so there is no unstyled moment
         $this->enqueue_widget_assets();
         $css = '';
-        if (did_action('wp_head') && !wp_style_is('wc-ship-today-notice', 'done')) {
+        if (did_action('wp_head') && !wp_style_is('ship-today-delivery-dates', 'done')) {
             ob_start();
-            wp_print_styles('wc-ship-today-notice');
+            wp_print_styles('ship-today-delivery-dates');
             $css = (string) ob_get_clean();
         }
 
         return $css . sprintf(
-            '<div class="%s" role="status" aria-live="polite" data-stn="%s"%s>%s</div>',
+            '<div class="%s" role="status" aria-live="polite" data-stdd="%s"%s>%s</div>',
             esc_attr(implode(' ', $classes)),
             esc_attr(wp_json_encode($config)),
             $state['hide'] ? ' style="display:none;"' : '',
@@ -2511,7 +2467,7 @@ final class WC_Ship_Today_Notice
     /**
      * Data for JS: slots for FRONTEND_DAYS days as absolute timestamps, so it works from a cached page.
      */
-    private function frontend_config(array $o, $mode, $count, $text, WC_STN_Schedule $schedule)
+    private function frontend_config(array $o, $mode, $count, $text, STDD_Schedule $schedule)
     {
         $now      = $schedule->now();
         $slots    = [];
@@ -2530,7 +2486,7 @@ final class WC_Ship_Today_Notice
             $templates = array_fill_keys(array_keys($templates), $text);
         }
         foreach ($templates as $state => $template) {
-            $templates[$state] = (string) apply_filters('wc_ship_today_notice_text', $template, $state, $mode, $schedule->method());
+            $templates[$state] = (string) apply_filters('stdd_text', $template, $state, $mode, $schedule->method());
         }
 
         return [
@@ -2558,14 +2514,14 @@ final class WC_Ship_Today_Notice
                 'day'     => self::countdown_days(1),
                 'days'    => self::countdown_days(2),
             ],
-            'words'      => WC_STN_Schedule::words(),
+            'words'      => STDD_Schedule::words(),
         ];
     }
 
     /**
      * Same state as notice.js, computed on the server (first paint and no JS).
      */
-    private function initial_state(array $config, WC_STN_Schedule $schedule)
+    private function initial_state(array $config, STDD_Schedule $schedule)
     {
         $now      = $schedule->now();
         $today    = $now->format('Y-m-d');
@@ -2598,9 +2554,9 @@ final class WC_Ship_Today_Notice
         foreach (array_slice($slots, 0, $config['count']) as $i => $slot) {
             $template = $config['templates'][(0 === $i || 'next' === $state) ? $state : 'next'];
             $html     = $schedule->render_text($template, $slot, $now);
-            $html     = str_replace('{countdown}', '<span class="wc-ship-today-countdown"></span>', $html);
+            $html     = str_replace('{countdown}', '<span class="stdd-countdown"></span>', $html);
             // A single slot too: the container is a flex box with a gap (see render() in notice.js)
-            $items[]  = '<div class="wc-ship-today-notice__item">' . $html . '</div>';
+            $items[]  = '<div class="stdd-notice__item">' . $html . '</div>';
         }
 
         return [
@@ -2618,7 +2574,7 @@ final class WC_Ship_Today_Notice
     private static function countdown_days($n)
     {
         /* translators: %d: number of days in the countdown, e.g. "3 days 05h 12min" */
-        return _n('%d day', '%d days', $n, 'wc-ship-today-notice');
+        return _n('%d day', '%d days', $n, 'ship-today-delivery-dates');
     }
 
     /* ---------------------------------------------------------
@@ -2653,10 +2609,11 @@ final class WC_Ship_Today_Notice
             return icl_t(self::WPML_DOMAIN, $key, $fallback);
         }
         if (has_filter('wpml_translate_single_string')) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML filter.
             return apply_filters('wpml_translate_single_string', $fallback, self::WPML_DOMAIN, $key);
         }
         return $fallback;
     }
 }
 
-WC_Ship_Today_Notice::instance();
+STDD_Plugin::instance();
