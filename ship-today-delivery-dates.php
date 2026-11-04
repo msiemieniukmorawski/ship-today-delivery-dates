@@ -1254,7 +1254,7 @@ final class STDD_Plugin
                 <h2><?php esc_html_e('Preview', 'ship-today-delivery-dates'); ?></h2>
                 <div id="stdd-style-preview" style="background:#fff;border:1px solid #c3c4c7;padding:16px;">
                     <p style="margin:0 0 6px;"><?php esc_html_e('Before cutoff', 'ship-today-delivery-dates'); ?></p>
-                    <div class="stdd-notice stdd-notice--before"><div class="stdd-notice__item"><?php echo $before_html; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above. ?></div></div>
+                    <div class="stdd-notice stdd-notice--before"><div class="stdd-notice__item"><?php echo wp_kses_post($before_html); ?></div></div>
                     <p style="margin:16px 0 6px;"><?php esc_html_e('After cutoff', 'ship-today-delivery-dates'); ?></p>
                     <div class="stdd-notice stdd-notice--after"><div class="stdd-notice__item"><?php echo esc_html(str_replace('{ship_when}', STDD_Schedule::words()['tomorrow'], __('We will ship {ship_when}.', 'ship-today-delivery-dates'))); ?></div></div>
                 </div>
@@ -1407,15 +1407,15 @@ final class STDD_Plugin
         $on_mon = STDD_Schedule::day_label(1, 'on');
         $on_tue = STDD_Schedule::day_label(2, 'on');
         $q      = function ($text) {
-            return '"' . esc_html($text) . '"';
+            return '"' . $text . '"';
         };
         ?>
         <p class="description">
             <?php echo esc_html__('Tokens:', 'ship-today-delivery-dates'); ?> <code>{countdown}</code> <?php echo esc_html__('countdown', 'ship-today-delivery-dates'); ?>,
-            <code>{cutoff_when}</code> <?php echo $q(sprintf($w['relative'], $w['today'], '20:00')) . ' / ' . $q(sprintf($w['relative'], $w['tomorrow'], '20:00')) . ' / ' . $q(sprintf($w['until'], $sunday, '20:00')); // phpcs:ignore WordPress.Security.EscapeOutput -- esc_html in $q. ?>,
-            <code>{cutoff_day}</code> <?php echo $q($sunday); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{cutoff_time}</code> "20:00", <code>{cutoff_date}</code> "25.10",
-            <code>{ship_when}</code> <?php echo $q($w['today']) . ' / ' . $q($w['tomorrow']) . ' / ' . $q($on_mon); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{ship_day}</code> <?php echo $q($on_mon); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{ship_date}</code>,
-            <code>{delivery_when}</code> <?php echo $q($w['tomorrow']) . ' / ' . $q($on_tue); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{delivery_day}</code> <?php echo $q($on_tue); // phpcs:ignore WordPress.Security.EscapeOutput ?>, <code>{delivery_date}</code> (<?php echo esc_html__('requires the delivery setting', 'ship-today-delivery-dates'); ?>).
+            <code>{cutoff_when}</code> <?php echo esc_html($q(sprintf($w['relative'], $w['today'], '20:00')) . ' / ' . $q(sprintf($w['relative'], $w['tomorrow'], '20:00')) . ' / ' . $q(sprintf($w['until'], $sunday, '20:00'))); ?>,
+            <code>{cutoff_day}</code> <?php echo esc_html($q($sunday)); ?>, <code>{cutoff_time}</code> "20:00", <code>{cutoff_date}</code> "25.10",
+            <code>{ship_when}</code> <?php echo esc_html($q($w['today']) . ' / ' . $q($w['tomorrow']) . ' / ' . $q($on_mon)); ?>, <code>{ship_day}</code> <?php echo esc_html($q($on_mon)); ?>, <code>{ship_date}</code>,
+            <code>{delivery_when}</code> <?php echo esc_html($q($w['tomorrow']) . ' / ' . $q($on_tue)); ?>, <code>{delivery_day}</code> <?php echo esc_html($q($on_tue)); ?>, <code>{delivery_date}</code> (<?php echo esc_html__('requires the delivery setting', 'ship-today-delivery-dates'); ?>).
         </p>
         <?php
     }
@@ -2416,6 +2416,26 @@ final class STDD_Plugin
 
     public function shortcode_output($atts = [])
     {
+        return $this->widget_html($atts, true);
+    }
+
+    /** The widget printed from a hook (automatic display): late CSS through WordPress, the markup escaped on output. */
+    public function print_widget()
+    {
+        $html = $this->widget_html([], false);
+        if ('' === $html) {
+            return;
+        }
+        if ($this->needs_late_css()) {
+            wp_print_styles('ship-today-delivery-dates');
+        }
+
+        echo wp_kses_post($html);
+    }
+
+    /** $with_css: the shortcode returns a string, so CSS printed after <head> goes into it. */
+    private function widget_html($atts, $with_css)
+    {
         $o = $this->get_options();
 
         if ('disabled' === $o['visibility_mode']) {
@@ -2449,18 +2469,28 @@ final class STDD_Plugin
         // next to the widget if <head> is already out, so there is no unstyled moment
         $this->enqueue_widget_assets();
         $css = '';
-        if (did_action('wp_head') && !wp_style_is('ship-today-delivery-dates', 'done')) {
+        if ($with_css && $this->needs_late_css()) {
             ob_start();
             wp_print_styles('ship-today-delivery-dates');
             $css = (string) ob_get_clean();
         }
 
-        return $css . sprintf(
+        return $css . $this->widget_markup($classes, $config, $state);
+    }
+
+    private function needs_late_css()
+    {
+        return did_action('wp_head') && !wp_style_is('ship-today-delivery-dates', 'done');
+    }
+
+    private function widget_markup(array $classes, array $config, array $state)
+    {
+        return sprintf(
             '<div class="%s" role="status" aria-live="polite" data-stdd="%s"%s>%s</div>',
             esc_attr(implode(' ', $classes)),
             esc_attr(wp_json_encode($config)),
             $state['hide'] ? ' style="display:none;"' : '',
-            $state['html'] // phpcs:ignore WordPress.Security.EscapeOutput -- texts from wp_kses_post and day labels.
+            wp_kses_post($state['html'])
         );
     }
 

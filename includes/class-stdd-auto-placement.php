@@ -61,7 +61,9 @@ final class STDD_Auto_Placement
             }
 
             $hook = function () use ($row) {
-                echo $this->render($row); // phpcs:ignore WordPress.Security.EscapeOutput -- HTML from shortcode_output().
+                if ($this->claim($row)) {
+                    $this->plugin->print_widget();
+                }
             };
 
             if ('product' === $row) {
@@ -150,12 +152,18 @@ final class STDD_Auto_Placement
 
     private function render($row)
     {
+        return $this->claim($row) ? $this->plugin->shortcode_output() : '';
+    }
+
+    /** Once per row and request. */
+    private function claim($row)
+    {
         if (!empty($this->rendered[$row])) {
-            return '';
+            return false;
         }
         $this->rendered[$row] = true;
 
-        return $this->plugin->shortcode_output();
+        return true;
     }
 
     private function around_block($html, $row, array $set)

@@ -23,6 +23,21 @@ final class STDD_Checkout
     const COLUMN       = 'stdd_ship';
     const FILTER_PARAM = 'stdd_ship_filter';
 
+    /** Markup of the classic checkout field, for wp_kses() when printing. */
+    const ALLOWED_HTML = [
+        'fieldset' => ['class' => true, 'id' => true, 'data-stdd-checkout' => true, 'style' => true],
+        'legend'   => ['class' => true],
+        'abbr'     => ['class' => true, 'title' => true],
+        'div'      => ['class' => true],
+        'label'    => ['class' => true],
+        'input'    => ['type' => true, 'class' => true, 'name' => true, 'value' => true, 'data-cutoff' => true, 'aria-label' => true, 'checked' => true],
+        'span'     => ['class' => true],
+        'p'        => ['class' => true, 'role' => true, 'aria-live' => true, 'hidden' => true],
+    ];
+
+    /** Attributes of the #stdd-checkout-data script tag. */
+    const DATA_ATTRS = ['type' => 'application/json', 'id' => 'stdd-checkout-data', 'class' => 'stdd-checkout__data'];
+
     /** @var STDD_Plugin */
     private $plugin;
 
@@ -103,18 +118,31 @@ final class STDD_Checkout
             return '';
         }
 
-        return $this->render_field();
+        $field = $this->field();
+
+        return $field['html'] . (null !== $field['data'] ? wp_get_inline_script_tag($field['data'], self::DATA_ATTRS) : '') . $field['close'];
     }
 
     public function print_field()
     {
-        echo $this->render_field(); // phpcs:ignore WordPress.Security.EscapeOutput
+        $field = $this->field();
+
+        echo wp_kses($field['html'], self::ALLOWED_HTML);
+        if (null !== $field['data']) {
+            wp_print_inline_script_tag($field['data'], self::DATA_ATTRS);
+        }
+        if ('' !== $field['close']) {
+            echo '</fieldset>';
+        }
     }
 
     /**
      * Tiles with the next slots and data for JS, which adds the next slots when a cutoff passes.
+     * html: the field up to the data element, data: JSON for #stdd-checkout-data or null, close: the closing tag.
+     *
+     * @return array{html:string,data:?string,close:string}
      */
-    private function render_field()
+    private function field()
     {
         $o        = $this->plugin->get_options();
         $method   = $this->current_method();
@@ -130,7 +158,11 @@ final class STDD_Checkout
         $marker = '<input type="hidden" name="' . esc_attr(self::RENDERED) . '" value="1" />';
 
         if (!$all && !$per_method) {
-            return '<p class="stdd-checkout__empty">' . esc_html__('No delivery dates available. Please contact us.', 'ship-today-delivery-dates') . '</p>' . $marker;
+            return [
+                'html'  => '<p class="stdd-checkout__empty">' . esc_html__('No delivery dates available. Please contact us.', 'ship-today-delivery-dates') . '</p>' . $marker,
+                'data'  => null,
+                'close' => '',
+            ];
         }
 
         $selected = $this->posted_ship_date();
@@ -164,12 +196,12 @@ final class STDD_Checkout
         $html .= '</div>';
         $html .= '<p class="stdd-checkout__notice" role="status" aria-live="polite"' . ($all ? ' hidden>' : '>' . esc_html__('No delivery dates available. Please contact us.', 'ship-today-delivery-dates')) . '</p>';
         $html .= $marker;
-        if ($per_method) {
-            $html .= $this->data_element($method, $tiles, $count);
-        }
-        $html .= '</fieldset>';
 
-        return $html;
+        return [
+            'html'  => $html,
+            'data'  => $per_method ? $this->data_json($method, $tiles, $count) : null,
+            'close' => '</fieldset>',
+        ];
     }
 
     /**
@@ -177,6 +209,11 @@ final class STDD_Checkout
      * checkout.js compares the method and rebuilds the tiles, keeping the selection if the date exists for the new method.
      */
     private function data_element($method, array $tiles, $count)
+    {
+        return wp_get_inline_script_tag($this->data_json($method, $tiles, $count), self::DATA_ATTRS);
+    }
+
+    private function data_json($method, array $tiles, $count)
     {
         $data = [
             'method'    => (string) $method,
@@ -188,7 +225,7 @@ final class STDD_Checkout
             'empty'     => __('No delivery dates available. Please contact us.', 'ship-today-delivery-dates'),
         ];
 
-        return '<script type="application/json" id="stdd-checkout-data" class="stdd-checkout__data">' . wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP) . '</script>';
+        return (string) wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP);
     }
 
     public function checkout_fragments($fragments)
