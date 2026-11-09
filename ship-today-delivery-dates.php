@@ -377,16 +377,21 @@ final class STDD_Plugin
      * --------------------------------------------------------- */
 
     /**
-     * ?stdd_now=2026-10-25T19:59 (shop managers only) overrides "now" in PHP and JS.
+     * ?stdd_now=2026-10-25T19:59&stdd_nonce=... (shop managers only) overrides "now" in PHP and JS.
+     * The link with the nonce is in the settings preview (test_mode_url()).
      */
     public function maybe_enable_test_mode()
     {
-        if (empty($_GET['stdd_now']) || !current_user_can('manage_woocommerce')) { // phpcs:ignore WordPress.Security.NonceVerification
+        if (
+            empty($_GET['stdd_now']) || empty($_GET['stdd_nonce']) ||
+            !current_user_can('manage_woocommerce') ||
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['stdd_nonce'])), 'stdd_test_mode')
+        ) {
             return;
         }
 
         try {
-            $fake = new DateTimeImmutable(sanitize_text_field(wp_unslash($_GET['stdd_now'])), wp_timezone()); // phpcs:ignore WordPress.Security.NonceVerification
+            $fake = new DateTimeImmutable(sanitize_text_field(wp_unslash($_GET['stdd_now'])), wp_timezone());
         } catch (Exception $e) {
             return;
         }
@@ -398,6 +403,18 @@ final class STDD_Plugin
         add_filter('stdd_now', function () use ($offset) {
             return (new DateTimeImmutable('@' . (time() + $offset)))->setTimezone(wp_timezone());
         });
+    }
+
+    /** Shop URL with test mode parameters for the current user (the nonce lasts about a day). */
+    public static function test_mode_url($when)
+    {
+        return add_query_arg(
+            [
+                'stdd_now'   => $when,
+                'stdd_nonce' => wp_create_nonce('stdd_test_mode'),
+            ],
+            function_exists('wc_get_page_permalink') ? wc_get_page_permalink('shop') : home_url('/')
+        );
     }
 
     public function on_options_updated($old, $new)
@@ -573,13 +590,19 @@ final class STDD_Plugin
     }
 
     /**
-     * Saves a section. WooCommerce already checked the nonce and manage_woocommerce. It saves on wp_loaded, before admin_init,
-     * so sanitizing happens here and not through register_setting. Style and methods are separate options.
+     * Saves a section. WooCommerce saves on wp_loaded, before admin_init, so sanitizing happens here and not through
+     * register_setting. Style and methods are separate options.
      */
     public function save_settings()
     {
+        // WooCommerce checks these too; checked again so the handler does not depend on the caller.
+        check_admin_referer('woocommerce-settings');
+        if (!current_user_can('manage_woocommerce')) {
+            wp_die(esc_html__('Sorry, you are not allowed to do this.', 'ship-today-delivery-dates'), 403);
+        }
+
         $section = $this->current_section();
-        // phpcs:disable WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput -- sanitized by sanitize_*().
+        // phpcs:disable WordPress.Security.ValidatedSanitizedInput -- sanitized by sanitize_*().
         if ('style' === $section) {
             update_option(self::STYLE_KEY, $this->sanitize_style(wp_unslash($_POST[self::STYLE_KEY] ?? [])));
             return;
@@ -1621,7 +1644,7 @@ final class STDD_Plugin
     public function field_advanced_toggles()
     {
         $this->toggle_checkbox('cache_purge_at_cutoff', __('Purge the page cache at each cutoff time', 'ship-today-delivery-dates'), __('Only with LiteSpeed Cache or a hooked stdd_purge_cache action: a WP-Cron event at each cutoff time, so cached pages get a fresh start text. The cache is still purged after saving the settings.', 'ship-today-delivery-dates'));
-        $this->toggle_checkbox('test_mode', __('Test mode ?stdd_now=', 'ship-today-delivery-dates'), __('Shop managers can add ?stdd_now=2026-12-20T19:59 to any URL to see the widget and the checkout at another time.', 'ship-today-delivery-dates'));
+        $this->toggle_checkbox('test_mode', __('Test mode ?stdd_now=', 'ship-today-delivery-dates'), __('Shop managers can open the shop at another time with the test link shown under the preview of upcoming dates.', 'ship-today-delivery-dates'));
         $this->toggle_checkbox('wpml_strings', __('WPML: translate the widget texts', 'ship-today-delivery-dates'), __('With WPML active: the four widget texts are registered as strings when saving and shown translated. Off: the texts are shown as saved.', 'ship-today-delivery-dates'));
     }
 
@@ -1753,16 +1776,24 @@ final class STDD_Plugin
      */
     public function field_preview()
     {
-        if ($this->render_preview($this->schedule())) {
+        if (!$this->render_preview($this->schedule())) {
+            return;
+        }
+
+        echo '<p class="description">' . esc_html__('Based on the saved settings and fetched holidays.', 'ship-today-delivery-dates') . ' ';
+
+        if (empty($this->get_options()['test_mode'])) {
+            esc_html_e('To test another moment, turn on test mode in the advanced settings.', 'ship-today-delivery-dates');
+        } else {
+            $when = wp_date('Y-m-d\TH:i', strtotime('+1 day'));
             printf(
-                '<p class="description">%s</p>',
-                sprintf(
-                    /* translators: %s: example URL parameter ?stdd_now=... */
-                    esc_html__('Based on the saved settings and fetched holidays. To test another moment, add %s to the page address (shop managers only).', 'ship-today-delivery-dates'),
-                    '<code>?stdd_now=2026-12-20T19:59</code>'
-                )
+                /* translators: %s: link to the shop with the test time */
+                esc_html__('Test another moment: %s. Change stdd_now in the address to pick the time. The link works only for you, for about a day.', 'ship-today-delivery-dates'),
+                sprintf('<a href="%s" target="_blank">%s</a>', esc_url(self::test_mode_url($when)), esc_html__('open the shop', 'ship-today-delivery-dates'))
             );
         }
+
+        echo '</p>';
     }
 
     /** Table of the next 5 slots. Returns whether there were any. */

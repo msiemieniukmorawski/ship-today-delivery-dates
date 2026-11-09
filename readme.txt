@@ -24,7 +24,7 @@ Show customers how long they have to order so the parcel ships in the next slot:
 * Tokens such as `{countdown}`, `{cutoff_when}`, `{ship_when}`, `{delivery_when}` with weekday forms in the shop language (e.g. Polish "do niedzieli 20:00", "we wtorek"; German "bis Sonntag 20:00", "am Dienstag").
 * Works with full-page cache: the next 42 days of slots are in the HTML and the browser switches slots itself. Optional cache purge (LiteSpeed Cache or your own hook) at each cutoff time.
 * "Style" section: colors, border, font and alignment of the widget with a live preview, output as CSS variables.
-* Preview of the next 5 slots in the settings and a test mode (`?stdd_now=2026-12-20T19:59`) for shop managers.
+* Preview of the next 5 slots in the settings and a test mode (`?stdd_now=2026-12-20T19:59`, link from the settings) for shop managers.
 
 **Ship date at checkout (optional, off by default)**
 
@@ -99,7 +99,7 @@ Users with the `manage_woocommerce` capability (Administrator and Shop Manager).
 
 = How can I test the widget at a different time? =
 
-As a shop manager add `?stdd_now=2026-12-20T19:59` to any URL. The widget and the checkout validation then use that time.
+Turn on test mode in the advanced settings. Under the preview of upcoming dates there is a link that opens the shop with `?stdd_now=` and a security token for your account. Change `stdd_now` in the address (e.g. `2026-12-20T19:59`); the widget and the checkout validation then use that time. The link works for about a day.
 
 = What happens to my data when I delete the plugin? =
 

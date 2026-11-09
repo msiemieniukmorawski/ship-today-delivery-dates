@@ -497,7 +497,8 @@ Widget czyta konfigurację z atrybutu `data-stdd`. Każdy element jest inicjowan
 add_filter('stdd_load_assets', '__return_true'); // albo warunek, np. is_front_page()
 ```
 
-**Tryb testowy**: użytkownik z `manage_woocommerce` może dodać do adresu dowolnej strony `?stdd_now=2026-12-20T19:59`. „Teraz”
+**Tryb testowy**: użytkownik z `manage_woocommerce` otwiera link z podglądu w ustawieniach (`?stdd_now=...&stdd_nonce=...`, nonce ważny ok. doby)
+i zmienia `stdd_now`, np. `2026-12-20T19:59`. „Teraz”
 zmienia się wtedy w PHP i w JS (widget, kafelki, walidacja checkoutu). Data jest interpretowana w strefie czasowej sklepu.
 
 </details>

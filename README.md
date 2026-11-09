@@ -493,7 +493,8 @@ The widget reads its configuration from the `data-stdd` attribute. Each element 
 add_filter('stdd_load_assets', '__return_true'); // or a condition, e.g. is_front_page()
 ```
 
-**Test mode**: a user with `manage_woocommerce` can add `?stdd_now=2026-12-20T19:59` to any page URL. "Now" then changes in PHP
+**Test mode**: a user with `manage_woocommerce` opens the link from the settings preview (`?stdd_now=...&stdd_nonce=...`; the nonce lasts about a day)
+and changes `stdd_now`, e.g. `2026-12-20T19:59`. "Now" then changes in PHP
 and JS (widget, tiles, checkout validation). The date is read in the store time zone.
 
 </details>
